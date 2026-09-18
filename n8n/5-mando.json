@@ -1,0 +1,204 @@
+{
+  "name": "5 · Mando manual (webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "mando",
+        "httpMethod": "GET",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook /mando",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -420,
+        300
+      ],
+      "id": "webhook-/mando"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.query.token }}",
+              "rightValue": "={{ $env.AGENT_API_TOKEN }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "¿Token correcto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -200,
+        300
+      ],
+      "id": "¿token-correcto?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.query.accion }}",
+              "rightValue": "kill",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "¿Qué pide?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        20,
+        220
+      ],
+      "id": "¿qué-pide?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://agent:10000/kill",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({reason: \"parada desde el celular\"}) }}"
+      },
+      "name": "Parar todo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        120
+      ],
+      "id": "parar-todo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://agent:10000/cycle",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 1800000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Disparar ciclo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        320
+      ],
+      "id": "disparar-ciclo"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{error:'token inválido'}}];"
+      },
+      "name": "Rechazado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        440
+      ],
+      "id": "rechazado"
+    }
+  ],
+  "connections": {
+    "Webhook /mando": {
+      "main": [
+        [
+          {
+            "node": "¿Token correcto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Token correcto?": {
+      "main": [
+        [
+          {
+            "node": "¿Qué pide?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Qué pide?": {
+      "main": [
+        [
+          {
+            "node": "Parar todo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Disparar ciclo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    {
+      "name": "mcp-trade"
+    }
+  ]
+}

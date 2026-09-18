@@ -97,6 +97,16 @@ class PilotA:
         self._order_lock = asyncio.Lock()
         self._stop = asyncio.Event()
 
+        # Lo que el explorador eligió, por slug. `/market` solo acepta estos:
+        # es el filtro y la whitelist del kernel actuando como puerta.
+        self._picks: dict = {}
+        self._bankroll_usd: float = 0.0
+        self._scout_note: str = ""
+        # Mismo techo de concurrencia que el ciclo interno. Sin esto, n8n en
+        # fan-out podría lanzar 15 pronósticos a la vez contra un Ollama que
+        # atiende de a uno, y todos se quedan esperando hasta el timeout.
+        self._market_sem = asyncio.Semaphore(CONCURRENCY)
+
     # ── arranque ─────────────────────────────────────────────────────────
 
     async def start(self) -> None:
@@ -146,6 +156,8 @@ class PilotA:
             resolve_fn=self._resolve_now,
             report_fn=self._report_now,
             kill_fn=self._kill_now,
+            candidates_fn=self._candidates_now,
+            market_fn=self._market_now,
         )
         await self._api.start()
 
@@ -303,15 +315,26 @@ class PilotA:
                     self._stop.wait(), timeout=self.s.strategist_interval_min * 60
                 )
 
-    async def _cycle(self) -> None:
-        started = datetime.now(UTC)
-        log.info("─── ciclo iniciado ───")
+    async def explorar(self, limit: int = 0) -> list:
+        """
+        El explorador, solo. Filtra, puntúa, abre la whitelist del kernel y
+        deja los elegidos listos para pronosticar.
 
+        Es la mitad barata del ciclo —sin IA, sin costo— y por eso es un
+        paso propio: n8n puede pedirla, ver qué salió y repartir el trabajo
+        mercado por mercado en vez de disparar un ciclo opaco de 10 minutos.
+
+        Devuelve [] si no hay capital, no hay presupuesto o no hay nada que
+        valga la pena. El motivo queda en `self._scout_note`.
+        """
+        self._scout_note = ""
         bank = await self.bankroll.read()
         log.info("capital: %s", bank)
         if bank.deployable_usd <= 1.0:
+            self._scout_note = "sin capital desplegable"
             log.warning("sin capital desplegable, saltando ciclo")
-            return
+            return []
+        self._bankroll_usd = bank.deployable_usd
 
         # Presupuesto ANTES de investigar. Quedarse sin Neurons a mitad del
         # ciclo tira a la basura llamadas a Gemini ya pagadas, y deja el
@@ -331,24 +354,24 @@ class PilotA:
                     affordable,
                 )
             else:
-                log.warning(
-                    "presupuesto agotado hasta las 00:00 UTC — %s",
-                    self.budget.snapshot(),
-                )
-                return
+                self._scout_note = "presupuesto agotado hasta las 00:00 UTC"
+                log.warning("%s — %s", self._scout_note, self.budget.snapshot())
+                return []
 
-        limit = min(MARKETS_PER_CYCLE, affordable)
-        if limit < MARKETS_PER_CYCLE:
+        pedido = limit if limit > 0 else MARKETS_PER_CYCLE
+        tope = min(pedido, affordable)
+        if tope < pedido:
             log.info(
                 "presupuesto recorta el ciclo: %d → %d mercados (%.0f neurons libres)",
-                MARKETS_PER_CYCLE, limit, self.budget.usable_left,
+                pedido, tope, self.budget.usable_left,
             )
 
         raw = await self._fetch_markets()
-        picks = select(raw, MarketFilter(), limit=limit)
+        picks = select(raw, MarketFilter(), limit=tope)
         log.info("%d mercados → %d candidatos\n%s", len(raw), len(picks), summarize(picks))
         if not picks:
-            return
+            self._scout_note = "ningún mercado pasó el filtro"
+            return []
 
         # La whitelist del kernel se cierra sobre los mercados de ESTE ciclo.
         tokens = frozenset(t for c in picks for t in (c.token_yes, c.token_no))
@@ -356,6 +379,21 @@ class PilotA:
         if self.kernel.killed:
             await self.alerts.killed(PILOT, self.kernel.kill_reason, self.kernel.snapshot())
             self._stop.set()
+            self._scout_note = f"kill switch activo: {self.kernel.kill_reason}"
+            return []
+
+        # Lo que `/market` puede aceptar. Un slug que no esté aquí no pasó
+        # por el filtro ni está en la whitelist del kernel, así que no entra
+        # a la ruta de ejecución por mucho que lo pidan.
+        self._picks = {c.slug: c for c in picks}
+        return picks
+
+    async def _cycle(self) -> None:
+        started = datetime.now(UTC)
+        log.info("─── ciclo iniciado ───")
+
+        picks = await self.explorar()
+        if not picks:
             return
 
         # Investigación y pronóstico van en paralelo (son esperas de red).
@@ -371,7 +409,7 @@ class PilotA:
             async with sem:
                 if self.forecaster.quota_exhausted:
                     return None
-                return await self._run_market(c, bank.deployable_usd)
+                return await self._run_market(c, self._bankroll_usd)
 
         runs = [r for r in await asyncio.gather(*(one(c) for c in picks)) if r]
 
@@ -461,7 +499,85 @@ class PilotA:
     async def _cycle_now(self) -> dict:
         """POST /cycle — n8n decide cuándo; el agente decide qué."""
         await self._cycle()
-        return self._cycle_stats or {"vistos": 0, "nota": "sin candidatos"}
+        return self._cycle_stats or {"vistos": 0, "nota": self._scout_note or "sin candidatos"}
+
+    async def _candidates_now(self, n: int = 0) -> dict:
+        """
+        GET /candidates — el explorador, sin pronosticar.
+
+        Lo que n8n hace con esto: un item por mercado, y de ahí un fan-out
+        donde cada mercado es una ejecución que se ve, se reintenta y se
+        ramifica sola.
+        """
+        picks = await self.explorar(n)
+        return {
+            "at": datetime.now(UTC).isoformat(timespec="seconds"),
+            "nota": self._scout_note,
+            "bankroll_usd": round(self._bankroll_usd, 2),
+            "n": len(picks),
+            "candidatos": [
+                {
+                    "slug": c.slug,
+                    "pregunta": c.question,
+                    "precio": round(c.price, 4),
+                    "liquidez": round(c.liquidity, 2),
+                    "puntaje": round(c.score, 4),
+                    "categoria": c.category,
+                    "cierra": c.end_date.isoformat() if c.end_date else None,
+                    "dias": c.days_to_resolution,
+                }
+                for c in picks
+            ],
+        }
+
+    async def _market_now(self, slug: str) -> dict:
+        """
+        POST /market {"slug": ...} — UN mercado por el pipeline completo.
+
+        Indivisible a propósito: `validar` y `ejecutar` comparten el estado
+        en memoria del kernel bajo un lock. Partirlos en dos llamadas HTTP
+        devolvería la carrera que ese lock existe para evitar.
+        """
+        c = self._picks.get(slug)
+        if c is None:
+            return {
+                "slug": slug, "corrido": False,
+                "motivo": "no está entre los candidatos — corre GET /candidates primero",
+            }
+        if self.kernel is None or self.kernel.killed:
+            motivo = self.kernel.kill_reason if self.kernel else "kernel sin inicializar"
+            return {"slug": slug, "corrido": False, "motivo": f"kill switch: {motivo}"}
+        if self.forecaster.quota_exhausted:
+            return {"slug": slug, "corrido": False, "motivo": "cuota de inferencia agotada"}
+
+        # El capital se relee por mercado: cada fill cambia lo desplegable,
+        # y en fan-out pueden pasar minutos entre un mercado y el siguiente.
+        bank = await self.bankroll.read()
+        if bank.deployable_usd <= 1.0:
+            return {"slug": slug, "corrido": False, "motivo": "sin capital desplegable"}
+
+        async with self._market_sem:
+            r = await self._run_market(c, bank.deployable_usd)
+
+        self._last_cycle = datetime.now(UTC)
+        d = r.decision
+        return {
+            "slug": slug,
+            "corrido": True,
+            "pregunta": c.question,
+            "parado_en": r.parado_en or "completado",
+            "motivo": r.motivo,
+            "accion": r.accion,
+            "opero": r.opero,
+            "escalado": r.escalado,
+            "precio_mercado": round(c.price, 4),
+            "p_pronostico": round(r.forecast.p_calibrated, 4) if r.forecast else None,
+            "edge": round(d.edge, 4) if (d is not None and d) else None,
+            "size_usd": round(d.size_usd, 2) if (d is not None and d) else None,
+            "orden_id": r.order.order_id if r.order else None,
+            "neurons": round(r.neurons, 1),
+            "costo_usd": round(r.cost_usd, 6),
+        }
 
     async def _resolve_now(self) -> dict:
         """POST /resolve — cierra el bucle de aprendizaje."""

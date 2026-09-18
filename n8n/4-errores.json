@@ -1,0 +1,88 @@
+{
+  "name": "4 · Errores (errorWorkflow)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Cuando algo falla",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        300
+      ],
+      "id": "cuando-algo-falla"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Se dispara cuando CUALQUIER workflow que lo tenga como errorWorkflow\n// falla. Sin esto, un workflow roto se queda callado hasta que alguien\n// entra a mirar — que es justo lo que no va a pasar.\nconst e = $input.first().json;\nconst w = e.workflow || {}, x = e.execution || {};\nreturn [{ json: { texto:\n  `💥 <b>Workflow falló</b>\\n`\n+ `<b>${w.name || '?'}</b>\\n`\n+ `nodo: <code>${x.lastNodeExecuted || '?'}</code>\\n`\n+ `${String(x.error?.message || '').slice(0, 300)}\\n`\n+ (x.url ? `\\n${x.url}` : '') } }];"
+      },
+      "name": "Formatear error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        300
+      ],
+      "id": "formatear-error"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({chat_id: $env.TELEGRAM_CHAT_ID, text: $json.texto, parse_mode: 'HTML'}) }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "name": "Avisar error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        300
+      ],
+      "id": "avisar-error"
+    }
+  ],
+  "connections": {
+    "Cuando algo falla": {
+      "main": [
+        [
+          {
+            "node": "Formatear error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear error": {
+      "main": [
+        [
+          {
+            "node": "Avisar error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    {
+      "name": "mcp-trade"
+    }
+  ]
+}

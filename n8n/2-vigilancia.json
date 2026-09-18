@@ -1,0 +1,175 @@
+{
+  "name": "2 · Vigilancia (escalera de alertas)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "name": "Cada 10 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        300
+      ],
+      "id": "cada-10-min"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://agent:10000/health",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Consultar salud",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        300
+      ],
+      "id": "consultar-salud",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Esto es lo que un cron no puede hacer: recordar la ejecución anterior.\n// Sin memoria, o avisas en cada parpadeo de red (y dejas de leer las\n// alertas) o no avisas nunca. Con memoria avisas UNA vez al tercer fallo\n// seguido, y una vez cuando vuelve.\nconst s = $getWorkflowStaticData('global');\nconst r = $input.first().json;\nconst body = r.body || {};\nconst vivo = r.statusCode === 200 && body.killed !== true;\n\ns.fallos = vivo ? 0 : (s.fallos || 0) + 1;\ns.avisado = s.avisado || false;\n\nlet avisar = false, texto = '';\nconst UMBRAL = 3;   // 3 × 10 min = 30 min caído antes de molestar\n\nif (!vivo && s.fallos === UMBRAL) {\n  avisar = true; s.avisado = true;\n  texto = body.killed\n    ? `🛑 <b>KILL SWITCH ACTIVO</b>\\n${body.kill_reason || ''}\\n\\nNo opera hasta que borres <code>state/.KILLED_a</code>.`\n    : `🔴 <b>Agente caído</b> — ${UMBRAL} chequeos seguidos sin respuesta (${r.statusCode || 'sin conexión'}).`;\n} else if (vivo && s.avisado) {\n  avisar = true; s.avisado = false;\n  texto = `🟢 <b>Agente de vuelta</b> — uptime ${Math.round((body.uptime_s || 0) / 60)} min.`;\n}\n\nreturn [{ json: { vivo, fallos: s.fallos, avisar, texto,\n                  ultimo_ciclo: body.last_cycle || null } }];"
+      },
+      "name": "Escalera de alertas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        300
+      ],
+      "id": "escalera-de-alertas"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.avisar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "¿Avisar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        260,
+        300
+      ],
+      "id": "¿avisar?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({chat_id: $env.TELEGRAM_CHAT_ID, text: $json.texto, parse_mode: 'HTML'}) }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "name": "Avisar salud",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ],
+      "id": "avisar-salud"
+    }
+  ],
+  "connections": {
+    "Cada 10 min": {
+      "main": [
+        [
+          {
+            "node": "Consultar salud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar salud": {
+      "main": [
+        [
+          {
+            "node": "Escalera de alertas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalera de alertas": {
+      "main": [
+        [
+          {
+            "node": "¿Avisar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Avisar?": {
+      "main": [
+        [
+          {
+            "node": "Avisar salud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    {
+      "name": "mcp-trade"
+    }
+  ]
+}

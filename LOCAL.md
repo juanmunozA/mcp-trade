@@ -71,10 +71,55 @@ docker compose logs -f agent
 ### n8n
 
 Entra a http://localhost:5678, crea la cuenta local (no sale a internet) e
-importa `n8n/agente-orquestacion.json` desde *Import from File*.
+importa los **cinco** workflows de `n8n/` desde *Import from File*:
+
+| | qué hace | por qué en n8n y no en el agente |
+|---|---|---|
+| `1-ciclo.json` | **un mercado = una ejecución** | ves cuál murió dónde y reintentas solo ese |
+| `2-vigilancia.json` | salud cada 10 min | avisa al **3er** fallo seguido, no en cada parpadeo |
+| `3-aprendizaje.json` | resolver + veredicto diario | te dice cuándo **apagarlo** |
+| `4-errores.json` | atrapa cualquier workflow que reviente | sin esto un workflow roto se calla |
+| `5-mando.json` | webhook: disparar o parar desde el celular | no hay que entrar a la máquina |
+
+Después de importar, dos cosas a mano:
+
+1. **Credencial.** Crea una *Header Auth* con `Name: Authorization` y
+   `Value: Bearer <tu AGENT_API_TOKEN>`, y asígnala a los nodos HTTP que
+   llaman al agente. Es la misma para todos.
+2. **Error workflow.** En cada workflow → *Settings* → *Error workflow* →
+   `4 · Errores`. Sin ese paso el workflow 4 nunca se dispara.
 
 Los workflows ya apuntan a `http://agent:10000` — dentro de la red de
 Docker los servicios se ven por nombre.
+
+**No los edites a mano en la UI sin volcar los cambios**: el JSON se
+genera desde [n8n/generar.py](n8n/generar.py), y `python n8n/generar.py`
+los reescribe.
+
+#### El fan-out, que es lo que cambia
+
+Antes n8n disparaba `POST /cycle` y esperaba 10 minutos a una caja negra.
+Ahora reparte:
+
+```
+GET /candidates        →  el explorador. Sin IA, sin costo.
+      ↓ un item por mercado
+POST /market {slug}    →  UN mercado por el pipeline, atómico
+      ↓ resultado por mercado: parado_en, motivo, decisión
+```
+
+Cada mercado es su propia ejecución: se ve dónde murió, se reintenta solo
+ese, y se ramifica según el resultado.
+
+**Hasta ahí llega el corte, y es a propósito.** `validar` y `ejecutar`
+comparten el estado en memoria del risk kernel y corren bajo un lock —
+entre `check()` y `on_order_sent()` hay `await`s, y dos mercados que los
+crucen a la vez pasan el mismo límite antes de que ninguno lo consuma. Un
+salto HTTP ahí devuelve esa carrera y encima la hace sobrevivir a
+reinicios. Por eso `/market` es indivisible.
+
+`/market` solo acepta slugs que el explorador ya eligió. Un workflow mal
+editado no puede meter un mercado arbitrario en la ruta de ejecución.
 
 ### Groq (opcional, pero vale la pena)
 
@@ -127,6 +172,14 @@ quieres que use. `Ctrl+G` para la vista de grafo.
 # disparar un ciclo a mano
 curl -X POST http://localhost:10000/cycle \
      -H "Authorization: Bearer $AGENT_API_TOKEN"
+
+# o paso a paso, como lo hace n8n
+curl "http://localhost:10000/candidates?n=3" \
+     -H "Authorization: Bearer $AGENT_API_TOKEN"
+curl -X POST http://localhost:10000/market \
+     -H "Authorization: Bearer $AGENT_API_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"slug":"el-slug-que-devolvio-candidates"}'
 
 # ¿hay edge o hay que apagarlo?
 curl http://localhost:10000/report \

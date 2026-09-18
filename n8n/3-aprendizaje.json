@@ -1,0 +1,275 @@
+{
+  "name": "3 · Aprendizaje y veredicto",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "name": "Cada 6 horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        200
+      ],
+      "id": "cada-6-horas"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://agent:10000/resolve",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 600000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Buscar resueltos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -420,
+        200
+      ],
+      "id": "buscar-resueltos"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b=$input.first().json.body||{};return [{json:{resueltos:b.resueltos??0, ...b}}];"
+      },
+      "name": "Resumir resoluciones",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        200
+      ],
+      "id": "resumir-resoluciones"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "name": "Reporte diario 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        420
+      ],
+      "id": "reporte-diario-8am"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://agent:10000/report",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Pedir reporte",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -420,
+        420
+      ],
+      "id": "pedir-reporte"
+    },
+    {
+      "parameters": {
+        "jsCode": "// El criterio para dejarlo prendido NO es el PnL: con 30 apuestas el PnL\n// es ruido. Es `skill_vs_market` — ¿pronostica mejor que el precio? Si no,\n// no hay negocio por mucho que haya ganado plata.\n//\n// Las claves son EXACTAMENTE las de learning_report(). Inventarlas hace\n// que esto lea undefined y diga \"todavía no se sabe\" para siempre, callado.\nconst b = ($input.first().json.body) || {};\nconst n = b.n_resolved ?? 0;\nconst bss = b.skill_vs_market ?? null;\nconst listo = b.ready_to_judge === true;   // el umbral lo pone el agente\nconst pnl = b.pnl_usd ?? 0;\nconst tasa = b.beat_market_rate;\n\nlet estado, texto;\nif (!listo) {\n  estado = 'juntando';\n  texto = `📊 <b>Todavía no se sabe</b>\\n${n} resoluciones.\\n`\n        + `Hasta las 30 cualquier número es ruido. PnL de paper: $${pnl}.`;\n} else if (bss === null) {\n  estado = 'sin-dato';\n  texto = `⚠️ ${n} resoluciones pero sin skill_vs_market. Revisa /report.`;\n} else if (bss <= 0) {\n  estado = 'apagar';\n  texto = `🛑 <b>APAGAR</b>\\nskill vs mercado ${bss.toFixed(3)} con ${n} resoluciones.\\n`\n        + `El precio pronostica igual o mejor que el agente. No hay edge: `\n        + `lo que gane de aquí en adelante es suerte.\\nPnL $${pnl}`\n        + (tasa != null ? ` · le gana al mercado ${(tasa * 100).toFixed(0)}% de las veces` : '');\n} else {\n  estado = 'hay-edge';\n  texto = `🟢 <b>Hay edge</b>\\nskill vs mercado +${bss.toFixed(3)} con ${n} resoluciones.\\n`\n        + `PnL $${pnl}`\n        + (tasa != null ? ` · le gana al mercado ${(tasa * 100).toFixed(0)}% de las veces` : '');\n}\n\nconst cats = (b.by_category || [])\n  .map(c => `| ${c.category || '?'} | ${c.n} | ${Number(c.brier).toFixed(3)} | `\n          + `${Number(c.brier_market).toFixed(3)} | `\n          + `${c.brier < c.brier_market ? '✅' : '❌'} |`);\n\nconst md = [\n  '---', 'tipo: reporte', `fecha: ${$now.toFormat('yyyy-MM-dd')}`,\n  `estado: ${estado}`, '---', '',\n  `# Reporte ${$now.toFormat('yyyy-MM-dd')}`, '',\n  texto.replace(/<[^>]+>/g, ''), '',\n  ...(cats.length ? ['## Por categoría', '',\n                     '| categoría | n | brier | mercado | ¿gana? |',\n                     '|---|---|---|---|---|', ...cats, ''] : []),\n  '## Crudo', '', '```json', JSON.stringify(b, null, 2), '```', '',\n].join('\\n');\n\nreturn [{\n  json: { estado, n, bss, pnl, texto, avisar: estado !== 'juntando' },\n  binary: { data: { data: Buffer.from(md, 'utf8').toString('base64'),\n                    mimeType: 'text/markdown', fileName: 'reporte.md' } },\n}];"
+      },
+      "name": "¿Hay edge o apagar?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        420
+      ],
+      "id": "¿hay-edge-o-apagar?"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/vault/contexto/_reporte-{{ $now.format('yyyy-MM-dd') }}.md",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "name": "Guardar en el vault",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        20,
+        520
+      ],
+      "id": "guardar-en-el-vault"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.avisar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "¿Vale la pena avisar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        20,
+        340
+      ],
+      "id": "¿vale-la-pena-avisar?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({chat_id: $env.TELEGRAM_CHAT_ID, text: $json.texto, parse_mode: 'HTML'}) }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "name": "Avisar veredicto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        340
+      ],
+      "id": "avisar-veredicto"
+    }
+  ],
+  "connections": {
+    "Cada 6 horas": {
+      "main": [
+        [
+          {
+            "node": "Buscar resueltos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar resueltos": {
+      "main": [
+        [
+          {
+            "node": "Resumir resoluciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reporte diario 8am": {
+      "main": [
+        [
+          {
+            "node": "Pedir reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedir reporte": {
+      "main": [
+        [
+          {
+            "node": "¿Hay edge o apagar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay edge o apagar?": {
+      "main": [
+        [
+          {
+            "node": "¿Vale la pena avisar?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Guardar en el vault",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Vale la pena avisar?": {
+      "main": [
+        [
+          {
+            "node": "Avisar veredicto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    {
+      "name": "mcp-trade"
+    }
+  ]
+}
