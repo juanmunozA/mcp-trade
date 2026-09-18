@@ -24,7 +24,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=http://agent:10000/health",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/health",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {

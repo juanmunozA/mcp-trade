@@ -24,7 +24,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://agent:10000/resolve",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/resolve",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -83,7 +83,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=http://agent:10000/report",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/report",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {

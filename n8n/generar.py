@@ -27,7 +27,16 @@ import json
 import pathlib
 
 OUT = pathlib.Path(__file__).resolve().parent
-AG = "http://agent:10000"
+
+AG = "{{ $env.AGENT_URL || 'http://agent:10000' }}"
+"""
+La URL del agente NO va fija. Dentro de Docker los servicios se ven por
+nombre (`http://agent:10000`), pero si corres el agente nativo —máquina
+sin RAM para Ollama, o depurando— n8n sigue en su contenedor y `agent` no
+resuelve a nada. Ahí `AGENT_URL=http://host.docker.internal:10000` y los
+cinco workflows se mudan sin tocarlos.
+"""
+
 CRED = {"authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth"}
 
 
@@ -39,7 +48,7 @@ def node(name, type_, ver, params, x, y, **extra):
 
 def http(name, method, path, x, y, timeout=300000, **extra):
     return node(name, "httpRequest", 4.2, {
-        "method": method, "url": f"={AG}{path}", **CRED,
+        "method": method, "url": f"={AG}{path}", **CRED,  # noqa: RUF027 — expresión n8n
         "options": {"timeout": timeout,
                     "response": {"response": {"neverError": True, "fullResponse": True}}},
     }, x, y, **extra)

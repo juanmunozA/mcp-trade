@@ -127,7 +127,10 @@ services:
       DB_POSTGRESDB_USER: trade
       DB_POSTGRESDB_PASSWORD: trade
       DB_POSTGRESDB_SCHEMA: n8n
-      AGENT_URL: http://agent:10000
+      # Si el agente corre nativo (máquina sin RAM para Ollama en Docker),
+      # pon AGENT_URL=http://host.docker.internal:10000 en el .env y los
+      # cinco workflows se mudan sin tocarlos.
+      AGENT_URL: ${AGENT_URL:-http://agent:10000}
       AGENT_API_TOKEN: ${AGENT_API_TOKEN:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}

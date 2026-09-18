@@ -35,7 +35,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=http://agent:10000/candidates",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/candidates",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -119,7 +119,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://agent:10000/market",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/market",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {

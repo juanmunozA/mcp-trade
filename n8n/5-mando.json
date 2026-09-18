@@ -78,7 +78,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://agent:10000/kill",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/kill",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -106,7 +106,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://agent:10000/cycle",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/cycle",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
