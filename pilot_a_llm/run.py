@@ -108,19 +108,24 @@ class PilotA:
 
         await db.init_pool(self.s.database_url)
 
-        # DeepSeek primero: mide mejor la comprensión de la pregunta.
-        # llama-8b segundo: 39× más barato en Neurons, da la segunda opinión
-        # que alimenta el detector de desacuerdo.
+        # ORDEN = CASCADA. El primero es el que se consulta siempre, así que
+        # tiene que ser el barato: llama cuesta 4.5 neurons y DeepSeek 175.
+        # Con DeepSeek de primero, un ciclo de 40 mercados agotaba el cupo
+        # diario entero — pasó en producción.
+        #
+        # llama lee bien la pregunta CUANDO tiene evidencia (medido: 0.95
+        # contra un mercado en 0.805). DeepSeek razona mejor pero solo se
+        # paga cuando hay algo que decidir.
         acc = self.s.cloudflare_account_id
         tok = self.s.cloudflare_api_token
         providers = {}
         if acc and tok:
             secret = tok.get_secret_value()
-            providers["deepseek-r1-32b"] = CloudflareProvider(
-                acc, secret, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
-            )
             providers["llama-3.1-8b"] = CloudflareProvider(
                 acc, secret, "@cf/meta/llama-3.1-8b-instruct"
+            )
+            providers["deepseek-r1-32b"] = CloudflareProvider(
+                acc, secret, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
             )
         if not providers:
             raise SystemExit("falta CLOUDFLARE_ACCOUNT_ID/API_TOKEN para el ensemble")
@@ -306,10 +311,29 @@ class PilotA:
     async def _handle(self, c, bankroll_usd: float, stats: dict) -> None:
         ev = await self.researcher.investigate(c)
         self.budget.spend_gemini()
-        f = await self.forecaster.forecast(c, ev)
+
+        # ── CASCADA ──────────────────────────────────────────────────────
+        # Escalón 1: solo el modelo barato (4.5 neurons). Mira todos los
+        # mercados. La mayoría no tendrá edge y ahí se acaba el gasto.
+        f = await self.forecaster.forecast(c, ev, second_opinion=False)
         if f is None:
             return
         self.budget.spend_neurons(f.neurons)
+
+        # Escalón 2: si el barato ve un desajuste que valdría la pena, se
+        # paga la segunda opinión (175 neurons). Sin ella no hay señal de
+        # desacuerdo, y el desacuerdo es el veto que evitó la peor apuesta
+        # que habríamos hecho.
+        interesante = not f.vetoed and f.divergence >= EdgeConfig().min_edge
+        if interesante and self.budget.can_afford(
+            [p.model for p in self.forecaster.providers.values()]
+        ):
+            completo = await self.forecaster.forecast(c, ev, second_opinion=True)
+            if completo is not None:
+                self.budget.spend_neurons(completo.neurons - f.neurons)
+                f = completo
+                stats["escalados"] = stats.get("escalados", 0) + 1
+
         stats["costo"] += f.cost_usd + ev.cost_usd
         stats["neurons"] = round(stats.get("neurons", 0.0) + f.neurons, 1)
 

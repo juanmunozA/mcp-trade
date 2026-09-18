@@ -124,8 +124,22 @@ class Forecaster:
         self.quota_exhausted = False
         """Lo enciende un 429. El ciclo lo consulta para cortar a tiempo."""
 
-    async def forecast(self, c: Candidate, ev: Evidence) -> Forecast | None:
-        """Devuelve None solo si ningún modelo respondió algo utilizable."""
+    async def forecast(
+        self, c: Candidate, ev: Evidence, *, second_opinion: bool = True
+    ) -> Forecast | None:
+        """
+        Devuelve None solo si ningún modelo respondió algo utilizable.
+
+        `second_opinion=False` consulta solo al modelo barato. Es el primer
+        escalón de la cascada: medido, DeepSeek cuesta 175 neurons y llama
+        4.5 — 39× más. Gastar el caro en mercados que el barato ya descarta
+        agota el cupo diario en un solo ciclo.
+
+        El costo: sin segundo modelo no hay señal de desacuerdo, así que ese
+        veto queda ciego. Por eso la cascada solo salta el segundo modelo
+        cuando el primero ya dice que no hay nada — si dice que sí, la
+        segunda opinión es obligatoria.
+        """
         started = datetime.now(UTC)
 
         if self.vetoes.require_evidence and ev.is_thin:
@@ -146,15 +160,21 @@ class Forecaster:
             operator_notes=notes,
         )
 
+        # El modelo barato va primero en el dict; con second_opinion=False
+        # solo se consulta a él.
+        activos = dict(self.providers) if second_opinion else dict(
+            list(self.providers.items())[:1]
+        )
+
         results = await asyncio.gather(
-            *(self._ask(name, p, prompt) for name, p in self.providers.items()),
+            *(self._ask(name, p, prompt) for name, p in activos.items()),
             return_exceptions=True,
         )
 
         parsed: dict[str, dict] = {}
         cost = 0.0
         neurons = 0.0
-        for (name, _), out in zip(self.providers.items(), results, strict=True):
+        for (name, _), out in zip(activos.items(), results, strict=True):
             if isinstance(out, Exception) or out is None:
                 log.warning("%s no respondió: %s", name, out)
                 continue
