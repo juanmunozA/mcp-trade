@@ -141,13 +141,29 @@ chat id, y van al `.env`. Sin eso corre igual, solo que no avisa.
 
 ---
 
-## 5. Obsidian (opcional)
+## 5. Obsidian
 
-El agente escribe cada pronóstico con su razonamiento en `vault/`. Ábrela
-como vault en [Obsidian](https://obsidian.md) y `Ctrl+G` para el grafo.
+**Empieza por aquí si quieres entender qué hace esto.** `vault/` ya viene
+con todo el sistema documentado como notas enlazadas — no hay que esperar
+a que corra.
 
-Al revés también: lo que escribas en `vault/contexto/` entra al prompt del
-agente. Lee `vault/contexto/_LEEME.md` antes.
+Abre `vault/` como vault en [Obsidian](https://obsidian.md), entra a
+`_INICIO` y pulsa `Ctrl+G`. Cada color es una capa:
+
+| | |
+|---|---|
+| `0-arranque` | los pasos de esta guía |
+| `1-flujo` | qué le hace a cada mercado |
+| `2-decisiones` | en qué puede terminar |
+| `6-servicios` | los cinco contenedores |
+| `7-orquestacion` | los workflows de n8n |
+| `contexto` | lo que escribes tú |
+
+Y al revés: lo que escribas en `vault/contexto/` entra al prompt del
+agente. Lee `_LEEME` antes.
+
+Sus pronósticos van apareciendo en `3-mercados/` con el razonamiento
+completo, enlazados al veto o la orden que salió.
 
 ---
 

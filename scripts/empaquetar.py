@@ -33,9 +33,13 @@ EXCLUIR_DIRS = {
 }
 EXCLUIR_SUFIJOS = {".pyc", ".pyo", ".log", ".db", ".sqlite"}
 EXCLUIR_ARCHIVOS = {
-    "empaquetar.py", "_entrega_plantillas.py",
+    "empaquetar.py", "_entrega_plantillas.py", "_entrega_vault.py",
     "check_env.py",      # pregunta por credenciales de nube que aquí no van
     "strategist.py",     # código muerto: nadie lo importa
+    # Existía para el disco efímero de Render. En local el vault es un bind
+    # mount y no se pierde — y su write_graph_config() pisaría la paleta del
+    # vault de la entrega, que tiene tres capas más.
+    "backfill_vault.py",
 }
 
 PATRONES = [
@@ -133,7 +137,8 @@ def main() -> int:
 
     # Docker crea como root lo que no exista, y después el contenedor no
     # puede escribir dentro.
-    for vacia in ("state", "vault/pronosticos", "vault/post-mortems"):
+    # `3-mercados` y `post-mortems` son los nombres que usa Vault.__init__.
+    for vacia in ("state", "vault/3-mercados", "vault/post-mortems"):
         (DESTINO / vacia).mkdir(parents=True, exist_ok=True)
         (DESTINO / vacia / ".gitkeep").touch()
 
@@ -144,7 +149,10 @@ def main() -> int:
             os.chmod(p, 0o755)
         total += 1
 
+    notas = construir_vault(DESTINO / "vault")
+    total += notas
     print(f"  {'(generados)':20} {len(PLANTILLAS):3}")
+    print(f"  {'vault obsidian':20} {notas:3}")
     print(f"\n  {total} archivos en {DESTINO}")
 
     if hallazgos := escanear(DESTINO):
@@ -167,6 +175,7 @@ def main() -> int:
 
 
 from scripts._entrega_plantillas import PLANTILLAS  # noqa: E402
+from scripts._entrega_vault import construir as construir_vault  # noqa: E402
 
 if __name__ == "__main__":
     sys.exit(main())
