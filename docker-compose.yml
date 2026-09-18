@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mcptrade-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: trade
+      POSTGRES_PASSWORD: trade
+      POSTGRES_DB: mcptrade
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trade -d mcptrade"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # el collector escribe mucho; subimos un poco los buffers
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c max_wal_size=2GB
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: mcptrade-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: America/Bogota
+      TZ: America/Bogota
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: mcptrade-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana_data:/var/lib/grafana
+    depends_on:
+      postgres:
+        condition: service_healthy

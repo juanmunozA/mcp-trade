@@ -1,0 +1,30 @@
+# Secretos — jamás dentro de la imagen.
+# En Render las variables van en el panel, no en el build.
+.env
+.env.*
+!.env.example
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+.git/
+.gitignore
+
+# Datos locales: no se hornean en la imagen
+pgdata/
+n8n_data/
+grafana_data/
+data/
+logs/
+state/
+*.db
+*.sqlite
+*.log
+
+docs/
+README.md
