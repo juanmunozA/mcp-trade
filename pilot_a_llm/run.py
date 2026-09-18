@@ -25,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import os
 import signal
 from datetime import UTC, datetime
 
@@ -32,24 +33,36 @@ import httpx
 
 from core import net
 from core.alerts import Level, Telegram
+from core.api import AgentAPI
 from core.config import Mode, get_settings
-from core.health import HealthServer
 from core.polymarket.client import ReadOnlyClient, build_execution_client
 from core.risk import OrderIntent, RiskKernel, RiskLimits, Side
 from core.storage import db
 from pilot_a_llm.bankroll import BankrollReader
+from pilot_a_llm.budget import Budget
 from pilot_a_llm.calibration import CalibrationMap, Resolution, ensemble_weights
 from pilot_a_llm.edge import Bet, EdgeConfig, Quote, decide
 from pilot_a_llm.forecast import Forecaster, VetoConfig
 from pilot_a_llm.markets import MarketFilter, select, summarize
 from pilot_a_llm.providers import CloudflareProvider, GeminiProvider
 from pilot_a_llm.research import Researcher
+from pilot_a_llm.vault import Vault
 
 log = logging.getLogger("pilot_a")
 
 PILOT = "a"
 RESOLVER_INTERVAL_S = 6 * 3600
-MARKETS_PER_CYCLE = 15
+MARKETS_PER_CYCLE = int(os.getenv("MARKETS_PER_CYCLE", "15"))
+MARKET_PAGES = int(os.getenv("MARKET_PAGES", "8"))       # 100 por página
+CONCURRENCY = int(os.getenv("FORECAST_CONCURRENCY", "4"))
+"""
+Cuántos mercados se investigan a la vez. DeepSeek tarda ~30 s por
+pronóstico, así que en serie el ciclo se hace eterno. Con 4 en paralelo
+bajamos de 30 s/mercado a ~8 s efectivos.
+
+No subir sin medir: cada mercado concurrente son 2 llamadas al ensemble
+más 1 a Gemini, y los rate limits de los free tiers son por minuto.
+"""
 
 
 class PilotA:
@@ -68,9 +81,14 @@ class PilotA:
         self.forecaster: Forecaster | None = None
         self.researcher: Researcher | None = None
         self.bankroll: BankrollReader | None = None
-        self._health: HealthServer | None = None
+        self._api: AgentAPI | None = None
         self._last_cycle: datetime | None = None
         self._cycle_stats: dict = {}
+        self._max_order_usd: float = 0.0
+        self.budget = Budget()
+        self.vault = Vault(os.getenv("VAULT_DIR", "vault"))
+        # Serializa el tramo check→orden del kernel cuando hay concurrencia.
+        self._order_lock = asyncio.Lock()
         self._stop = asyncio.Event()
 
     # ── arranque ─────────────────────────────────────────────────────────
@@ -110,8 +128,11 @@ class PilotA:
 
         calib, weights = await self._load_learning()
         self.forecaster = Forecaster(
-            providers, calibration=calib, weights=weights, vetoes=VetoConfig()
+            providers, calibration=calib, weights=weights,
+            vetoes=VetoConfig(), vault=self.vault,
         )
+        if notes := self.vault.read_context():
+            log.info("vault: %d caracteres de notas del operador en contexto", len(notes))
 
         _, funder = self.s.credentials(PILOT)
         self.bankroll = BankrollReader(
@@ -120,10 +141,26 @@ class PilotA:
 
         # La whitelist del kernel se abre por ciclo, con los tokens de los
         # mercados elegidos. Aquí solo se valida que los límites existan.
-        RiskLimits.from_env(PILOT)
+        limits = RiskLimits.from_env(PILOT)
+        self._max_order_usd = limits.max_order_usd
+        """
+        El techo REAL de una orden. Sin esto, edge.py dimensiona con Kelly
+        hasta su propio máximo y el kernel rechaza todo lo que lo supere —
+        tirando a la basura la investigación completa del mercado.
+        Medido: en una corrida de 40 mercados, 11 decisiones de operar y
+        0 órdenes colocadas, todas rechazadas por $8-17 contra un tope de $5.
+        """
 
-        self._health = HealthServer(self._status)
-        await self._health.start()
+        # La API reemplaza al health server: incluye /health y además los
+        # verbos que n8n necesita para orquestar.
+        self._api = AgentAPI(
+            status_fn=self._status,
+            cycle_fn=self._cycle_now,
+            resolve_fn=self._resolve_now,
+            report_fn=self._report_now,
+            kill_fn=self._kill_now,
+        )
+        await self._api.start()
 
         await self.alerts.send(
             Level.INFO,
@@ -196,8 +233,26 @@ class PilotA:
             log.warning("sin capital desplegable, saltando ciclo")
             return
 
+        # Presupuesto ANTES de investigar. Quedarse sin Neurons a mitad del
+        # ciclo tira a la basura llamadas a Gemini ya pagadas, y deja el
+        # resto del día muerto sin que nadie se entere.
+        models = [p.model for p in self.forecaster.providers.values()]
+        affordable = self.budget.markets_affordable(models)
+        if affordable <= 0:
+            log.warning(
+                "presupuesto agotado hasta las 00:00 UTC — %s", self.budget.snapshot()
+            )
+            return
+
+        limit = min(MARKETS_PER_CYCLE, affordable)
+        if limit < MARKETS_PER_CYCLE:
+            log.info(
+                "presupuesto recorta el ciclo: %d → %d mercados (%.0f neurons libres)",
+                MARKETS_PER_CYCLE, limit, self.budget.usable_left,
+            )
+
         raw = await self._fetch_markets()
-        picks = select(raw, MarketFilter(), limit=MARKETS_PER_CYCLE)
+        picks = select(raw, MarketFilter(), limit=limit)
         log.info("%d mercados → %d candidatos\n%s", len(raw), len(picks), summarize(picks))
         if not picks:
             return
@@ -212,13 +267,20 @@ class PilotA:
 
         stats = {"vistos": len(picks), "vetados": 0, "pass": 0, "ordenes": 0, "costo": 0.0}
 
-        for c in picks:
+        # Investigación y pronóstico van en paralelo (son esperas de red).
+        # La parte que toca el kernel va serializada — ver _handle.
+        sem = asyncio.Semaphore(CONCURRENCY)
+
+        async def one(c):
             if self.kernel.killed:
-                break
-            try:
-                await self._handle(c, bank.deployable_usd, stats)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("%s falló: %s", c.slug[:40], exc)
+                return
+            async with sem:
+                try:
+                    await self._handle(c, bank.deployable_usd, stats)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("%s falló: %s", c.slug[:40], exc)
+
+        await asyncio.gather(*(one(c) for c in picks))
 
         self._last_cycle = datetime.now(UTC)
         self._cycle_stats = stats | {
@@ -228,10 +290,13 @@ class PilotA:
 
     async def _handle(self, c, bankroll_usd: float, stats: dict) -> None:
         ev = await self.researcher.investigate(c)
+        self.budget.spend_gemini()
         f = await self.forecaster.forecast(c, ev)
         if f is None:
             return
+        self.budget.spend_neurons(f.neurons)
         stats["costo"] += f.cost_usd + ev.cost_usd
+        stats["neurons"] = round(stats.get("neurons", 0.0) + f.neurons, 1)
 
         # Precios reales del book: pagas el ask, no el mid.
         books = await self.market_data.get_books([c.token_yes, c.token_no])
@@ -244,15 +309,20 @@ class PilotA:
             stats["vetados"] += 1
             log.info("VETO %s — %s", c.slug[:40], f.veto_reason[:110])
             await self._save(f, quote, None, bankroll_usd, ev)
+            self._to_vault(f, "VETO", None)
             return
 
+        # El tope de edge.py NUNCA debe superar el del kernel: si Kelly pide
+        # más de lo que el kernel acepta, la orden se rechaza y se pierde el
+        # trabajo. Kelly dimensiona dentro de lo que el riesgo va a aprobar.
         d = decide(
             f.p_calibrated, quote, bankroll_usd,
-            EdgeConfig(max_position_usd=min(25.0, bankroll_usd * 0.2)),
+            EdgeConfig(max_position_usd=min(self._max_order_usd, bankroll_usd * 0.2)),
         )
         if not d:
             stats["pass"] += 1
             await self._save(f, quote, d, bankroll_usd, ev)
+            self._to_vault(f, "PASS", None)
             return
 
         token = c.token_yes if d.bet is Bet.YES else c.token_no
@@ -262,31 +332,42 @@ class PilotA:
             market_slug=c.slug, reason=f.means_yes[:200],
         )
         book = by if d.bet is Bet.YES else bn
-        verdict = self.kernel.check(intent, mid=book.mid)
-        intent_id = await self.repo.record_intent(
-            intent, verdict, mid=book.mid, strategy="forecast"
-        )
-        if not verdict.approved:
-            log.info("kernel rechazó %s: %s", c.slug[:40], verdict.detail[:100])
-            await self._save(f, quote, d, bankroll_usd, ev)
-            return
 
-        placed = await self.exec_client.place(intent, book=book)
-        self.kernel.on_order_sent(intent)
+        # SECCIÓN CRÍTICA. Entre `check()` y `on_order_sent()` hay awaits, y
+        # con mercados concurrentes dos órdenes podrían pasar el mismo límite
+        # antes de que ninguna lo consuma — saltándose el tope de exposición
+        # sin que el kernel se entere. El lock lo impide.
+        async with self._order_lock:
+            verdict = self.kernel.check(intent, mid=book.mid)
+            intent_id = await self.repo.record_intent(
+                intent, verdict, mid=book.mid, strategy="forecast"
+            )
+            if not verdict.approved:
+                log.info("kernel rechazó %s: %s", c.slug[:40], verdict.detail[:100])
+                await self._save(f, quote, d, bankroll_usd, ev)
+                return
+
+            placed = await self.exec_client.place(intent, book=book)
+            self.kernel.on_order_sent(intent)
+
+            if placed.status == "filled":
+                self.kernel.on_order_closed()
+                realized = self.kernel.on_fill(token, Side.BUY, placed.price, placed.size)
+                if placed.is_paper:
+                    self.bankroll.on_paper_fill(placed.price * placed.size)
+            else:
+                realized = 0.0
+
         await self.repo.record_order(
             placed.order_id, intent_id, intent,
             status=placed.status, is_paper=placed.is_paper,
             latency_ms=placed.latency_ms, raw=placed.raw,
         )
         if placed.status == "filled":
-            self.kernel.on_order_closed()
-            realized = self.kernel.on_fill(token, Side.BUY, placed.price, placed.size)
             await self.repo.record_fill(
                 placed.order_id, token, "BUY", placed.price, placed.size,
                 realized_pnl=realized, is_paper=placed.is_paper,
             )
-            if placed.is_paper:
-                self.bankroll.on_paper_fill(placed.price * placed.size)
 
         stats["ordenes"] += 1
         log.info(
@@ -294,6 +375,14 @@ class PilotA:
             d.bet, c.slug[:36], f.p_calibrated, c.price, d.edge, d.size_usd,
         )
         await self._save(f, quote, d, bankroll_usd, ev)
+        self._to_vault(f, str(d.bet), d.size_usd)
+
+    def _to_vault(self, f, action: str, size_usd: float | None) -> None:
+        """Escribir el vault nunca puede tumbar un ciclo."""
+        try:
+            self.vault.write_forecast(f, action, size_usd)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("no se pudo escribir la nota del vault: %s", exc)
 
     async def _save(self, f, quote: Quote, d, bankroll_usd: float, ev) -> None:
         await db.pool().execute(
@@ -335,7 +424,7 @@ class PilotA:
     async def _fetch_markets(self) -> list[dict]:
         rows: list[dict] = []
         async with httpx.AsyncClient(timeout=45) as http:
-            for offset in range(0, 800, 100):
+            for offset in range(0, MARKET_PAGES * 100, 100):
                 r = await http.get(f"{self.s.gamma_host}/markets", params={
                     "active": "true", "closed": "false", "archived": "false",
                     "limit": 100, "offset": offset,
@@ -385,6 +474,38 @@ class PilotA:
 
     # ── salud y apagado ──────────────────────────────────────────────────
 
+    # ── verbos que expone la API (los usa n8n) ───────────────────────────
+
+    async def _cycle_now(self) -> dict:
+        """POST /cycle — n8n decide cuándo; el agente decide qué."""
+        await self._cycle()
+        return self._cycle_stats or {"vistos": 0, "nota": "sin candidatos"}
+
+    async def _resolve_now(self) -> dict:
+        """POST /resolve — cierra el bucle de aprendizaje."""
+        from pilot_a_llm.resolution import ResolutionTracker, learning_report
+
+        resolved = await ResolutionTracker().sweep()
+        if resolved:
+            # Recarga calibración y pesos con lo recién aprendido.
+            calib, weights = await self._load_learning()
+            self.forecaster.calibration = calib
+            self.forecaster.weights = weights
+        report = await learning_report()
+        return {"resueltos": len(resolved)} | report
+
+    @staticmethod
+    async def _report_now() -> dict:
+        from pilot_a_llm.resolution import learning_report
+
+        return await learning_report()
+
+    def _kill_now(self, reason: str) -> None:
+        """POST /kill — botón de pánico desde n8n o Telegram."""
+        if self.kernel is not None:
+            self.kernel.trip(reason)
+        self._stop.set()
+
     def _status(self) -> dict:
         return {
             "service": "pilot_a",
@@ -397,6 +518,7 @@ class PilotA:
                 self.forecaster and self.forecaster.calibration
                 and self.forecaster.calibration.active
             ),
+            "budget": self.budget.snapshot(),
         }
 
     async def run(self) -> None:
@@ -413,8 +535,8 @@ class PilotA:
             await asyncio.gather(*tasks, return_exceptions=True)
             with contextlib.suppress(Exception):
                 await self.exec_client.cancel_all()
-            if self._health:
-                await self._health.stop()
+            if self._api:
+                await self._api.stop()
             await self.market_data.aclose()
             await db.close_pool()
             log.info("piloto A abajo")

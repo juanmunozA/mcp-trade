@@ -19,3 +19,8 @@ state/
 n8n_data/
 pgdata/
 grafana_data/
+
+# El vault: tus notas son tuyas, no del repo
+vault/pronosticos/
+vault/post-mortems/
+ollama_data/

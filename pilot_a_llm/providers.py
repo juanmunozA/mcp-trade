@@ -52,6 +52,8 @@ class Completion:
     output_tokens: int = 0
     thought_tokens: int = 0
     cost_usd: float = 0.0
+    neurons: float = 0.0
+    """Consumo real de Cloudflare, de la cabecera `cf-ai-neurons`."""
     latency_ms: int = 0
     finish_reason: str = ""
     grounded_urls: list[str] = field(default_factory=list)
@@ -322,6 +324,10 @@ class CloudflareProvider:
         inp = usage.get("prompt_tokens", 0)
         out = usage.get("completion_tokens", 0)
 
+        # Consumo REAL, no estimado. Cloudflare lo devuelve por respuesta;
+        # sin esto el presupuesto se descubre al agotarlo.
+        neurons = float(r.headers.get("cf-ai-neurons", usage.get("neurons", 0) or 0))
+
         return Completion(
             text=text,
             provider=self.name,
@@ -329,9 +335,136 @@ class CloudflareProvider:
             input_tokens=inp,
             output_tokens=out,
             cost_usd=0.0,
+            neurons=neurons,
             latency_ms=latency,
             raw=data,
         )
+
+
+# ─────────────────────────── Ollama local ────────────────────────────────
+
+
+class OllamaProvider:
+    """
+    Modelos abiertos corriendo en tu propia máquina o en un contenedor.
+
+    NO PROBADO en este entorno: el portátil de desarrollo (i5-1135G7, sin
+    GPU, 16 GB) no aguanta un modelo útil a velocidad razonable. El código
+    está escrito contra la API documentada de Ollama; la primera vez que
+    corras el contenedor, verifica que `/api/chat` responde antes de
+    meterlo al ensemble.
+
+    CUÁNDO USARLO
+    Cuando quieras volumen sin límite de cuota: triaje de cientos de
+    mercados, extracción de reglas de resolución, resúmenes. Para el juicio
+    calibrado siguen siendo mejores los modelos grandes por API — un modelo
+    que cabe en tu RAM está peor calibrado, y la calibración es el trabajo.
+
+    MODELOS SEGÚN LA MÁQUINA
+        qwen3:4b          ~2.5 GB   triaje, cabe casi en cualquier lado
+        qwen3:8b          ~5 GB     razonamiento básico
+        qwen3:14b         ~9 GB     el mínimo para pronóstico serio
+        gpt-oss:20b       ~12 GB    necesita 16 GB libres de verdad
+    """
+
+    def __init__(
+        self,
+        host: str = "http://localhost:11434",
+        model: str = "qwen3:8b",
+        *,
+        timeout: float = 600.0,
+        keep_alive: str = "-1",
+    ) -> None:
+        self.name = "ollama"
+        self.model = model
+        self.host = host.rstrip("/")
+        self.timeout = timeout
+        self.keep_alive = keep_alive
+        """
+        `-1` mantiene el modelo cargado en RAM indefinidamente. Sin esto
+        Ollama lo descarga a los 5 minutos y la siguiente llamada paga de
+        nuevo la carga completa — que en CPU son minutos, no segundos.
+        """
+
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        system: str | None = None,
+        schema: dict | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.0,
+        search: bool = False,
+        thinking_budget: int | None = None,
+    ) -> Completion:
+        if search:
+            raise ProviderError("Ollama no navega; la búsqueda web la hace Gemini")
+
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        body: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "keep_alive": self.keep_alive,
+            "options": {"temperature": temperature, "num_predict": max_tokens},
+        }
+        # Ollama acepta un JSON Schema en `format` y fuerza la salida.
+        if schema is not None:
+            body["format"] = schema
+
+        t0 = time.perf_counter()
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as http:
+                r = await http.post(f"{self.host}/api/chat", json=body)
+        except httpx.RequestError as exc:
+            raise ProviderError(
+                f"Ollama no responde en {self.host}: {exc}. "
+                "¿Está el contenedor arriba? `docker compose up -d ollama`"
+            ) from exc
+        latency = int((time.perf_counter() - t0) * 1000)
+
+        if r.status_code == 404:
+            raise ProviderError(
+                f"modelo '{self.model}' no descargado. "
+                f"Corre: docker compose exec ollama ollama pull {self.model}"
+            )
+        if r.status_code != 200:
+            raise ProviderError(f"ollama HTTP {r.status_code}: {r.text[:300]}")
+
+        data = r.json()
+        text = (data.get("message") or {}).get("content", "")
+
+        # Los modelos de razonamiento (qwen3, deepseek-r1) emiten <think>.
+        # Completion.json() ya busca el último objeto balanceado, así que
+        # el bloque de razonamiento no estorba.
+        return Completion(
+            text=text,
+            provider=self.name,
+            model=self.model,
+            input_tokens=data.get("prompt_eval_count", 0),
+            output_tokens=data.get("eval_count", 0),
+            cost_usd=0.0,
+            neurons=0.0,
+            latency_ms=latency,
+            finish_reason=data.get("done_reason", ""),
+            raw=data,
+        )
+
+    async def available(self) -> bool:
+        """¿Está el contenedor arriba y el modelo descargado?"""
+        try:
+            async with httpx.AsyncClient(timeout=10) as http:
+                r = await http.get(f"{self.host}/api/tags")
+                if r.status_code != 200:
+                    return False
+                names = [m["name"] for m in r.json().get("models", [])]
+                return any(n.startswith(self.model.split(":")[0]) for n in names)
+        except Exception:  # noqa: BLE001
+            return False
 
 
 # ───────────────────────────── factory ───────────────────────────────────

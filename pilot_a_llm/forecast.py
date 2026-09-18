@@ -88,6 +88,7 @@ class Forecast:
     vetoed: bool = False
     veto_reason: str = ""
     cost_usd: float = 0.0
+    neurons: float = 0.0
     latency_ms: int = 0
     at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
@@ -110,6 +111,7 @@ class Forecaster:
         calibration: CalibrationMap | None = None,
         weights: dict[str, float] | None = None,
         vetoes: VetoConfig | None = None,
+        vault=None,
     ) -> None:
         if not providers:
             raise ValueError("el ensemble necesita al menos un proveedor")
@@ -117,6 +119,8 @@ class Forecaster:
         self.calibration = calibration
         self.weights = weights or {}
         self.vetoes = vetoes or VetoConfig()
+        self.vault = vault
+        """Vault de Obsidian. Si está, sus notas entran al prompt."""
 
     async def forecast(self, c: Candidate, ev: Evidence) -> Forecast | None:
         """Devuelve None solo si ningún modelo respondió algo utilizable."""
@@ -128,12 +132,16 @@ class Forecaster:
                    f"{len(ev.sources)} fuentes)"
             )
 
+        # Las notas del operador (vault de Obsidian) filtradas por categoría.
+        notes = self.vault.read_context(category=c.category) if self.vault else ""
+
         prompt = build_forecast_prompt(
             question=c.question,
             resolution_rules=c.rules,
             evidence=ev.text,
             today=f"{datetime.now(UTC):%Y-%m-%d}",
             days_to_resolution=c.days_to_resolution,
+            operator_notes=notes,
         )
 
         results = await asyncio.gather(
@@ -143,13 +151,15 @@ class Forecaster:
 
         parsed: dict[str, dict] = {}
         cost = 0.0
+        neurons = 0.0
         for (name, _), out in zip(self.providers.items(), results, strict=True):
             if isinstance(out, Exception) or out is None:
                 log.warning("%s no respondió: %s", name, out)
                 continue
-            data, c_usd = out
+            data, c_usd, n = out
             parsed[name] = data
             cost += c_usd
+            neurons += n
 
         if not parsed:
             log.error("ningún modelo respondió para %s", c.slug)
@@ -181,6 +191,7 @@ class Forecaster:
             what_would_change_my_mind=str(lead.get("what_would_change_my_mind", ""))[:500],
             resolution_risk=str(lead.get("resolution_risk", ""))[:500],
             cost_usd=round(cost, 6),
+            neurons=round(neurons, 2),
             latency_ms=int((datetime.now(UTC) - started).total_seconds() * 1000),
         )
         self._apply_vetoes(f)
@@ -208,7 +219,7 @@ class Forecaster:
             data["probability"] = _clamp01(data["probability"])
         except (TypeError, ValueError):
             return None
-        return data, comp.cost_usd
+        return data, comp.cost_usd, comp.neurons
 
     def _apply_vetoes(self, f: Forecast) -> None:
         v = self.vetoes

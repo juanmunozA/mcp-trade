@@ -1,4 +1,15 @@
+# Stack local completo. Levanta lo que necesites:
+#
+#   docker compose up -d postgres agent           # mínimo para operar
+#   docker compose --profile local-llm up -d      # + Ollama
+#   docker compose --profile orquestacion up -d   # + n8n
+#   docker compose --profile todo up -d           # todo
+#
+# Los perfiles existen porque Ollama pesa varios GB de RAM y no siempre
+# lo quieres prendido.
+
 services:
+  # ── base de datos ──────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: mcptrade-pg
@@ -7,48 +18,92 @@ services:
       POSTGRES_USER: trade
       POSTGRES_PASSWORD: trade
       POSTGRES_DB: mcptrade
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    volumes: ["./pgdata:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U trade -d mcptrade"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # el collector escribe mucho; subimos un poco los buffers
     command: >
-      postgres
-      -c shared_buffers=256MB
-      -c max_wal_size=2GB
+      postgres -c shared_buffers=256MB -c max_wal_size=2GB
 
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: mcptrade-n8n
+  # ── el agente ──────────────────────────────────────────────────────────
+  agent:
+    build: .
+    container_name: mcptrade-agent
     restart: unless-stopped
-    ports:
-      - "5678:5678"
+    env_file: [.env]
     environment:
-      N8N_SECURE_COOKIE: "false"
-      GENERIC_TIMEZONE: America/Bogota
-      TZ: America/Bogota
+      PORT: 10000
+      # Dentro de la red de Docker los servicios se ven por nombre.
+      OLLAMA_HOST: http://ollama:11434
+      VAULT_DIR: /vault
+    ports: ["10000:10000"]
     volumes:
-      - ./n8n_data:/home/node/.n8n
+      # El vault se monta desde el host: lo abres con Obsidian de escritorio
+      # mientras el agente escribe dentro del contenedor.
+      - ./vault:/vault
+      # El kill switch debe sobrevivir a reinicios del contenedor.
+      - ./state:/app/state
     depends_on:
       postgres:
         condition: service_healthy
 
-  grafana:
-    image: grafana/grafana-oss:latest
-    container_name: mcptrade-grafana
+  # ── modelo local ───────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: mcptrade-ollama
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    profiles: ["local-llm", "todo"]
+    ports: ["11434:11434"]
+    volumes: ["./ollama_data:/root/.ollama"]
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: "false"
+      # Mantiene el modelo residente. Sin esto se descarga a los 5 minutos
+      # y la siguiente llamada paga la carga completa otra vez — que en CPU
+      # son minutos.
+      OLLAMA_KEEP_ALIVE: "-1"
+      # Una petición a la vez: en CPU, dos concurrentes se pelean los
+      # núcleos y las dos tardan el doble.
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    deploy:
+      resources:
+        limits:
+          memory: 10G
+    # Descarga el modelo la primera vez, después sirve.
+    # Cambia qwen3:8b según tu RAM:  4b≈2.5GB · 8b≈5GB · 14b≈9GB
+    entrypoint: >
+      sh -c "ollama serve &
+             sleep 5 &&
+             ollama pull ${OLLAMA_MODEL:-qwen3:8b} &&
+             wait"
+
+  # ── orquestación ───────────────────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: mcptrade-n8n
+    restart: unless-stopped
+    profiles: ["orquestacion", "todo"]
+    ports: ["5678:5678"]
+    environment:
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: America/Bogota
+      TZ: America/Bogota
+      # Persistencia en Postgres: con SQLite, n8n pierde los workflows en
+      # cada actualización de imagen. Es un bug conocido y documentado.
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: mcptrade
+      DB_POSTGRESDB_USER: trade
+      DB_POSTGRESDB_PASSWORD: trade
+      DB_POSTGRESDB_SCHEMA: n8n
+      # Para que los workflows puedan llamar al agente por nombre de red.
+      AGENT_URL: http://agent:10000
     volumes:
-      - ./grafana_data:/var/lib/grafana
+      - ./n8n_data:/home/node/.n8n
+      # n8n también ve el vault: puede escribir notas de contexto.
+      - ./vault:/vault
     depends_on:
       postgres:
         condition: service_healthy
