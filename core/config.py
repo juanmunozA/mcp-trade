@@ -14,8 +14,16 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import lru_cache
 
+from dotenv import load_dotenv
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Puente obligatorio: pydantic-settings lee el .env hacia SU objeto, pero el
+# risk kernel lee `os.environ` directamente y a propósito — para que los
+# límites nunca entren a un objeto que el LLM pueda ver. Sin esto, los
+# límites no existen en local y `RiskLimits.from_env` revienta.
+# En Render no hace falta (la plataforma los inyecta), pero es idempotente.
+load_dotenv(override=False)
 
 
 class Mode(StrEnum):

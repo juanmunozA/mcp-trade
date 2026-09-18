@@ -212,6 +212,104 @@ CREATE TABLE IF NOT EXISTS pilot_a.journal (
 );
 
 
+-- Un pronóstico por mercado y ciclo. Es el corazón del piloto A: sin esta
+-- tabla no hay calibración, y sin calibración no hay forma de saber si el
+-- agente sirve para algo.
+CREATE TABLE IF NOT EXISTS pilot_a.forecasts (
+    id               BIGSERIAL PRIMARY KEY,
+    ts               TIMESTAMPTZ NOT NULL DEFAULT now(),
+    condition_id     TEXT NOT NULL,
+    slug             TEXT NOT NULL,
+    question         TEXT NOT NULL,
+    token_yes        TEXT NOT NULL,
+    token_no         TEXT NOT NULL,
+    category         TEXT,
+    end_date         TIMESTAMPTZ,
+    days_to_resolution INTEGER,
+
+    -- precio cuando pronosticamos: sin esto no se puede calcular el Brier
+    -- skill score contra el mercado, que es EL criterio para matar el piloto
+    p_market         NUMERIC(10, 6) NOT NULL,
+    ask_yes          NUMERIC(10, 6),
+    ask_no           NUMERIC(10, 6),
+    liquidity        NUMERIC(18, 2),
+    opportunity_score NUMERIC(6, 4),
+
+    -- salida del ensemble
+    p_raw            NUMERIC(10, 6) NOT NULL,   -- media ponderada, sin calibrar
+    p_calibrated     NUMERIC(10, 6) NOT NULL,   -- tras CalibrationMap
+    disagreement     NUMERIC(10, 6),            -- desv. est. entre modelos
+    n_models         INTEGER NOT NULL DEFAULT 1,
+    per_model        JSONB,                     -- {modelo: probabilidad}
+
+    -- el trabajo mostrado: para leer un fallo y ver EN QUÉ PASO se rompió
+    means_yes        TEXT,
+    is_ambiguous     BOOLEAN NOT NULL DEFAULT FALSE,
+    ambiguity_note   TEXT,
+    reference_class  TEXT,
+    base_rate        NUMERIC(10, 6),
+    key_evidence     TEXT[],
+    steps_required   TEXT,
+    confidence       TEXT,
+    what_would_change_my_mind TEXT,
+    resolution_risk  TEXT,
+
+    evidence         TEXT,
+    sources          TEXT[],
+
+    -- decisión
+    action           TEXT NOT NULL,             -- YES | NO | PASS
+    pass_reason      TEXT,
+    edge             NUMERIC(10, 6),
+    size_usd         NUMERIC(18, 6),
+    shares           NUMERIC(18, 6),
+    bankroll_usd     NUMERIC(18, 6),
+
+    cost_usd         NUMERIC(10, 6) DEFAULT 0,
+    neurons          NUMERIC(12, 2) DEFAULT 0,
+    latency_ms       INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_forecasts_ts ON pilot_a.forecasts (ts DESC);
+CREATE INDEX IF NOT EXISTS idx_forecasts_condition ON pilot_a.forecasts (condition_id);
+CREATE INDEX IF NOT EXISTS idx_forecasts_open ON pilot_a.forecasts (end_date)
+    WHERE action <> 'PASS';
+
+-- Cuando el mercado resuelve. Cada fila alimenta los bucles de aprendizaje:
+-- calibración, pesos del ensemble, conocimiento y tu revisión manual.
+CREATE TABLE IF NOT EXISTS pilot_a.resolutions (
+    id               BIGSERIAL PRIMARY KEY,
+    forecast_id      BIGINT NOT NULL REFERENCES pilot_a.forecasts(id),
+    ts               TIMESTAMPTZ NOT NULL DEFAULT now(),
+    condition_id     TEXT NOT NULL,
+    outcome          BOOLEAN NOT NULL,          -- true = resolvió SÍ
+    p_forecast       NUMERIC(10, 6) NOT NULL,
+    p_market         NUMERIC(10, 6) NOT NULL,
+    brier            NUMERIC(10, 6) NOT NULL,
+    brier_market     NUMERIC(10, 6) NOT NULL,   -- ¿le ganamos al precio?
+    category         TEXT,
+    pnl_usd          NUMERIC(18, 6),
+    post_mortem      TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_resolutions_forecast
+    ON pilot_a.resolutions (forecast_id);
+CREATE INDEX IF NOT EXISTS idx_resolutions_ts ON pilot_a.resolutions (ts DESC);
+
+-- Lecciones destiladas, no archivo de noticias. REGLA CRÍTICA: aquí solo
+-- entra lo que salió de un pronóstico YA RESUELTO. Si el agente recupera
+-- su propio razonamiento sin validar, refuerza sus errores.
+CREATE TABLE IF NOT EXISTS pilot_a.knowledge (
+    id               BIGSERIAL PRIMARY KEY,
+    ts               TIMESTAMPTZ NOT NULL DEFAULT now(),
+    kind             TEXT NOT NULL,   -- resolution_pattern | base_rate
+                                      -- post_mortem | source_reliability
+    content          TEXT NOT NULL,
+    category         TEXT,
+    learned_from     BIGINT REFERENCES pilot_a.resolutions(id),
+    times_used       INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_knowledge_kind ON pilot_a.knowledge (kind, category);
+
+
 -- ─────────────── específico del piloto B (complete sets) ─────────────
 
 CREATE TABLE IF NOT EXISTS pilot_b.sets (
