@@ -23,6 +23,7 @@ from datetime import UTC, datetime
 
 from core import net
 from core.config import get_settings
+from core.health import HealthServer
 from core.polymarket.client import ReadOnlyClient
 from core.polymarket.models import Book
 from core.storage import db
@@ -55,6 +56,7 @@ class Collector:
         self._tokens: list[str] = []
         self._last_flush = asyncio.get_event_loop().time()
         self._last_tick: datetime | None = None
+        self._health: HealthServer | None = None
         self._stop = asyncio.Event()
 
     # ── ciclo de vida ────────────────────────────────────────────────────
@@ -69,6 +71,11 @@ class Collector:
         await db.log_health("connected", f"slugs={self.slugs or 'TODOS los binarios activos'}")
         log.info("collector arriba | slugs=%s", self.slugs or "todos")
 
+        # Render exige que el proceso escuche en $PORT, y UptimeRobot pega
+        # aquí para evitar el spin-down. Ver core/health.py.
+        self._health = HealthServer(self._status)
+        await self._health.start()
+
         tasks = [
             asyncio.create_task(self._refresh_markets_loop(), name="markets"),
             asyncio.create_task(self._poll_loop(), name="poll"),
@@ -81,9 +88,26 @@ class Collector:
             await asyncio.gather(*tasks, return_exceptions=True)
             await self._flush()
             await db.log_health("disconnected", "shutdown limpio")
+            if self._health is not None:
+                await self._health.stop()
             await self.client.aclose()
             await db.close_pool()
             log.info("collector abajo, buffer vaciado")
+
+    def _status(self) -> dict:
+        """Lo que publica el endpoint de salud. Barato: sin red, sin base."""
+        stale = None
+        if self._last_tick is not None:
+            stale = round((datetime.now(UTC) - self._last_tick).total_seconds(), 1)
+        return {
+            "service": "collector",
+            "mode": str(self.settings.mode),
+            "markets_tracked": len(self._tokens) // 2,
+            "buffered_rows": len(self._buffer),
+            "seconds_since_data": stale,
+            # el watchdog de los pilotos usa el mismo umbral
+            "data_stale": stale is not None and stale > self.settings.stale_data_seconds,
+        }
 
     def stop(self) -> None:
         self._stop.set()
