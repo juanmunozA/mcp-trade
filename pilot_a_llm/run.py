@@ -44,7 +44,11 @@ from pilot_a_llm.calibration import CalibrationMap, Resolution, ensemble_weights
 from pilot_a_llm.forecast import Forecaster, VetoConfig
 from pilot_a_llm.markets import MarketFilter, select, summarize
 from pilot_a_llm.pipeline import MarketRun, correr, resumen
-from pilot_a_llm.providers import CloudflareProvider, GeminiProvider
+from pilot_a_llm.providers import (
+    CloudflareProvider,
+    GeminiProvider,
+    OllamaProvider,
+)
 from pilot_a_llm.research import Researcher
 from pilot_a_llm.store import save_run
 from pilot_a_llm.vault import Vault
@@ -97,49 +101,21 @@ class PilotA:
     async def start(self) -> None:
         if self.s.mode is Mode.COLLECT:
             raise SystemExit("MODE=collect: usa paper o live para operar")
-        if self.s.gemini_api_key is None:
-            raise SystemExit("falta GEMINI_API_KEY (la búsqueda web no es opcional)")
 
         if rescued := await net.ensure_resolvable(*net.hosts_from_settings(self.s)):
             log.warning("DNS rescatado por DoH: %s", rescued)
 
         await db.init_pool(self.s.database_url)
 
-        # ORDEN = CASCADA. El primero es el que se consulta siempre, así que
-        # tiene que ser el barato: llama cuesta 4.5 neurons y DeepSeek 175.
-        # Con DeepSeek de primero, un ciclo de 40 mercados agotaba el cupo
-        # diario entero — pasó en producción.
-        #
-        # llama lee bien la pregunta CUANDO tiene evidencia (medido: 0.95
-        # contra un mercado en 0.805). DeepSeek razona mejor pero solo se
-        # paga cuando hay algo que decidir.
-        acc = self.s.cloudflare_account_id
-        tok = self.s.cloudflare_api_token
-        providers = {}
-        if acc and tok:
-            secret = tok.get_secret_value()
-            providers["llama-3.1-8b"] = CloudflareProvider(
-                acc, secret, "@cf/meta/llama-3.1-8b-instruct"
-            )
-            providers["deepseek-r1-32b"] = CloudflareProvider(
-                acc, secret, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
-            )
-        if not providers:
-            raise SystemExit("falta CLOUDFLARE_ACCOUNT_ID/API_TOKEN para el ensemble")
-
-        gemini = GeminiProvider(
-            self.s.gemini_api_key.get_secret_value(), self.s.strategist_model
+        providers, fallback = (
+            await self._proveedores_locales() if self.s.local_mode
+            else self._proveedores_nube()
         )
-        self.researcher = Researcher(gemini)
 
         calib, weights = await self._load_learning()
         self.forecaster = Forecaster(
             providers, calibration=calib, weights=weights,
-            vetoes=VetoConfig(), vault=self.vault,
-            # Respaldo en otra nube: cuando Cloudflare agota sus neurons,
-            # Gemini sigue pronosticando con su propia cuota. Sin esto el
-            # agente se queda mudo hasta las 00:00 UTC.
-            fallback={"gemini-respaldo": gemini},
+            vetoes=VetoConfig(), vault=self.vault, fallback=fallback,
         )
         if notes := self.vault.read_context():
             log.info("vault: %d caracteres de notas del operador en contexto", len(notes))
@@ -178,6 +154,83 @@ class PilotA:
             f"ensemble: {', '.join(providers)}\ninvestigación: {self.s.strategist_model}",
         )
         log.info("piloto A arriba | modo=%s | ensemble=%s", self.s.mode, list(providers))
+
+    # ── proveedores: local o nube, mismo pipeline ────────────────────────
+
+    async def _proveedores_locales(self) -> tuple[dict, dict]:
+        """
+        Todo en la máquina: Ollama para los modelos, SearXNG para buscar.
+        Sin cuotas, sin credenciales, sin nadie de quien depender.
+
+        El ensemble usa UN modelo en vez de dos. En la nube tener dos
+        familias distintas daba errores descorrelacionados y con eso el veto
+        por desacuerdo; en local, dos modelos serían el doble de tiempo de
+        CPU para un desacuerdo mucho menos informativo — vienen del mismo
+        linaje. Se prefiere un modelo más grande corriendo una vez.
+        """
+        from pilot_a_llm.research import LocalResearcher
+        from pilot_a_llm.search import LocalSearch
+
+        modelo = OllamaProvider(self.s.ollama_host, self.s.ollama_model)
+        if not await modelo.available():
+            raise SystemExit(
+                f"Ollama no responde en {self.s.ollama_host} o le falta "
+                f"'{self.s.ollama_model}'.\n"
+                f"  docker compose up -d ollama\n"
+                f"  docker compose exec ollama ollama pull {self.s.ollama_model}"
+            )
+
+        buscador = LocalSearch(self.s.searxng_host)
+        # Destila con un modelo chico si está configurado: resumir páginas no
+        # necesita razonamiento y en CPU la diferencia de tiempo es grande.
+        destilador = (
+            OllamaProvider(self.s.ollama_host, self.s.ollama_model_triage)
+            if self.s.ollama_model_triage else modelo
+        )
+        self.researcher = LocalResearcher(buscador, destilador)
+
+        log.info(
+            "modo LOCAL | modelo=%s | búsqueda=%s",
+            self.s.ollama_model, self.s.searxng_host,
+        )
+        # Sin respaldo: no hay cuota que agotar, así que no hay de qué
+        # recuperarse. Si Ollama se cae, el ciclo falla y se reintenta.
+        return {self.s.ollama_model: modelo}, {}
+
+    def _proveedores_nube(self) -> tuple[dict, dict]:
+        """
+        Cloudflare para el ensemble, Gemini para buscar.
+
+        ORDEN = CASCADA: el primero se consulta siempre, así que tiene que
+        ser el barato. llama cuesta 4.5 neurons y DeepSeek 175; con DeepSeek
+        de primero, un ciclo de 40 mercados agotaba el cupo diario entero.
+        """
+        if self.s.gemini_api_key is None:
+            raise SystemExit(
+                "falta GEMINI_API_KEY (la búsqueda web no es opcional).\n"
+                "¿Querías modo local? Pon LOCAL_MODE=true en el .env."
+            )
+        acc, tok = self.s.cloudflare_account_id, self.s.cloudflare_api_token
+        if not (acc and tok):
+            raise SystemExit("falta CLOUDFLARE_ACCOUNT_ID/API_TOKEN para el ensemble")
+
+        secret = tok.get_secret_value()
+        providers = {
+            "llama-3.1-8b": CloudflareProvider(
+                acc, secret, "@cf/meta/llama-3.1-8b-instruct"
+            ),
+            "deepseek-r1-32b": CloudflareProvider(
+                acc, secret, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
+            ),
+        }
+        gemini = GeminiProvider(
+            self.s.gemini_api_key.get_secret_value(), self.s.strategist_model
+        )
+        self.researcher = Researcher(gemini)
+        log.info("modo NUBE | ensemble=%s", list(providers))
+        # Respaldo en otra nube: cuando Cloudflare agota sus neurons, Gemini
+        # sigue pronosticando con su propia cuota.
+        return providers, {"gemini-respaldo": gemini}
 
     async def _load_learning(self) -> tuple[CalibrationMap | None, dict]:
         """

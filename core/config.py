@@ -60,6 +60,34 @@ class Settings(BaseSettings):
     openrouter_api_key: SecretStr | None = None
     anthropic_api_key: SecretStr | None = None
 
+    # ── modo local: sin nubes, sin cuotas, sin credenciales ──
+    local_mode: bool = False
+    """
+    Todo corre en la máquina: Ollama para los modelos, SearXNG para buscar,
+    Postgres en contenedor. No se usa ninguna API externa, así que no hay
+    cuotas que agotar ni claves que rotar.
+
+    El precio: los modelos que caben en RAM están peor calibrados que los
+    de frontera, y la calibración es justamente el trabajo. Para eso está
+    el bucle de resolución — mide si sirve o no con TUS datos.
+    """
+    ollama_host: str = "http://localhost:11434"
+    ollama_model: str = "deepseek-r1:8b"
+    """
+    Según la RAM libre:
+        deepseek-r1:1.5b   ~1.1 GB   solo triaje
+        deepseek-r1:8b     ~5   GB   mínimo razonable  ← default
+        deepseek-r1:14b    ~9   GB   notablemente mejor
+        deepseek-r1:32b    ~20  GB   el que medimos en Cloudflare
+    """
+    ollama_model_triage: str = ""
+    """
+    Modelo chico para el primer escalón de la cascada. Vacío = se usa el
+    mismo para todo, que en local es más simple y casi igual de rápido:
+    el costo aquí es tiempo de CPU, no cuota.
+    """
+    searxng_host: str = "http://localhost:8888"
+
     # Juicio: probabilidad calibrada. Pocas llamadas, alta calidad.
     strategist_model: str = "gemini-2.5-flash"
     # Triaje: filtrar cientos de mercados. Volumen, salida corta.

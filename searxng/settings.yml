@@ -1,0 +1,47 @@
+# Configuración de SearXNG para el agente.
+#
+# La línea que importa es `formats: [json]`. Por defecto SearXNG solo sirve
+# HTML y el agente recibe un 403 sin explicación — es el fallo más común al
+# montarlo para uso programático.
+
+use_default_settings: true
+
+general:
+  instance_name: "mcp-trade"
+  # Nadie lo va a usar desde el navegador, así que sobra.
+  enable_metrics: false
+
+server:
+  secret_key: "cambia-esto-por-algo-aleatorio"
+  limiter: false
+  # Sin esto el agente recibe 403 al pedir ?format=json
+  public_instance: false
+  image_proxy: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  formats:
+    - html
+    - json
+
+ui:
+  static_use_hash: true
+
+# Motores que responden bien para eventos de actualidad. Los que fallan
+# demasiado se desactivan solos, pero listarlos aquí evita perder tiempo
+# en los que nunca sirven para esto.
+engines:
+  - name: wikidata
+    disabled: true
+  - name: currency
+    disabled: true
+  - name: duckduckgo images
+    disabled: true
+
+outgoing:
+  request_timeout: 10.0
+  max_request_timeout: 15.0
+  pool_connections: 100
+  pool_maxsize: 20

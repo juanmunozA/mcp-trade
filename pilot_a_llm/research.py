@@ -19,6 +19,7 @@ ancla en él y el ensemble deja de ser independiente.
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -82,3 +83,75 @@ class Researcher:
                 c.slug, len(ev.text), len(ev.sources),
             )
         return ev
+
+
+class LocalResearcher:
+    """
+    Investigación sin depender de nadie: SearXNG busca, se descargan las
+    páginas, y el modelo local destila el texto crudo en evidencia con
+    fechas.
+
+    Devuelve el mismo `Evidence` que el investigador de Gemini, así que el
+    resto del pipeline no distingue con cuál está trabajando.
+
+    Es más lento y peor: Gemini entrega síntesis con citas verificadas;
+    aquí llega HTML crudo y lo resume un modelo más pequeño. Ese es el
+    precio de no depender de ninguna nube.
+    """
+
+    def __init__(self, search, provider: Provider, *, max_tokens: int = 2048) -> None:
+        self.search = search
+        self.provider = provider
+        self.max_tokens = max_tokens
+
+    async def investigate(self, c: Candidate) -> Evidence:
+        from pilot_a_llm.search import consultas_para
+
+        t0 = time.perf_counter()
+        queries = consultas_para(c.question, c.rules)
+
+        busquedas = [await self.search.buscar(q) for q in queries]
+        utiles = [b for b in busquedas if b.ok]
+        if not utiles:
+            motivo = busquedas[0].error if busquedas else "sin resultados"
+            log.info("búsqueda vacía para %s: %s", c.slug[:40], motivo)
+            return Evidence("", ok=False, error=motivo)
+
+        crudo = "\n\n".join(b.como_evidencia() for b in utiles)
+        fuentes = [r.url for b in utiles for r in b.resultados if r.util]
+
+        # El modelo local destila. Se le prohíbe opinar sobre probabilidades
+        # por lo mismo que a Gemini: si sugiere un número, el pronosticador
+        # se ancla y el ensemble deja de ser independiente.
+        prompt = f"""\
+Debajo hay resultados de búsqueda sobre este evento. Extrae SOLO hechos \
+verificables, cada uno con su fecha.
+
+PREGUNTA: {c.question}
+REGLA DE RESOLUCIÓN: {c.rules[:800]}
+HOY ES: {datetime.now(UTC):%Y-%m-%d}. Resuelve en {c.days_to_resolution} días.
+
+{crudo[:20000]}
+
+Devuelve en máximo 250 palabras:
+1. ESTADO ACTUAL — qué ya ocurrió, con fechas.
+2. DATOS — cifras, encuestas, conteos, con su fuente y fecha.
+3. QUÉ FALTA — qué debe pasar todavía para que resuelva SÍ.
+4. SEÑALES EN CONTRA — evidencia de que NO ocurrirá.
+
+No estimes probabilidades. No opines si es buena apuesta. Solo hechos.
+Si los resultados no hablan del evento, dilo y no inventes nada."""
+
+        try:
+            comp = await self.provider.complete(prompt, max_tokens=self.max_tokens)
+        except ProviderError as exc:
+            log.warning("destilado falló para %s: %s", c.slug[:40], exc)
+            # El crudo sirve mejor que nada: el pronosticador puede leerlo.
+            return Evidence(crudo[:6000], sources=fuentes[:10])
+
+        return Evidence(
+            text=comp.text.strip(),
+            sources=fuentes[:10],
+            cost_usd=0.0,
+            latency_ms=int((time.perf_counter() - t0) * 1000),
+        )
