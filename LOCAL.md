@@ -76,6 +76,43 @@ importa `n8n/agente-orquestacion.json` desde *Import from File*.
 Los workflows ya apuntan a `http://agent:10000` — dentro de la red de
 Docker los servicios se ven por nombre.
 
+### Groq (opcional, pero vale la pena)
+
+Corriendo con un solo modelo local se pierde **el veto por desacuerdo** —
+el que comparaba dos modelos y frenaba la apuesta cuando no se ponían de
+acuerdo. Es el veto que evitó la peor apuesta que el sistema habría hecho.
+
+Groq lo devuelve gratis y sin tarjeta: https://console.groq.com/keys
+
+```
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+Sirve porque es **otra familia** (Llama contra DeepSeek): sus errores no
+están correlacionados con los del modelo local, y eso es justo lo que
+hace informativo el desacuerdo. Dos modelos parecidos se equivocan juntos
+y el veto no dispara nunca.
+
+El límite real del free tier no es el que anuncian. Dicen 1.000
+peticiones/día, pero **lo que ata son los tokens diarios**:
+
+| Modelo | TPD | Pronósticos/día reales |
+|---|---|---|
+| `llama-3.3-70b-versatile` | 100K | ~18 |
+| `openai/gpt-oss-120b` | 200K | ~36 |
+
+Alcanza porque Groq solo entra en el **segundo escalón**: los ~4 mercados
+por ciclo que el modelo local marca como interesantes, no los 8. Con 6
+ciclos al día son ~24 escalados.
+
+Dos detalles: los límites son por organización (no por key, no sirve
+abrir varias), y DeepSeek-R1 fue deprecado en Groq en septiembre de 2025 —
+por eso el segundo modelo es Llama y no otro DeepSeek.
+
+Si dejas `GROQ_API_KEY` vacío el agente corre igual, solo con un modelo y
+sin ese veto.
+
 ### Obsidian
 
 Abre `./vault` como vault. Ahí el agente escribe cada pronóstico con su
