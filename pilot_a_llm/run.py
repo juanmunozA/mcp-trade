@@ -44,7 +44,11 @@ from pilot_a_llm.calibration import CalibrationMap, Resolution, ensemble_weights
 from pilot_a_llm.edge import Bet, EdgeConfig, Quote, decide
 from pilot_a_llm.forecast import Forecaster, VetoConfig
 from pilot_a_llm.markets import MarketFilter, select, summarize
-from pilot_a_llm.providers import CloudflareProvider, GeminiProvider
+from pilot_a_llm.providers import (
+    CloudflareProvider,
+    GeminiProvider,
+    QuotaExhausted,
+)
 from pilot_a_llm.research import Researcher
 from pilot_a_llm.vault import Vault
 
@@ -272,11 +276,22 @@ class PilotA:
         sem = asyncio.Semaphore(CONCURRENCY)
 
         async def one(c):
-            if self.kernel.killed:
+            # La cuota se comprueba DENTRO del bucle, no solo al empezar:
+            # el presupuesto vive en memoria y se reinicia con el proceso,
+            # así que un 429 puede llegar cuando creíamos tener cupo.
+            if self.kernel.killed or self.forecaster.quota_exhausted:
                 return
             async with sem:
+                if self.forecaster.quota_exhausted:
+                    return
                 try:
                     await self._handle(c, bank.deployable_usd, stats)
+                except QuotaExhausted:
+                    # Agota el presupuesto local para que el resto del ciclo
+                    # —y los siguientes— no gasten Gemini en balde.
+                    self.budget.spend_neurons(self.budget.neurons_left)
+                    stats["cuota_agotada"] = True
+                    log.warning("cuota agotada: se corta el ciclo hasta las 00:00 UTC")
                 except Exception as exc:  # noqa: BLE001
                     log.warning("%s falló: %s", c.slug[:40], exc)
 

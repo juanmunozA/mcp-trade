@@ -43,6 +43,21 @@ class ProviderError(RuntimeError):
     pass
 
 
+class QuotaExhausted(ProviderError):
+    """
+    El proveedor devolvió 429: se acabó la cuota del día.
+
+    Tiene su propia clase porque exige una reacción distinta a un fallo
+    normal. Medido en producción: el presupuesto vive en memoria, así que
+    al reiniciar el proceso cree tener el cupo entero. Recibía 429 de
+    Cloudflare, no aprendía, y seguía gastando llamadas a Gemini —cuota
+    aparte y también limitada— investigando mercados cuyo pronóstico iba
+    a fallar de todos modos.
+
+    Un 429 es la única fuente autorizada sobre el estado real de la cuota.
+    """
+
+
 @dataclass(slots=True)
 class Completion:
     text: str
@@ -307,7 +322,7 @@ class CloudflareProvider:
         latency = int((time.perf_counter() - t0) * 1000)
 
         if r.status_code == 429:
-            raise ProviderError("cloudflare: se acabaron los Neurons del día")
+            raise QuotaExhausted("cloudflare: se acabaron los Neurons del día")
         if r.status_code != 200:
             raise ProviderError(f"cloudflare HTTP {r.status_code}: {r.text[:300]}")
 

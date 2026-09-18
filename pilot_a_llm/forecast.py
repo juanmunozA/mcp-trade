@@ -44,7 +44,7 @@ from pilot_a_llm.prompts import (
     FORECASTER_SYSTEM,
     build_forecast_prompt,
 )
-from pilot_a_llm.providers import Provider, ProviderError
+from pilot_a_llm.providers import Provider, ProviderError, QuotaExhausted
 from pilot_a_llm.research import Evidence
 
 log = logging.getLogger("forecast")
@@ -121,6 +121,8 @@ class Forecaster:
         self.vetoes = vetoes or VetoConfig()
         self.vault = vault
         """Vault de Obsidian. Si está, sus notas entran al prompt."""
+        self.quota_exhausted = False
+        """Lo enciende un 429. El ciclo lo consulta para cortar a tiempo."""
 
     async def forecast(self, c: Candidate, ev: Evidence) -> Forecast | None:
         """Devuelve None solo si ningún modelo respondió algo utilizable."""
@@ -207,6 +209,12 @@ class Forecaster:
                 schema=FORECAST_SCHEMA,
                 max_tokens=4096,
             )
+        except QuotaExhausted:
+            # Se propaga: el ciclo debe detenerse, no seguir gastando la
+            # cuota de Gemini en mercados que no va a poder pronosticar.
+            self.quota_exhausted = True
+            log.warning("%s: cuota agotada", name)
+            raise
         except ProviderError as exc:
             log.warning("%s falló: %s", name, exc)
             return None
