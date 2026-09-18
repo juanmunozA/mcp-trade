@@ -64,6 +64,15 @@ PERMITIDO = [
 BINARIOS = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf", ".zip", ".woff2"}
 
 
+def vaciar(d: Path) -> None:
+    """
+    Borra el contenido, no la carpeta. En Windows, una terminal parada
+    dentro de `entrega/` la bloquea y `rmtree` de la raíz revienta.
+    """
+    for hijo in d.iterdir():
+        shutil.rmtree(hijo) if hijo.is_dir() else hijo.unlink()
+
+
 def copiar(src: Path, dst: Path) -> int:
     n = 0
     for origen in src.rglob("*"):
@@ -102,9 +111,8 @@ def main() -> int:
     ap.add_argument("--zip", action="store_true")
     args = ap.parse_args()
 
-    if DESTINO.exists():
-        shutil.rmtree(DESTINO)
-    DESTINO.mkdir(parents=True)
+    DESTINO.mkdir(parents=True, exist_ok=True)
+    vaciar(DESTINO)
 
     total = 0
     for d in DIRS:
@@ -143,7 +151,7 @@ def main() -> int:
         print(f"\n  ABORTADO — {len(hallazgos)} posibles secretos:\n")
         for h in hallazgos:
             print(f"    {h}")
-        shutil.rmtree(DESTINO)
+        vaciar(DESTINO)
         return 1
     print("  escaneado: ninguna credencial viaja")
 
