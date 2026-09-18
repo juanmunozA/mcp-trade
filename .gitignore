@@ -24,3 +24,7 @@ grafana_data/
 vault/pronosticos/
 vault/post-mortems/
 ollama_data/
+
+# La entrega es derivada: se regenera con scripts/empaquetar.py
+entrega/
+entrega.zip
