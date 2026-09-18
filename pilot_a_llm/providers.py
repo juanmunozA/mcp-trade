@@ -393,6 +393,115 @@ class CloudflareProvider:
         )
 
 
+# ───────────────────────────── Groq ──────────────────────────────────────
+
+
+class GroqProvider:
+    """
+    Inferencia en LPU: ~100× más rápida que un modelo local en CPU.
+
+    PARA QUÉ SIRVE AQUÍ
+    Corriendo local, el ensemble usa un solo modelo y con eso se pierde el
+    veto por desacuerdo — el que evitó la peor apuesta que el sistema
+    habría hecho. Groq lo devuelve: es otra familia (Llama vs DeepSeek),
+    así que sus errores están descorrelacionados, que es lo que hace
+    informativo el desacuerdo.
+
+    EL LÍMITE REAL NO ES EL QUE ANUNCIAN
+    El free tier dice 1.000 peticiones/día, pero lo que ata son los tokens
+    diarios:
+
+        llama-3.3-70b-versatile   100K TPD  →  ~18 pronósticos/día
+        openai/gpt-oss-120b       200K TPD  →  ~36 pronósticos/día
+
+    (con prompts de ~5.500 tokens, que es lo que mide este agente con
+    evidencia incluida). Por eso Groq va SOLO en el segundo escalón de la
+    cascada: los ~4 mercados por ciclo que el modelo local marca como
+    interesantes, no los 15.
+
+    Los límites son por organización, no por key: varias keys no dan más.
+    """
+
+    BASE = "https://api.groq.com/openai/v1"
+
+    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile") -> None:
+        self.name = "groq"
+        self.model = model
+        self._key = api_key
+
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        system: str | None = None,
+        schema: dict | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.0,
+        search: bool = False,
+        thinking_budget: int | None = None,
+    ) -> Completion:
+        if search:
+            raise ProviderError("Groq no navega; la búsqueda la hace SearXNG o Gemini")
+
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        body: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if schema is not None:
+            # `strict: true` usa decodificación restringida: el servidor
+            # garantiza que la salida encaja en el esquema. Mejor que pedirlo
+            # en el prompt y esperar que obedezca.
+            body["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "forecast",
+                    "schema": schema,
+                    "strict": True,
+                },
+            }
+
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient(timeout=120) as http:
+            r = await http.post(
+                f"{self.BASE}/chat/completions",
+                headers={"Authorization": f"Bearer {self._key}"},
+                json=body,
+            )
+        latency = int((time.perf_counter() - t0) * 1000)
+
+        if r.status_code == 429:
+            raise QuotaExhausted(
+                "groq: cuota agotada. Lo que ata suele ser el límite de "
+                "tokens diarios, no el de peticiones."
+            )
+        if r.status_code != 200:
+            raise ProviderError(f"groq HTTP {r.status_code}: {r.text[:300]}")
+
+        data = r.json()
+        choice = (data.get("choices") or [{}])[0]
+        text = (choice.get("message") or {}).get("content", "")
+        usage = data.get("usage", {})
+
+        return Completion(
+            text=text,
+            provider=self.name,
+            model=self.model,
+            input_tokens=usage.get("prompt_tokens", 0),
+            output_tokens=usage.get("completion_tokens", 0),
+            cost_usd=0.0,
+            latency_ms=latency,
+            finish_reason=choice.get("finish_reason", ""),
+            raw=data,
+        )
+
+
 # ─────────────────────────── Ollama local ────────────────────────────────
 
 

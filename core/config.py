@@ -88,6 +88,20 @@ class Settings(BaseSettings):
     """
     searxng_host: str = "http://localhost:8888"
 
+    # Groq: segunda opinión rápida en modo local. Opcional.
+    groq_api_key: SecretStr | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
+    """
+    Lo que ata en el free tier no son las peticiones sino los tokens
+    diarios, y con prompts de ~5.500 tokens:
+
+        llama-3.3-70b-versatile   100K TPD  →  ~18 pronósticos/día
+        openai/gpt-oss-120b       200K TPD  →  ~36 pronósticos/día
+
+    Por eso solo se usa en el segundo escalón de la cascada. DeepSeek-R1
+    fue deprecado en Groq en septiembre de 2025.
+    """
+
     # Juicio: probabilidad calibrada. Pocas llamadas, alta calidad.
     strategist_model: str = "gemini-2.5-flash"
     # Triaje: filtrar cientos de mercados. Volumen, salida corta.

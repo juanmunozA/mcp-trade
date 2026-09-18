@@ -47,6 +47,7 @@ from pilot_a_llm.pipeline import MarketRun, correr, resumen
 from pilot_a_llm.providers import (
     CloudflareProvider,
     GeminiProvider,
+    GroqProvider,
     OllamaProvider,
 )
 from pilot_a_llm.research import Researcher
@@ -189,13 +190,29 @@ class PilotA:
         )
         self.researcher = LocalResearcher(buscador, destilador)
 
+        providers = {self.s.ollama_model: modelo}
+
+        # Groq como SEGUNDA opinión: recupera el veto por desacuerdo que
+        # se pierde al usar un solo modelo. Es otra familia (Llama contra
+        # DeepSeek), así que sus errores están descorrelacionados — que es
+        # lo que hace informativo el desacuerdo.
+        #
+        # Va en el segundo escalón porque su cuota es chica: lo que ata son
+        # ~100K tokens/día, unos 18 pronósticos. Suficiente para los ~4 por
+        # ciclo que el modelo local marca como interesantes; no para los 15.
+        if self.s.groq_api_key:
+            providers[self.s.groq_model] = GroqProvider(
+                self.s.groq_api_key.get_secret_value(), self.s.groq_model
+            )
+            log.info("Groq activo como segunda opinión: %s", self.s.groq_model)
+
         log.info(
-            "modo LOCAL | modelo=%s | búsqueda=%s",
-            self.s.ollama_model, self.s.searxng_host,
+            "modo LOCAL | modelo=%s | búsqueda=%s | ensemble=%s",
+            self.s.ollama_model, self.s.searxng_host, list(providers),
         )
-        # Sin respaldo: no hay cuota que agotar, así que no hay de qué
-        # recuperarse. Si Ollama se cae, el ciclo falla y se reintenta.
-        return {self.s.ollama_model: modelo}, {}
+        # Sin respaldo: en local no hay cuota que agotar. Si Ollama se cae,
+        # el ciclo falla y se reintenta.
+        return providers, {}
 
     def _proveedores_nube(self) -> tuple[dict, dict]:
         """
