@@ -248,32 +248,121 @@ tags: [inicio]
 # Agente de pronóstico
 
 Lee mercados de eventos de Polymarket, busca información, estima una
-probabilidad y apuesta solo cuando difiere del precio lo suficiente para
-pagar el spread. Arranca simulando.
+probabilidad y apuesta **solo cuando difiere del precio lo suficiente para
+pagar el spread**. Arranca simulando.
 
-`Ctrl+G` abre el grafo. Cada color es una capa.
+---
 
-## Empezar
+## Qué le hace a cada mercado
+
+Esto es el flujo. Todo lo demás son detalles de esto.
+
+```mermaid
+flowchart TD
+    P["Polymarket<br/>~800 mercados activos"] --> S["1 · SELECCIÓN<br/>filtro + puntaje · sin IA"]
+    S -->|"8 candidatos"| I["2 · INVESTIGACIÓN<br/>SearXNG busca, el modelo destila"]
+
+    I -->|"sin hechos"| VE(["PASS · veto evidencia"])
+    I --> E["3 · ENSEMBLE<br/>DeepSeek pronostica"]
+    E -->|"parece interesante"| G["segunda opinión<br/>Groq"]
+    G --> V
+    E --> V{"4 · LOS TRES VETOS"}
+
+    V -->|"pregunta ambigua"| VA(["PASS · veto ambigüedad"])
+    V -->|"los modelos no coinciden"| VD(["PASS · veto desacuerdo"])
+    V -->|"discrepa +35 puntos"| VX(["PASS · veto divergencia"])
+
+    V -->|"pasa"| Q["COTIZAR<br/>book real · se paga el ask"]
+    Q --> D["5 · DECISIÓN<br/>Kelly fraccional × 0.20"]
+    D -->|"edge insuficiente"| PS(["PASS · sin edge"])
+    D --> K{"RISK KERNEL<br/>límites duros"}
+    K -->|"rechaza"| PS
+    K -->|"aprueba"| O(["ORDEN"])
+
+    O --> R["6 · APRENDIZAJE<br/>al resolver: Brier propio vs del mercado"]
+    R -.->|"corrige el sesgo"| E
+
+    style O fill:#6FA37D,color:#fff
+    style VE fill:#C8615B,color:#fff
+    style VA fill:#C8615B,color:#fff
+    style VD fill:#C8615B,color:#fff
+    style VX fill:#C8615B,color:#fff
+    style PS fill:#8a8a8a,color:#fff
+    style K fill:#3d3d3d,color:#fff
+```
+
+**La mayoría de los mercados terminan en PASS, y eso es correcto.** Un
+agente que encuentra oportunidad en todo no está evaluando.
+
+Detalle de cada paso: [[1-seleccion]] · [[2-investigacion]] ·
+[[3-ensemble]] · [[4-vetos]] · [[5-decision]] · [[6-aprendizaje]]
+
+---
+
+## Cómo se monta
+
+```mermaid
+flowchart LR
+    Z["descomprimir"] --> C["editar .env<br/>modelo + 2 claves"]
+    C --> A["./arrancar.sh"]
+    A --> Q{"¿la máquina da?<br/>docker · RAM · disco"}
+    Q -->|"no"| X(["te dice qué falta<br/>y no arranca"])
+    Q -->|"sí"| U["docker compose up"]
+    U --> M["baja el modelo<br/>5-20 GB · tarda"]
+    M --> B["prepara la base"]
+    B --> OK(["corriendo"])
+
+    style OK fill:#6FA37D,color:#fff
+    style X fill:#C8615B,color:#fff
+```
 
 [[1-requisitos]] → [[2-configurar]] → [[3-arrancar]] → [[4-verificar]] →
 [[5-que-esperar]]
 
-## Qué hace con cada mercado
+---
 
-[[1-seleccion]] → [[2-investigacion]] → [[3-ensemble]] → [[4-vetos]] →
-[[5-decision]] → [[6-aprendizaje]]
+## Quién habla con quién
 
-## Qué queda corriendo
+```mermaid
+flowchart LR
+    subgraph TU["tu máquina"]
+        N["n8n<br/>:5678"] -->|"cada 4 h"| A["agent<br/>:10000"]
+        A --> O["ollama<br/>:11434"]
+        A --> S["searxng<br/>:8888"]
+        A --> P["postgres<br/>:5432"]
+    end
+    A -->|"mercados y órdenes"| PM[("Polymarket")]
+    S -->|"consultas"| W[("buscadores")]
+
+    style TU fill:#1e1e1e,stroke:#555
+```
+
+Lo único que sale de tu máquina es Polymarket y las consultas de búsqueda.
+Los modelos, la base y el contexto se quedan.
 
 [[agent]] · [[ollama]] · [[searxng]] · [[postgres]] · [[n8n]]
 
-## Lo que escribas tú
+---
 
-Lo de `contexto/` entra al prompt del agente. Ahí se le dan lecciones.
-Lee [[_LEEME]] antes de escribir, y [[reglas-de-resolucion]] como ejemplo
-de nota que sí sirve.
+## Lo que escribes tú
+
+Lo de `contexto/` entra al prompt del agente en su próximo ciclo. Ahí se le
+dan lecciones. Lee [[_LEEME]] antes de escribir, y [[reglas-de-resolucion]]
+como ejemplo de nota que sí sirve.
 
 Sus pronósticos van a `3-mercados/` a medida que corre — ahora está vacío.
+
+---
+
+## Sobre el grafo (`Ctrl+G`)
+
+Sirve para **navegar**, no para entender el flujo — un grafo de fuerzas no
+tiene noción de orden y apelotona todo. Para el orden están los diagramas
+de arriba.
+
+Viene filtrado con `-path:3-mercados`: si no, los cientos de notas de
+mercados tapan la estructura. Borra el filtro cuando quieras ver de qué
+mercados salió cada decisión.
 """
 
 
@@ -356,8 +445,11 @@ def _graph_config(raiz: Path) -> None:
         return {"query": query, "color": {"a": 1, "rgb": color}}
 
     (cfg / "graph.json").write_text(json.dumps({
-        "collapse-filter": True,
-        "search": "",
+        "collapse-filter": False,
+        # Sin esto, los cientos de notas de mercados que el agente va
+        # escribiendo tapan la estructura y el grafo es una bola ilegible.
+        # Se quita desde la UI cuando se quiera ver el detalle.
+        "search": "-path:3-mercados",
         "showTags": False,
         "showAttachments": False,
         "hideUnresolved": True,
@@ -396,3 +488,34 @@ def _graph_config(raiz: Path) -> None:
         json.dumps({"attachmentFolderPath": "adjuntos",
                     "alwaysUpdateLinks": True}, indent=2),
         encoding="utf-8")
+
+    # Abre en el grafo con _INICIO al lado. Sin esto, la primera vez se ve
+    # un panel vacío y hay que saber que el grafo es Ctrl+G.
+    (cfg / "workspace.json").write_text(json.dumps({
+        "main": {
+            "id": "raiz", "type": "split", "direction": "vertical",
+            "children": [{
+                "id": "tabs", "type": "tabs",
+                "children": [
+                    {"id": "hoja-grafo", "type": "leaf",
+                     "state": {"type": "graph", "state": {}}},
+                    {"id": "hoja-inicio", "type": "leaf",
+                     "state": {"type": "markdown",
+                               "state": {"file": "_INICIO.md", "mode": "preview"}}},
+                ],
+                "currentTab": 0,
+            }],
+        },
+        "left": {
+            "id": "izq", "type": "split", "direction": "horizontal", "width": 260,
+            "children": [{
+                "id": "izq-tabs", "type": "tabs",
+                "children": [{"id": "hoja-archivos", "type": "leaf",
+                              "state": {"type": "file-explorer", "state": {}}}],
+            }],
+        },
+        "right": {"id": "der", "type": "split", "direction": "horizontal",
+                  "width": 300, "collapsed": True, "children": []},
+        "active": "hoja-grafo",
+        "lastOpenFiles": ["_INICIO.md"],
+    }, indent=2), encoding="utf-8")

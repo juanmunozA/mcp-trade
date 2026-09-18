@@ -306,8 +306,12 @@ llega al agente._
             return {"query": query, "color": {"a": 1, "rgb": color}}
 
         (cfg / "graph.json").write_text(json.dumps({
-            "collapse-filter": True,
-            "search": "",
+            "collapse-filter": False,
+            # Sin filtro, las notas de mercado —que son cientos y crecen cada
+            # ciclo— tapan la espina del flujo y el grafo deja de leerse. Se
+            # quita desde la UI cuando se quiere ver de qué mercado salió cada
+            # decisión.
+            "search": "-path:3-mercados",
             "showTags": False,
             "showAttachments": False,
             "hideUnresolved": True,

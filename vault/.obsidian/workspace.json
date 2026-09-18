@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "a228086d50ac250f",
+        "id": "d1e1822a7ce77cd7",
         "type": "tabs",
         "children": [
           {
-            "id": "45ad77cdedfae10a",
+            "id": "e51b8593072d38fc",
             "type": "leaf",
             "state": {
               "type": "graph",
@@ -184,8 +184,10 @@
       "bases:Crear nueva base": false
     }
   },
-  "active": "45ad77cdedfae10a",
+  "active": "e51b8593072d38fc",
   "lastOpenFiles": [
+    "contexto/reglas-de-resolucion.md",
+    "4-temas/geopolitica.md",
     "1-flujo/3-ensemble.md",
     "pronosticos/2026-09-18-will-luiz-incio-lula-da-silva-finish-in-second-place-in-the.md",
     "_INICIO.md",
@@ -210,8 +212,6 @@
     "mapas/orden-yes.md",
     "mapas/pass-sin-edge.md",
     "mapas/orden-no.md",
-    "mapas",
-    "pronosticos/2026-09-18-2026-balance-of-power-d-senate-d-house-949.md",
-    "pronosticos/2026-09-18-china-x-philippines-military-clash-before-2027-2026072321480.md"
+    "mapas"
   ]
 }
