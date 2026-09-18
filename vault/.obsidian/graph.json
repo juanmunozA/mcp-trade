@@ -1,0 +1,86 @@
+{
+  "collapse-filter": true,
+  "search": "",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": true,
+  "showOrphans": false,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "path:1-flujo",
+      "color": {
+        "a": 1,
+        "rgb": 14251863
+      }
+    },
+    {
+      "query": "tag:#orden path:2-decisiones",
+      "color": {
+        "a": 1,
+        "rgb": 7316349
+      }
+    },
+    {
+      "query": "tag:#veto path:2-decisiones",
+      "color": {
+        "a": 1,
+        "rgb": 13132123
+      }
+    },
+    {
+      "query": "path:contexto",
+      "color": {
+        "a": 1,
+        "rgb": 6006944
+      }
+    },
+    {
+      "query": "path:4-temas",
+      "color": {
+        "a": 1,
+        "rgb": 9138088
+      }
+    },
+    {
+      "query": "path:5-modelos",
+      "color": {
+        "a": 1,
+        "rgb": 13150299
+      }
+    },
+    {
+      "query": "tag:#orden",
+      "color": {
+        "a": 1,
+        "rgb": 7316349
+      }
+    },
+    {
+      "query": "tag:#veto",
+      "color": {
+        "a": 1,
+        "rgb": 13132123
+      }
+    },
+    {
+      "query": "path:3-mercados",
+      "color": {
+        "a": 1,
+        "rgb": 8161952
+      }
+    }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": -1.2,
+  "nodeSizeMultiplier": 1.15,
+  "lineSizeMultiplier": 0.55,
+  "collapse-forces": false,
+  "centerStrength": 0.28,
+  "repelStrength": 16,
+  "linkStrength": 0.55,
+  "linkDistance": 260,
+  "scale": 0.4199999999999989,
+  "close": true
+}

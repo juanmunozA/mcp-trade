@@ -36,20 +36,17 @@ from core.alerts import Level, Telegram
 from core.api import AgentAPI
 from core.config import Mode, get_settings
 from core.polymarket.client import ReadOnlyClient, build_execution_client
-from core.risk import OrderIntent, RiskKernel, RiskLimits, Side
+from core.risk import RiskKernel, RiskLimits
 from core.storage import db
 from pilot_a_llm.bankroll import BankrollReader
 from pilot_a_llm.budget import Budget
 from pilot_a_llm.calibration import CalibrationMap, Resolution, ensemble_weights
-from pilot_a_llm.edge import Bet, EdgeConfig, Quote, decide
 from pilot_a_llm.forecast import Forecaster, VetoConfig
 from pilot_a_llm.markets import MarketFilter, select, summarize
-from pilot_a_llm.providers import (
-    CloudflareProvider,
-    GeminiProvider,
-    QuotaExhausted,
-)
+from pilot_a_llm.pipeline import MarketRun, correr, resumen
+from pilot_a_llm.providers import CloudflareProvider, GeminiProvider
 from pilot_a_llm.research import Researcher
+from pilot_a_llm.store import save_run
 from pilot_a_llm.vault import Vault
 
 log = logging.getLogger("pilot_a")
@@ -139,6 +136,10 @@ class PilotA:
         self.forecaster = Forecaster(
             providers, calibration=calib, weights=weights,
             vetoes=VetoConfig(), vault=self.vault,
+            # Respaldo en otra nube: cuando Cloudflare agota sus neurons,
+            # Gemini sigue pronosticando con su propia cuota. Sin esto el
+            # agente se queda mudo hasta las 00:00 UTC.
+            fallback={"gemini-respaldo": gemini},
         )
         if notes := self.vault.read_context():
             log.info("vault: %d caracteres de notas del operador en contexto", len(notes))
@@ -247,11 +248,24 @@ class PilotA:
         # resto del día muerto sin que nadie se entere.
         models = [p.model for p in self.forecaster.providers.values()]
         affordable = self.budget.markets_affordable(models)
+
         if affordable <= 0:
-            log.warning(
-                "presupuesto agotado hasta las 00:00 UTC — %s", self.budget.snapshot()
-            )
-            return
+            # Cloudflare agotado. Con respaldo el ciclo sigue —Gemini tiene
+            # su propia cuota—; sin respaldo no hay nada que hacer.
+            if self.forecaster.fallback and self.budget.gemini_left > 2:
+                # Gemini investiga Y pronostica, así que gasta 2 llamadas
+                # por mercado en vez de 1.
+                affordable = self.budget.gemini_left // 2
+                log.warning(
+                    "Cloudflare agotado — respaldo con Gemini, %d mercados posibles",
+                    affordable,
+                )
+            else:
+                log.warning(
+                    "presupuesto agotado hasta las 00:00 UTC — %s",
+                    self.budget.snapshot(),
+                )
+                return
 
         limit = min(MARKETS_PER_CYCLE, affordable)
         if limit < MARKETS_PER_CYCLE:
@@ -274,191 +288,50 @@ class PilotA:
             self._stop.set()
             return
 
-        stats = {"vistos": len(picks), "vetados": 0, "pass": 0, "ordenes": 0, "costo": 0.0}
-
         # Investigación y pronóstico van en paralelo (son esperas de red).
-        # La parte que toca el kernel va serializada — ver _handle.
+        # Los pasos que tocan el kernel van bajo lock — ver pipeline.BAJO_LOCK.
         sem = asyncio.Semaphore(CONCURRENCY)
 
-        async def one(c):
+        async def one(c) -> MarketRun | None:
             # La cuota se comprueba DENTRO del bucle, no solo al empezar:
             # el presupuesto vive en memoria y se reinicia con el proceso,
             # así que un 429 puede llegar cuando creíamos tener cupo.
             if self.kernel.killed or self.forecaster.quota_exhausted:
-                return
+                return None
             async with sem:
                 if self.forecaster.quota_exhausted:
-                    return
-                try:
-                    await self._handle(c, bank.deployable_usd, stats)
-                except QuotaExhausted:
-                    # Agota el presupuesto local para que el resto del ciclo
-                    # —y los siguientes— no gasten Gemini en balde.
-                    self.budget.spend_neurons(self.budget.neurons_left)
-                    stats["cuota_agotada"] = True
-                    log.warning("cuota agotada: se corta el ciclo hasta las 00:00 UTC")
-                except Exception as exc:  # noqa: BLE001
-                    log.warning("%s falló: %s", c.slug[:40], exc)
+                    return None
+                return await self._run_market(c, bank.deployable_usd)
 
-        await asyncio.gather(*(one(c) for c in picks))
+        runs = [r for r in await asyncio.gather(*(one(c) for c in picks)) if r]
 
         self._last_cycle = datetime.now(UTC)
-        self._cycle_stats = stats | {
-            "duracion_s": round((self._last_cycle - started).total_seconds(), 1)
+        self._cycle_stats = resumen(runs) | {
+            "duracion_s": round((self._last_cycle - started).total_seconds(), 1),
+            "presupuesto": self.budget.snapshot()["pct_consumido"],
         }
         log.info("─── ciclo terminado: %s ───", self._cycle_stats)
 
-    async def _handle(self, c, bankroll_usd: float, stats: dict) -> None:
-        ev = await self.researcher.investigate(c)
-        self.budget.spend_gemini()
+    # ── el pipeline de un mercado vive en pipeline.py ────────────────────
+    # Aquí solo queda la orquestación: cuántos mercados, con qué capital y
+    # cuándo. El "qué le pasa a cada mercado" es una lista de pasos leíble.
 
-        # ── CASCADA ──────────────────────────────────────────────────────
-        # Escalón 1: solo el modelo barato (4.5 neurons). Mira todos los
-        # mercados. La mayoría no tendrá edge y ahí se acaba el gasto.
-        f = await self.forecaster.forecast(c, ev, second_opinion=False)
-        if f is None:
-            return
-        self.budget.spend_neurons(f.neurons)
+    async def _run_market(self, c, bankroll_usd: float) -> MarketRun:
+        r = MarketRun(candidate=c, bankroll_usd=bankroll_usd)
+        await correr(r, self, lock=self._order_lock)
+        await save_run(r, bankroll_usd=bankroll_usd)
+        self._to_vault(r)
+        return r
 
-        # Escalón 2: si el barato ve un desajuste que valdría la pena, se
-        # paga la segunda opinión (175 neurons). Sin ella no hay señal de
-        # desacuerdo, y el desacuerdo es el veto que evitó la peor apuesta
-        # que habríamos hecho.
-        interesante = not f.vetoed and f.divergence >= EdgeConfig().min_edge
-        if interesante and self.budget.can_afford(
-            [p.model for p in self.forecaster.providers.values()]
-        ):
-            completo = await self.forecaster.forecast(c, ev, second_opinion=True)
-            if completo is not None:
-                self.budget.spend_neurons(completo.neurons - f.neurons)
-                f = completo
-                stats["escalados"] = stats.get("escalados", 0) + 1
-
-        stats["costo"] += f.cost_usd + ev.cost_usd
-        stats["neurons"] = round(stats.get("neurons", 0.0) + f.neurons, 1)
-
-        # Precios reales del book: pagas el ask, no el mid.
-        books = await self.market_data.get_books([c.token_yes, c.token_no])
-        by, bn = books.get(c.token_yes), books.get(c.token_no)
-        if by is None or bn is None or by.best_ask is None or bn.best_ask is None:
-            return
-        quote = Quote(by.best_ask, bn.best_ask, by.best_bid or 0, bn.best_bid or 0)
-
-        if f.vetoed:
-            stats["vetados"] += 1
-            log.info("VETO %s — %s", c.slug[:40], f.veto_reason[:110])
-            await self._save(f, quote, None, bankroll_usd, ev)
-            self._to_vault(f, "VETO", None)
-            return
-
-        # El tope de edge.py NUNCA debe superar el del kernel: si Kelly pide
-        # más de lo que el kernel acepta, la orden se rechaza y se pierde el
-        # trabajo. Kelly dimensiona dentro de lo que el riesgo va a aprobar.
-        d = decide(
-            f.p_calibrated, quote, bankroll_usd,
-            EdgeConfig(max_position_usd=min(self._max_order_usd, bankroll_usd * 0.2)),
-        )
-        if not d:
-            stats["pass"] += 1
-            await self._save(f, quote, d, bankroll_usd, ev)
-            self._to_vault(f, "PASS", None)
-            return
-
-        token = c.token_yes if d.bet is Bet.YES else c.token_no
-        intent = OrderIntent(
-            pilot=PILOT, token_id=token, side=Side.BUY,
-            price=d.price_paid, size=d.shares,
-            market_slug=c.slug, reason=f.means_yes[:200],
-        )
-        book = by if d.bet is Bet.YES else bn
-
-        # SECCIÓN CRÍTICA. Entre `check()` y `on_order_sent()` hay awaits, y
-        # con mercados concurrentes dos órdenes podrían pasar el mismo límite
-        # antes de que ninguna lo consuma — saltándose el tope de exposición
-        # sin que el kernel se entere. El lock lo impide.
-        async with self._order_lock:
-            verdict = self.kernel.check(intent, mid=book.mid)
-            intent_id = await self.repo.record_intent(
-                intent, verdict, mid=book.mid, strategy="forecast"
-            )
-            if not verdict.approved:
-                log.info("kernel rechazó %s: %s", c.slug[:40], verdict.detail[:100])
-                await self._save(f, quote, d, bankroll_usd, ev)
-                return
-
-            placed = await self.exec_client.place(intent, book=book)
-            self.kernel.on_order_sent(intent)
-
-            if placed.status == "filled":
-                self.kernel.on_order_closed()
-                realized = self.kernel.on_fill(token, Side.BUY, placed.price, placed.size)
-                if placed.is_paper:
-                    self.bankroll.on_paper_fill(placed.price * placed.size)
-            else:
-                realized = 0.0
-
-        await self.repo.record_order(
-            placed.order_id, intent_id, intent,
-            status=placed.status, is_paper=placed.is_paper,
-            latency_ms=placed.latency_ms, raw=placed.raw,
-        )
-        if placed.status == "filled":
-            await self.repo.record_fill(
-                placed.order_id, token, "BUY", placed.price, placed.size,
-                realized_pnl=realized, is_paper=placed.is_paper,
-            )
-
-        stats["ordenes"] += 1
-        log.info(
-            "ORDEN %s %s | p=%.3f vs mercado %.3f | edge %+.3f | $%.2f",
-            d.bet, c.slug[:36], f.p_calibrated, c.price, d.edge, d.size_usd,
-        )
-        await self._save(f, quote, d, bankroll_usd, ev)
-        self._to_vault(f, str(d.bet), d.size_usd)
-
-    def _to_vault(self, f, action: str, size_usd: float | None) -> None:
+    def _to_vault(self, r: MarketRun) -> None:
         """Escribir el vault nunca puede tumbar un ciclo."""
+        if r.forecast is None:
+            return
         try:
-            self.vault.write_forecast(f, action, size_usd)
+            size = r.decision.size_usd if (r.decision and r.decision) else None
+            self.vault.write_forecast(r.forecast, r.accion, size)
         except Exception as exc:  # noqa: BLE001
             log.warning("no se pudo escribir la nota del vault: %s", exc)
-
-    async def _save(self, f, quote: Quote, d, bankroll_usd: float, ev) -> None:
-        await db.pool().execute(
-            """
-            INSERT INTO pilot_a.forecasts
-                (condition_id, slug, question, token_yes, token_no, category,
-                 end_date, days_to_resolution, p_market, ask_yes, ask_no,
-                 liquidity, opportunity_score, p_raw, p_calibrated, disagreement,
-                 n_models, per_model, means_yes, is_ambiguous, ambiguity_note,
-                 reference_class, base_rate, key_evidence, steps_required,
-                 confidence, what_would_change_my_mind, resolution_risk,
-                 evidence, sources, action, pass_reason, edge, size_usd, shares,
-                 bankroll_usd, cost_usd, latency_ms)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,
-                    $18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,
-                    $33,$34,$35,$36,$37,$38)
-            """,
-            f.candidate.condition_id, f.candidate.slug, f.candidate.question,
-            f.candidate.token_yes, f.candidate.token_no, f.candidate.category,
-            f.candidate.end_date, f.candidate.days_to_resolution,
-            f.candidate.price, quote.ask_yes, quote.ask_no,
-            f.candidate.liquidity, f.candidate.score,
-            f.p_raw, f.p_calibrated, f.disagreement, len(f.per_model),
-            dict(f.per_model), f.means_yes, f.is_ambiguous, f.ambiguity_note,
-            f.reference_class, f.base_rate, f.key_evidence, f.steps_required,
-            f.confidence, f.what_would_change_my_mind, f.resolution_risk,
-            ev.text[:8000], ev.sources[:20],
-            str(d.bet) if d else "PASS",
-            # Por qué no se operó: el veto manda; si no hubo veto, el motivo
-            # lo da edge.py (poco edge, fuera de banda, Kelly no positivo).
-            # `d is not None and not d` = hubo decisión y fue PASS; Decision
-            # define __bool__, así que `not d` solo dice "es PASS".
-            f.veto_reason or (d.reason if (d is not None and not d) else None),
-            d.edge if d else None, d.size_usd if d else None,
-            d.shares if d else None, bankroll_usd, f.cost_usd + ev.cost_usd,
-            f.latency_ms,
-        )
 
     async def _fetch_markets(self) -> list[dict]:
         rows: list[dict] = []

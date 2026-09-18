@@ -130,6 +130,43 @@ def _cost(model: str, inp: int, out: int) -> float:
     return round(inp / 1e6 * prices[0] + out / 1e6 * prices[1], 6)
 
 
+# `responseSchema` de Gemini es un subconjunto de OpenAPI, no JSON Schema
+# completo. Solo acepta estos campos; cualquier otro devuelve un 400.
+_GEMINI_OK = {
+    "type", "format", "description", "nullable", "enum",
+    "items", "properties", "required", "propertyOrdering",
+}
+
+
+def _para_gemini(schema: dict) -> dict:
+    """
+    Poda el esquema a lo que Gemini acepta.
+
+    Hace falta porque el mismo esquema se usa con Cloudflare, que sí quiere
+    `additionalProperties: false` para forzar salida estricta. Enviárselo a
+    Gemini rompía el respaldo entero:
+
+        400 Unknown name "additionalProperties" at
+            'generation_config.response_schema'
+
+    Y lo peor: solo se veía cuando Cloudflare ya estaba agotado, que es
+    justo cuando el respaldo tiene que funcionar.
+    """
+    if not isinstance(schema, dict):
+        return schema
+    podado: dict[str, Any] = {}
+    for k, v in schema.items():
+        if k not in _GEMINI_OK:
+            continue
+        if k == "properties" and isinstance(v, dict):
+            podado[k] = {pk: _para_gemini(pv) for pk, pv in v.items()}
+        elif k == "items":
+            podado[k] = _para_gemini(v)
+        else:
+            podado[k] = v
+    return podado
+
+
 # ───────────────────────────── Gemini ────────────────────────────────────
 
 
@@ -197,7 +234,7 @@ class GeminiProvider:
                     "usa dos llamadas (investigar → estructurar)"
                 )
             body["generationConfig"]["responseMimeType"] = "application/json"
-            body["generationConfig"]["responseSchema"] = schema
+            body["generationConfig"]["responseSchema"] = _para_gemini(schema)
         elif search:
             body["tools"] = [{"google_search": {}}]
 

@@ -75,15 +75,24 @@ def test_escribe_nota_de_pronostico(vault):
 def test_frontmatter_para_obsidian(vault):
     text = vault.write_forecast(forecast(), "YES", 4.50).read_text(encoding="utf-8")
     assert text.startswith("---")
-    assert "categoria: politica" in text
-    assert "tags: [pronostico, politica]" in text
+    assert "tema: politica" in text
+    assert "tags: [mercado, politica, orden]" in text
+
+
+def test_enlaces_para_el_grafo(vault):
+    """Sin [[enlaces]] la vista de grafo no dibuja nada."""
+    text = vault.write_forecast(forecast(), "YES", 4.50).read_text(encoding="utf-8")
+    assert "[[orden-yes]]" in text      # qué le pasó
+    assert "[[politica]]" in text        # de qué tema
+    assert "[[deepseek]]" in text        # quién opinó
+    assert "[[3-ensemble]]" in text      # a qué paso del flujo pertenece
 
 
 def test_nota_de_veto_guarda_el_motivo(vault):
     f = forecast(vetoed=True, veto_reason="desacuerdo 0.31 > 0.2")
     text = vault.write_forecast(f, "VETO", None).read_text(encoding="utf-8")
     assert "desacuerdo 0.31" in text
-    assert "sin posición" in text
+    assert "[[veto-desacuerdo]]" in text
 
 
 # ─────────────── lo que el agente lee (lo importante) ───────────────────

@@ -65,6 +65,13 @@ class VetoConfig:
     min_models: int = 1
     require_evidence: bool = True
 
+    min_escalation: float = 0.05
+    """
+    Divergencia mínima para pagar la segunda opinión del modelo caro.
+    Por debajo de esto el mercado se descarta igual, así que gastar 175
+    neurons en confirmarlo es tirar el cupo del día.
+    """
+
 
 @dataclass(slots=True)
 class Forecast:
@@ -112,10 +119,24 @@ class Forecaster:
         weights: dict[str, float] | None = None,
         vetoes: VetoConfig | None = None,
         vault=None,
+        fallback: dict[str, Provider] | None = None,
     ) -> None:
         if not providers:
             raise ValueError("el ensemble necesita al menos un proveedor")
         self.providers = providers
+        self.fallback = fallback or {}
+        """
+        Proveedores de otra nube, para cuando los titulares agoten su cuota.
+
+        Medido: Cloudflare se agota y el agente queda mudo el resto del día
+        —85 minutos o 20 horas, según cuándo pase. Con respaldo sigue
+        pronosticando con cuota distinta.
+
+        Es respaldo y no titular a propósito: el respaldo (Gemini) también
+        hace la investigación, así que investigar y pronosticar con el mismo
+        modelo correlaciona sus errores y el ensemble pierde sentido. Mejor
+        eso que nada, peor que lo normal.
+        """
         self.calibration = calibration
         self.weights = weights or {}
         self.vetoes = vetoes or VetoConfig()
@@ -123,6 +144,42 @@ class Forecaster:
         """Vault de Obsidian. Si está, sus notas entran al prompt."""
         self.quota_exhausted = False
         """Lo enciende un 429. El ciclo lo consulta para cortar a tiempo."""
+
+    async def forecast_cascada(
+        self, c: Candidate, ev: Evidence, *, budget=None
+    ) -> Forecast | None:
+        """
+        La cascada completa, en un solo sitio.
+
+        Escalón 1: solo el modelo barato (4.5 neurons) mira el mercado.
+        Escalón 2: si ve un desajuste que valdría la pena, se paga la
+        segunda opinión (175 neurons, 39× más).
+
+        Vive aquí y no en el orquestador porque es una decisión sobre CÓMO
+        pronosticar. El pipeline solo pide un pronóstico; qué modelos se
+        consultan y en qué orden es asunto del ensemble.
+
+        El límite: solo se salta la segunda opinión cuando el barato dice
+        que no hay nada. Si dice que sí, es obligatoria — sin ella no hay
+        señal de desacuerdo, y ese veto evitó la peor apuesta que el
+        sistema habría hecho.
+        """
+        barato = await self.forecast(c, ev, second_opinion=False)
+        if barato is None or barato.vetoed:
+            return barato
+
+        vale_la_pena = barato.divergence >= self.vetoes.min_escalation
+        if not vale_la_pena:
+            return barato
+
+        if budget is not None:
+            modelos = [p.model for p in self.providers.values()]
+            if not budget.can_afford(modelos):
+                log.info("sin presupuesto para escalar %s", c.slug[:40])
+                return barato
+
+        completo = await self.forecast(c, ev, second_opinion=True)
+        return completo if completo is not None else barato
 
     async def forecast(
         self, c: Candidate, ev: Evidence, *, second_opinion: bool = True
@@ -160,11 +217,17 @@ class Forecaster:
             operator_notes=notes,
         )
 
-        # El modelo barato va primero en el dict; con second_opinion=False
-        # solo se consulta a él.
-        activos = dict(self.providers) if second_opinion else dict(
-            list(self.providers.items())[:1]
-        )
+        # Si los titulares ya agotaron su cuota hoy, se va directo al
+        # respaldo en vez de coleccionar 429s.
+        if self.quota_exhausted and self.fallback:
+            activos = dict(self.fallback)
+            log.info("cuota agotada: usando respaldo %s", list(activos))
+        else:
+            # El modelo barato va primero en el dict; con second_opinion=False
+            # solo se consulta a él.
+            activos = dict(self.providers) if second_opinion else dict(
+                list(self.providers.items())[:1]
+            )
 
         results = await asyncio.gather(
             *(self._ask(name, p, prompt) for name, p in activos.items()),
@@ -182,6 +245,21 @@ class Forecaster:
             parsed[name] = data
             cost += c_usd
             neurons += n
+
+        # Si los titulares murieron por cuota, se reintenta con el respaldo
+        # antes de darse por vencido.
+        if not parsed and self.fallback and activos is not self.fallback:
+            log.info("reintentando %s con respaldo", c.slug[:40])
+            rescate = await asyncio.gather(
+                *(self._ask(n, p, prompt) for n, p in self.fallback.items()),
+                return_exceptions=True,
+            )
+            for (name, _), out in zip(self.fallback.items(), rescate, strict=True):
+                if isinstance(out, Exception) or out is None:
+                    continue
+                data, c_usd, n = out
+                parsed[name] = data
+                cost += c_usd
 
         if not parsed:
             log.error("ningún modelo respondió para %s", c.slug)

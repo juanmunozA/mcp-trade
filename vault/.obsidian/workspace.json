@@ -1,0 +1,217 @@
+{
+  "main": {
+    "id": "b9abc158df9e92e5",
+    "type": "split",
+    "children": [
+      {
+        "id": "a228086d50ac250f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "45ad77cdedfae10a",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Vista gráfica"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "fece53a409c178a1",
+    "type": "split",
+    "children": [
+      {
+        "id": "f298a15aef9e9fef",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ddaa44536af2f947",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de archivos"
+            }
+          },
+          {
+            "id": "606bccbd4cee8773",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Buscar"
+            }
+          },
+          {
+            "id": "6db1ad73650336b9",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "6b789d2bdb3e1fd9",
+    "type": "split",
+    "children": [
+      {
+        "id": "7f40b31870290de4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "085d4feddfcdc833",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "_INICIO.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Enlaces entrantes"
+            }
+          },
+          {
+            "id": "f1950c0098706c8c",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "_INICIO.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Enlaces salientes"
+            }
+          },
+          {
+            "id": "75f0c79c42fdb937",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "111791d36cf6c297",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas las propiedades"
+            }
+          },
+          {
+            "id": "2cb3de738861499f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "_INICIO.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Esquema"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir selector rápido": false,
+      "graph:Abrir vista gráfica": false,
+      "canvas:Crear nuevo lienzo": false,
+      "daily-notes:Abrir la nota de hoy": false,
+      "templates:Insertar plantilla": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Crear nueva base": false
+    }
+  },
+  "active": "45ad77cdedfae10a",
+  "lastOpenFiles": [
+    "1-flujo/3-ensemble.md",
+    "pronosticos/2026-09-18-will-luiz-incio-lula-da-silva-finish-in-second-place-in-the.md",
+    "_INICIO.md",
+    "pronosticos/2026-09-18-russia-ukraine-peace-talks-by-december-31-2026-2026060901254.md",
+    "pronosticos/2026-09-18-us-announces-end-of-iranian-blockade-by-october-31-2026-2026.md",
+    "pronosticos/2026-09-18-will-no-qualifying-diplomatic-us-iran-meeting-occur-by-septe.md",
+    "pronosticos/2026-09-18-will-flvio-bolsonaro-finish-in-second-place-in-the-first-rou.md",
+    "pronosticos/2026-09-18-nato-x-russia-military-clash-by-december-31-2026-244-538-582.md",
+    "pronosticos/2026-09-18-will-gadi-eizenkot-be-the-next-prime-minister-of-israel.md",
+    "pronosticos/2026-09-18-russia-x-ukraine-ceasefire-agreement-by-december-31-2026.md",
+    "pronosticos/2026-09-18-israel-x-iran-ceasefire-continues-through-december-31-415.md",
+    "pronosticos/2026-09-18-us-x-iran-diplomatic-meeting-by-december-31-2026-745.md",
+    "mapas/cat-geopolitica.md",
+    "pronosticos/2026-09-18-us-x-iran-diplomatic-meeting-by-september-30-2026.md",
+    "mapas/modelo-deepseek-r1-32b.md",
+    "mapas/modelo-llama-3.1-8b.md",
+    "mapas/cat-politica.md",
+    "mapas/veto-evidencia.md",
+    "mapas/veto-divergencia.md",
+    "mapas/veto-desacuerdo.md",
+    "mapas/veto-ambiguedad.md",
+    "mapas/orden-yes.md",
+    "mapas/pass-sin-edge.md",
+    "mapas/orden-no.md",
+    "mapas",
+    "pronosticos/2026-09-18-2026-balance-of-power-d-senate-d-house-949.md",
+    "pronosticos/2026-09-18-china-x-philippines-military-clash-before-2027-2026072321480.md"
+  ]
+}
