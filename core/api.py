@@ -40,6 +40,7 @@ ENDPOINTS
     GET  /health      estado, presupuesto, kill switch  (también UptimeRobot)
     GET  /report      tablero de aprendizaje: ¿hay edge?
     GET  /candidates  mercados elegidos por el explorador  [?n=8]
+    GET  /geo         desde qué país ve Polymarket al bot
     POST /market      un mercado por el pipeline           {"slug": "..."}
     POST /cycle       ciclo completo (equivale a candidates + todos)
     POST /resolve     busca mercados resueltos y aprende
@@ -245,6 +246,9 @@ class AgentAPI:
                     return 400, {"error": "falta 'slug' en el body"}
                 return 200, await fn(slug)
 
+        if path == "/geo" and method == "GET":
+            return 200, await _geoblock()
+
         if path == "/resolve" and method == "POST":
             return 200, await self._resolve_fn()
 
@@ -254,7 +258,7 @@ class AgentAPI:
             return 200, {"killed": True, "reason": motivo[:300], "at": _now()}
 
         return 404, {"error": "no existe", "rutas": [
-            "GET /health", "GET /report", "GET /candidates",
+            "GET /health", "GET /report", "GET /candidates", "GET /geo",
             "POST /forecast", "POST /trade", "POST /market",
             "POST /cycle", "POST /resolve", "POST /kill",
         ]}
@@ -281,6 +285,26 @@ class AgentAPI:
         ).encode()
         writer.write(head + body)
         await writer.drain()
+
+
+async def _geoblock() -> dict:
+    """
+    Desde dónde sale el bot, según Polymarket.
+
+    Responde lo que hace la *web*, no el CLOB: hay países con la web
+    cerrada y la API abierta. Por eso `blocked: true` es señal para
+    revisar antes de pasar a real, no veredicto de que no se pueda.
+    """
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as cli:
+            r = await cli.get("https://polymarket.com/api/geoblock")
+        datos = r.json() if r.headers.get("content-type", "").startswith(
+            "application/json") else {"raw": r.text[:200]}
+        return {"http": r.status_code, "web": datos, "at": _now()}
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"{type(exc).__name__}: {exc}", "at": _now()}
 
 
 def _now() -> str:
