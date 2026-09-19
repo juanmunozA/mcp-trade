@@ -21,6 +21,7 @@ import signal
 from datetime import UTC, datetime, timedelta
 
 from core.alerts import Level, Telegram
+from core.api import AgentAPI
 from core.config import Mode, get_settings
 from core.polymarket.client import ReadOnlyClient, build_execution_client
 from core.polymarket.models import Market
@@ -57,6 +58,7 @@ class PilotB:
         self.markets: dict[str, Market] = {}
         self.kernel: RiskKernel | None = None   # se construye tras conocer los tokens
         self._last_data: datetime | None = None
+        self._api: AgentAPI | None = None
         self._stop = asyncio.Event()
 
     # ── arranque ─────────────────────────────────────────────────────────
@@ -95,7 +97,47 @@ class PilotB:
             f"Piloto B arriba ({self.settings.mode})",
             f"{len(markets)} mercados · {len(tokens)} tokens",
         )
+        # Render exige un puerto abierto o mata el servicio ("No open ports
+        # detected"), y sin endpoint UptimeRobot no puede mantenerlo despierto.
+        # De paso queda el boton de panico accesible desde fuera.
+        self._api = AgentAPI(
+            status_fn=self._status,
+            cycle_fn=self._no_aplica,
+            resolve_fn=self._no_aplica,
+            report_fn=self._reporte,
+            kill_fn=self._kill_ahora,
+        )
+        await self._api.start()
+
         log.info("piloto B arriba | modo=%s | %d mercados", self.settings.mode, len(markets))
+
+    # ── superficie HTTP ──────────────────────────────────────────────────
+
+    def _status(self) -> dict:
+        """Lo que ve /health. Sin secretos: esto es publico."""
+        inv = self.engine.summary() if self.engine else {}
+        return {
+            "service": "trade-sets",
+            "mode": str(self.settings.mode),
+            "killed": bool(self.kernel and self.kernel.killed),
+            "kill_reason": self.kernel.kill_reason if self.kernel else "",
+            "mercados": len(self.markets),
+            "inventario": inv,
+        }
+
+    async def _no_aplica(self) -> dict:
+        """Este agente no tiene ciclos ni resoluciones: opera en continuo."""
+        return {"nota": "no aplica a complete sets; mira /health"}
+
+    async def _reporte(self) -> dict:
+        day = (datetime.now(UTC) - timedelta(days=1)).date()
+        stats = await self.repo.daily_summary(day)
+        return stats | self.engine.summary()
+
+    def _kill_ahora(self, reason: str) -> None:
+        if self.kernel is not None:
+            self.kernel.trip(reason)
+        self._stop.set()
 
     # ── loop de trading ──────────────────────────────────────────────────
 
@@ -260,6 +302,8 @@ class PilotB:
             with contextlib.suppress(Exception):
                 n = await self.exec_client.cancel_all()
                 log.info("canceladas %d órdenes al salir", n)
+            if self._api is not None:
+                await self._api.stop()
             await self.market_data.aclose()
             await db.close_pool()
             log.info("piloto B abajo | %s", self.engine.summary())
