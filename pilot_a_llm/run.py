@@ -497,6 +497,9 @@ class PilotA:
                      "exclude_categories": frozenset(),
                      "sports_narrative_only": False}
         return MarketFilter(
+            min_price=float(os.getenv("MARKET_MIN_PRICE", "0.12")),
+            max_price=float(os.getenv("MARKET_MAX_PRICE", "0.88")),
+            max_per_category=int(os.getenv("MARKET_MAX_PER_CATEGORY", "2")),
             min_days=int(os.getenv("MARKET_MIN_DAYS", "2")),
             max_days=int(os.getenv("MARKET_MAX_DAYS", "150")),
             min_liquidity_usd=float(os.getenv("MARKET_MIN_LIQUIDITY", "15000")),

@@ -32,17 +32,49 @@ from datetime import UTC, datetime
 # Categorías donde la información vive en TEXTO, que es donde un LLM puede
 # leer mejor o más rápido que el consenso.
 CATEGORY_PATTERNS: dict[str, str] = {
-    "politica": r"election|president|senate|congress|nomination|primary|governor"
-                r"|parliament|vote|impeach|cabinet|minister|candidat|poll|referend",
-    "geopolitica": r"ukraine|russia|china|taiwan|israel|gaza|iran|nato|war|ceasefire"
-                   r"|sanction|treaty|summit|nuclear|invade|troops|border",
-    "economia": r"\bfed\b|rate|inflation|cpi|gdp|recession|tariff|unemployment"
-                r"|jobs report|interest|central bank|ecb",
-    "empresas": r"\bipo\b|\bceo\b|acquisition|merger|antitrust|lawsuit|bankrupt"
-                r"|earnings|layoff|resign",
-    "deportes": r"nba|nfl|soccer|fifa|championship|super bowl|world cup|premier"
-                r"|ucl|olympic|match|game",
-    "cripto": r"bitcoin|btc|ethereum|eth|solana|crypto|token|halving|etf approval",
+    # EL ORDEN MANDA: gana el primero que coincida, asi que lo especifico va
+    # arriba. `deportes` antes que `entretenimiento` porque "Oscar Piastri"
+    # es un piloto de F1, no un premio.
+    #
+    # Casi todo lleva \b, y casi todo lleva \w* o plural. Ambas cosas salieron
+    # de medir contra 800 mercados reales, no de imaginarlas:
+    #   · sin \b, `rocket` coincidia dentro de "C-rocket-t" (Jasmine Crockett)
+    #   · con \b pero sin \w*, `\biran\b` no alcanzaba "Iranian", ni
+    #     `\belection\b` alcanzaba "elections"
+    "cripto": r"\bbitcoin\b|\bbtc\b|\bethereum\b|\beth\b|\bsolana\b|\bcrypto\w*"
+              r"|\bstablecoins?\b|\btokens?\b|\bhalving\b|\bdefi\b|\bbinance\b"
+              r"|\bcoinbase\b|\bmemecoins?\b|\bnft\b|\bdogecoin\b|\baltcoins?\b",
+    "tecnologia": r"\bopenai\b|\banthropic\b|\bgpt-?\d|\bllm\b|artificial intelligence"
+                  r"|\bchatgpt\b|\bnvidia\b|\bsemiconductors?\b|\bspacex\b|\bstarship\b"
+                  r"|\brockets?\b|\bsatellites?\b|\bquantum\b|\brobotaxi\b|self-driving"
+                  r"|\bagi\b|data ?center|\bchips?\b",
+    "deportes": r"\bnba\b|\bnfl\b|\bmlb\b|\bnhl\b|\bsoccer\b|\bfifa\b|\bchampionships?\b"
+                r"|super bowl|world cup|world series|premier league|\bucl\b|\bolympics?\b"
+                r"|\bvs\.|\bmatch\b|\btournament\b|\bplayoffs?\b|\bf1\b|formula 1"
+                r"|ballon d'or|\bfinals\b|\bleague\b",
+    "entretenimiento": r"\boscars\b|academy award|\bgrammys?\b|\bemmys?\b|golden globe"
+                       r"|box office|\bmovies?\b|\bfilms?\b|\balbums?\b|\bbillboard\b"
+                       r"|\bnetflix\b|\bspotify\b|rotten tomatoes|\bconcerts?\b"
+                       r"|\bsingers?\b|\bactors?\b|\bactress\b|\bcelebrity\b",
+    "politica": r"\belections?\b|\bpresident\w*|\bsenate\b|\bcongress\b|\bnominations?\b"
+                r"|\bprimary\b|\bgovernor\b|\bparliament\w*|\bvote[sd]?\b|\bimpeach\w*"
+                r"|\bcabinet\b|\bministers?\b|\bcandidat\w*|\bpolls?\b|\breferend\w*"
+                r"|\bmayor\b|\bchancellor\b|\bleader of\b|\bmidterms?\b|signed into law"
+                r"|\bh\.r\.\d|\bparty\b|\bcoalition\b|\bout (?:before|by)\b",
+    "geopolitica": r"\bukrain\w*|\brussia\w*|\bchina\b|\bchinese\b|\btaiwan\w*|\bisrael\w*"
+                   r"|\bgaza\b|\biran\w*|\bnato\b|\bwar\b|\bceasefire\b|\bsanctions?\b"
+                   r"|\btreaty\b|\bsummit\b|\bnuclear\b|\binvad\w*|\btroops\b"
+                   r"|\bhostages?\b|\bvenezuela\b|\bgreenland\b|\bstrait\b|\bhormuz\b"
+                   r"|\bregime\b|xi jinping",
+    "economia": r"\bfed\b|interest rates?|\binflation\b|\bcpi\b|\bgdp\b|\brecession\b"
+                r"|\btariffs?\b|\bunemployment\b|jobs report|central bank|\becb\b"
+                r"|s&p 500|stock market",
+    "empresas": r"\bipo\b|\bceo\b|\bacquir\w*|\bacquisitions?\b|\bmergers?\b|\bantitrust\b"
+                r"|\blawsuits?\b|\bbankrupt\w*|\bearnings\b|\blayoffs?\b|\bresigns?\b"
+                r"|\bshareholders?\b|market cap|\bdelisted?\b",
+    "social": r"supreme court|\babortion\b|\bimmigration\b|\bdeport\w*|\bprotests?\b"
+              r"|\bclimate\b|\bhurricanes?\b|\bpandemic\b|\bvaccines?\b|\bshootings?\b"
+              r"|\bverdict\b|\bindict\w*|\bpardons?\b|\bepstein\b|\bnobel\b|\bprize\b",
 }
 
 # Deportes tiene un subconjunto que SÍ sirve: lo que se decide fuera de la
@@ -83,12 +115,34 @@ class MarketFilter:
     esperando una resolución lejana.
     """
 
-    allowed_categories: frozenset[str] = frozenset({"politica", "geopolitica", "economia"})
-    sports_narrative_only: bool = True
+    allowed_categories: frozenset[str] = frozenset(CATEGORY_PATTERNS) | {"otros"}
+    sports_narrative_only: bool = False
+
+    max_per_category: int = 2
+    """
+    Cuantos mercados como maximo de una misma categoria por ciclo.
+
+    Sin esto el ciclo sale casi todo politica: es el 45% de lo que tiene
+    Polymarket y ademas puntua alto, asi que copa los primeros puestos. Un
+    ciclo de 12 daba 9 politicos.
+
+    Repartir importa por dos razones. La calibracion ahora es por categoria
+    y cada una necesita sus propias 30 muestras: concentrarse en una las
+    deja a todas las demas dormidas para siempre. Y doce apuestas sobre la
+    misma clase de evento no son doce apuestas, son una grande.
+    """
     """Si deportes está permitido, solo la parte de narrativa (fichajes, despidos)."""
 
-    exclude_categories: frozenset[str] = frozenset({"cripto"})
-    """PolyBench: 'miscalibración severa... retornos profundamente negativos'."""
+    exclude_categories: frozenset[str] = frozenset()
+    """
+    Vacío a propósito. Antes excluía `cripto` por la miscalibración que mide
+    PolyBench, pero eso era necesario cuando la calibración era UNA curva
+    para todo: el sesgo de cripto se comía la corrección de política.
+
+    Ahora `CalibrationMap` segmenta por categoría, así que cada una aprende
+    su propio sesgo. Cripto puede entrar: si el modelo es sobreconfiado ahí,
+    su curva lo encoge sin tocar a las demás.
+    """
 
 
 @dataclass(slots=True)
@@ -283,6 +337,22 @@ def select(
     f = f or MarketFilter()
     candidates = [c for m in markets if (c := passes(m, f, now)) is not None]
     candidates.sort(key=lambda c: c.score, reverse=True)
+
+    # Reparto por categoria. Se recorre en orden de puntaje y se toma el
+    # mejor de cada una por ronda, asi que dentro de cada categoria siguen
+    # ganando los mejores y ninguna copa el ciclo.
+    if f.max_per_category > 0:
+        por_cat: dict[str, list[Candidate]] = {}
+        for c in candidates:
+            por_cat.setdefault(c.category, []).append(c)
+        repartidos: list[Candidate] = []
+        for ronda in range(f.max_per_category):
+            for cat in sorted(por_cat, key=lambda k: -por_cat[k][0].score):
+                if ronda < len(por_cat[cat]):
+                    repartidos.append(por_cat[cat][ronda])
+        repartidos.sort(key=lambda c: c.score, reverse=True)
+        candidates = repartidos
+
     return candidates[:limit]
 
 

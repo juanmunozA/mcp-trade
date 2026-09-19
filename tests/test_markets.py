@@ -98,15 +98,37 @@ def test_horizonte_fuera_de_rango(days):
     assert passes(m, MarketFilter(), NOW) is None
 
 
-def test_cripto_excluido():
-    """PolyBench: 'miscalibración severa... retornos profundamente negativos'."""
+def test_cripto_ya_no_se_excluye():
+    """
+    Antes se excluía por la miscalibración que mide PolyBench. Eso hacía
+    falta cuando la calibración era UNA curva para todo: el sesgo de cripto
+    se comía la corrección de las demás.
+
+    Ahora `CalibrationMap` segmenta por categoría, así que cada una aprende
+    su propio sesgo y cripto puede entrar sin contaminar a nadie.
+    """
     m = raw(question="Will Bitcoin reach 200k by December?", slug="btc-200k")
-    assert passes(m, MarketFilter(), NOW) is None
+    c = passes(m, MarketFilter(), NOW)
+    assert c is not None
+    assert c.category == "cripto"
 
 
-def test_deportes_de_partido_excluido():
+def test_excluir_sigue_funcionando_si_se_pide():
+    """El mecanismo no murió: abrir cripto fue una decisión, no un olvido."""
+    f = MarketFilter(exclude_categories=frozenset({"cripto"}))
+    m = raw(question="Will Bitcoin reach 200k by December?", slug="btc-200k")
+    assert passes(m, f, NOW) is None
+
+
+def test_deportes_de_partido_permitido():
+    """
+    `sports_narrative_only` pasó a False: un partido es difícil de
+    pronosticar, pero su categoría calibra aparte y el dato sirve.
+    """
     m = raw(question="Who wins the NBA championship game tonight?", slug="nba-final")
-    assert passes(m, MarketFilter(), NOW) is None
+    c = passes(m, MarketFilter(), NOW)
+    assert c is not None
+    assert c.category == "deportes"
 
 
 def test_deportes_de_narrativa_permitido():
