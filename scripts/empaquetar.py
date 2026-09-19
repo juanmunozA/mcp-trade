@@ -22,7 +22,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "entrega"
 
-DIRS = ["core", "pilot_a_llm", "scripts", "searxng", "vault/contexto"]
+DIRS = ["core", "pilot_a_llm", "trade", "scripts", "searxng", "vault/contexto"]
 ARCHIVOS = ["Dockerfile", "docker-compose.yml"]
 GLOBS = ["n8n/*.json"]
 

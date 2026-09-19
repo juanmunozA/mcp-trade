@@ -4,7 +4,7 @@ Réplica de la mecánica de `norm1e69`, el usuario descrito en el tweet de
 [@RetroValix](https://x.com/RetroValix/status/2100375324244447353).
 
 ```powershell
-python -m pilot_b_sets.run
+python -m trade.run
 ```
 
 ## El caso original

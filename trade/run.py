@@ -1,5 +1,5 @@
 """
-Piloto B — complete sets.  `python -m pilot_b_sets.run`
+Complete sets — el agente de trading.  `python -m trade.run`
 
 Loop determinista, sin LLM. Cuatro tareas concurrentes:
 
@@ -26,7 +26,7 @@ from core.polymarket.client import ReadOnlyClient, build_execution_client
 from core.polymarket.models import Market
 from core.risk import RiskKernel, RiskLimits
 from core.storage import db
-from pilot_b_sets.engine import EngineConfig, SetEngine
+from trade.engine import EngineConfig, SetEngine
 
 log = logging.getLogger("pilot_b")
 

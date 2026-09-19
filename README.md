@@ -12,7 +12,7 @@ esquemas de base de datos y kill switches **distintos**.
                  ┌─────────────┴─────────────┐
                  ▼                           ▼
         ┌─────────────────┐        ┌────────────────────┐
-        │  pilot_a_llm/   │        │  pilot_b_sets/     │
+        │  pilot_a_llm/   │        │  trade/     │
         │  "El Arena"     │        │  "norm1e69"        │
         │  LLM decide     │        │  complete sets     │
         │  wallet A       │        │  wallet B          │
@@ -34,7 +34,7 @@ política a órdenes, y el risk kernel las valida.
 - **Precedente:** Alpha Arena (nof1.ai) — 6 LLMs, $10k c/u. Ganador +22%, peores -60%.
 - **Expectativa honesta:** retorno esperado ≈ 0 o negativo. El valor es el aprendizaje.
 
-### `pilot_b_sets/` — Complete Sets
+### `trade/` — Complete Sets
 Replica la mecánica del usuario `norm1e69` descrita en el tweet de @RetroValix:
 acumular **ambos lados** (Up y Down) del mismo mercado rotando entre ellos hasta
 armar sets donde `precio(Up) + precio(Down) < $1`. El inventario sin parear queda
@@ -136,7 +136,7 @@ core/
     kernel.py          ⛔ EL RISK KERNEL. Léelo antes que nada.
   alerts.py            telegram
 pilot_a_llm/           piloto A
-pilot_b_sets/          piloto B
+trade/          piloto B
 scripts/               init_db, verify_sdk, replay
 tests/                 tests del kernel (los que importan)
 docs/                  RIESGOS.md, RUNBOOK.md
