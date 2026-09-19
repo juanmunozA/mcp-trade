@@ -214,6 +214,17 @@ class CalibrationMap:
     Con pocas muestras **no hace nada** a propósito: devuelve la
     probabilidad tal cual. Una corrección estimada con 8 mercados
     resueltos es superstición con decimales.
+
+    SEGMENTA POR CATEGORÍA
+    Antes era una sola curva para todo. El sesgo del modelo no es el mismo
+    en política que en cripto —PolyBench mide miscalibración severa solo en
+    la segunda— así que promediarlos corrige mal las dos: le quita a una lo
+    que le sobra a la otra.
+
+    Cada categoría estrena su propia curva al llegar a las 30 muestras.
+    Hasta entonces usa la global, y si tampoco la hay, no corrige nada.
+    Llamar con `categoria` es opcional: sin ella se usa la global de
+    siempre.
     """
 
     def __init__(
@@ -222,11 +233,29 @@ class CalibrationMap:
         *,
         n_bins: int = 10,
         prior_strength: float = 10.0,
+        _segmentar: bool = True,
     ) -> None:
         self.n = len(records)
         self.active = self.n >= MIN_SAMPLES_TO_CALIBRATE
         self._centers: list[float] = []
         self._values: list[float] = []
+        self._por_categoria: dict[str, CalibrationMap] = {}
+
+        # Una curva propia por cada categoría que ya tenga datos de sobra.
+        # Se construye antes de salir: una categoría puede estar lista
+        # aunque el total todavía no lo esté.
+        if _segmentar:
+            grupos: dict[str, list[Resolution]] = {}
+            for r in records:
+                if r.category:
+                    grupos.setdefault(r.category, []).append(r)
+            for cat, rs in grupos.items():
+                if len(rs) >= MIN_SAMPLES_TO_CALIBRATE:
+                    sub = CalibrationMap(rs, n_bins=n_bins,
+                                         prior_strength=prior_strength,
+                                         _segmentar=False)
+                    if sub.active:
+                        self._por_categoria[cat] = sub
 
         if not self.active:
             return
@@ -248,8 +277,19 @@ class CalibrationMap:
         self._centers = [b.mean_forecast for b in populated]
         self._values = monotone
 
-    def __call__(self, p: float) -> float:
-        """Interpolación lineal entre centros de bin; constante en los extremos."""
+    @property
+    def categorias_calibradas(self) -> list[str]:
+        """Cuáles ya tienen curva propia. Para el reporte."""
+        return sorted(self._por_categoria)
+
+    def __call__(self, p: float, categoria: str = "") -> float:
+        """
+        Interpolación lineal entre centros de bin; constante en los extremos.
+
+        Con `categoria`, usa la curva de esa categoría si ya tiene una.
+        """
+        if categoria and (propia := self._por_categoria.get(categoria)):
+            return propia(p)
         if not self.active or not self._centers:
             return p
         if p <= self._centers[0]:

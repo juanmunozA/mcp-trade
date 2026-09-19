@@ -434,7 +434,7 @@ class PilotA:
             )
 
         raw = await self._fetch_markets()
-        picks = select(raw, MarketFilter(), limit=tope)
+        picks = select(raw, self._filtro(), limit=tope)
         log.info("%d mercados → %d candidatos\n%s", len(raw), len(picks), summarize(picks))
         if not picks:
             self._scout_note = "ningún mercado pasó el filtro"
@@ -463,6 +463,45 @@ class PilotA:
         self._analizados.clear()
         self._operados.clear()
         return picks
+
+    @staticmethod
+    def _filtro() -> MarketFilter:
+        """
+        El filtro, con el horizonte configurable.
+
+        Por diseño son 2-150 dias: menos de 2 no alcanzas a investigar ni a
+        que se mueva el precio. Pero durante el arranque eso choca con algo
+        mas urgente -- la calibracion no se activa hasta tener 30
+        resoluciones, y con mercados a 15-45 dias eso son seis semanas
+        operando a ciegas.
+
+        Apuntando a mercados de 1-3 dias las resoluciones llegan en una
+        semana. Se paga un precio: calibrar sobre "pasa manana" no traslada
+        perfecto a "pasa en tres meses", son tareas distintas. Pero
+        `resolutions` guarda la categoria y el horizonte, asi que despues se
+        puede segmentar. Calibrar con datos imperfectos le gana a no
+        calibrar.
+
+            MARKET_MIN_DAYS=1  MARKET_MAX_DAYS=3   -> arranque rapido
+            (sin poner nada)                       -> 2-150, el diseno
+        """
+        cats = os.getenv("MARKET_CATEGORIES", "")
+        extra = {}
+        if cats:
+            # Abrir cripto y deportes tiene sentido SOLO porque la
+            # calibracion ahora segmenta por categoria: su sesgo se corrige
+            # aparte y no contamina al de politica. Sin eso, mezclarlas
+            # empeora las dos.
+            permitidas = frozenset(c.strip() for c in cats.split(",") if c.strip())
+            extra = {"allowed_categories": permitidas,
+                     "exclude_categories": frozenset(),
+                     "sports_narrative_only": False}
+        return MarketFilter(
+            min_days=int(os.getenv("MARKET_MIN_DAYS", "2")),
+            max_days=int(os.getenv("MARKET_MAX_DAYS", "150")),
+            min_liquidity_usd=float(os.getenv("MARKET_MIN_LIQUIDITY", "15000")),
+            **extra,
+        )
 
     async def _cycle(self) -> None:
         started = datetime.now(UTC)

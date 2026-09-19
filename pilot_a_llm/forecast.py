@@ -267,7 +267,7 @@ class Forecaster:
 
         probs = {n: float(d["probability"]) for n, d in parsed.items()}
         p_raw = combine(probs, self.weights)
-        p_cal = self.calibration(p_raw) if self.calibration else p_raw
+        p_cal = self.calibration(p_raw, c.category) if self.calibration else p_raw
         dis = disagreement(probs)
 
         # Los campos cualitativos vienen del primer modelo que respondió,
