@@ -116,6 +116,10 @@ class Candidate:
         return bool(re.search(DEADLINE_PATTERN, self.question, re.I))
 
 
+CATEGORIAS: list[str] = [*CATEGORY_PATTERNS, "otros"]
+"""Los valores que `categorize` puede devolver. Se publican en /candidates."""
+
+
 def categorize(slug: str, question: str) -> str:
     text = f"{slug} {question}".lower()
     for cat, pattern in CATEGORY_PATTERNS.items():

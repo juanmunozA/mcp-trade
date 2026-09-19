@@ -155,11 +155,23 @@ return [{ json: {
 
 QUE_MIRAR_JS = r"""
 // POLÍTICA: qué mercados vale la pena analizar. Editable sin tocar código.
+//
+// Categorías válidas (el agente las publica en /candidates):
+//   politica · geopolitica · economia · empresas · deportes · cripto · otros
 const cs = $json.body.candidatos || [];
+const VALIDAS = $json.body.categorias || [];
 
-const SIN_ALPHA = ['crypto'];   // PolyBench: miscalibración severa ahí
+const SIN_ALPHA = ['cripto'];   // PolyBench: miscalibración severa ahí
 const DIAS_MIN  = 2;            // resolver mañana no da tiempo a nada
 const TOPE      = 8;            // cuántos analizar por ciclo
+
+// Un nombre mal escrito no da error: simplemente no filtra nada, y te
+// quedas creyendo que excluiste algo. Mejor que se note.
+const fantasmas = SIN_ALPHA.filter(x => VALIDAS.length && !VALIDAS.includes(x));
+if (fantasmas.length) {
+  throw new Error(`SIN_ALPHA tiene categorías que no existen: ${fantasmas.join(', ')}. `
+                + `Válidas: ${VALIDAS.join(', ')}`);
+}
 
 const pasan = cs
   .filter(c => !SIN_ALPHA.includes(c.categoria))

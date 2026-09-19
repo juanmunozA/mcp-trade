@@ -42,7 +42,7 @@ from pilot_a_llm.bankroll import BankrollReader
 from pilot_a_llm.budget import Budget
 from pilot_a_llm.calibration import CalibrationMap, Resolution, ensemble_weights
 from pilot_a_llm.forecast import Forecaster, VetoConfig
-from pilot_a_llm.markets import MarketFilter, select, summarize
+from pilot_a_llm.markets import CATEGORIAS, MarketFilter, select, summarize
 from pilot_a_llm.pipeline import (
     ANALISIS,
     OPERACION,
@@ -533,6 +533,10 @@ class PilotA:
             "at": datetime.now(UTC).isoformat(timespec="seconds"),
             "nota": self._scout_note,
             "bankroll_usd": round(self._bankroll_usd, 2),
+            # Las categorías que el agente sabe emitir. El orquestador filtra
+            # por nombre, y un nombre que no exista no da error: simplemente
+            # no filtra nada. Publicarlas deja que el nodo lo detecte.
+            "categorias": CATEGORIAS,
             "n": len(picks),
             "candidatos": [
                 {

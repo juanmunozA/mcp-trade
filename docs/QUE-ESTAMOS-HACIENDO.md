@@ -130,10 +130,15 @@ POST /trade         actúa
 Los dos puntos marcados **POLÍTICA** son nodos de código editables desde la
 interfaz. Ahí vive lo que antes estaba enterrado en Python:
 
-**Qué mirar** — descartar categorías donde el modelo está mal calibrado
-(medido: en cripto los LLM tienen miscalibración severa y retornos
-negativos), exigir un mínimo de días hasta la resolución, ordenar por
-puntaje de oportunidad, y cuántos analizar por ciclo.
+**Qué mirar** — descartar categorías donde el modelo está mal calibrado,
+exigir un mínimo de días hasta la resolución, ordenar por puntaje de
+oportunidad, y cuántos analizar por ciclo.
+
+El agente clasifica cada mercado en una de siete: `politica`,
+`geopolitica`, `economia`, `empresas`, `deportes`, `cripto`, `otros`. **No
+se mira solo política** — las siete entran, y hoy la única excluida es
+`cripto`, porque ahí los LLM tienen miscalibración severa y retornos
+negativos medidos.
 
 **¿Operar?** — el umbral de divergencia por debajo del cual no compensa
 pagar el spread, y si se exige o no una segunda opinión del ensemble.

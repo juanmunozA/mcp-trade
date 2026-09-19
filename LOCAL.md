@@ -120,6 +120,12 @@ qué categorías descartar, días mínimos hasta resolución, cuántos analizar
 por ciclo, y el umbral de divergencia por debajo del cual no paga el
 spread. Se cambian en la UI sin tocar el agente.
 
+Las categorías son siete —`politica`, `geopolitica`, `economia`,
+`empresas`, `deportes`, `cripto`, `otros`— y entran todas salvo las que
+excluyas. `/candidates` publica la lista y el nodo revienta si escribes una
+que no existe: sin eso, un nombre mal puesto no filtra nada y te quedas
+creyendo que sí.
+
 **Lo que no es editable: los tres vetos y el risk kernel.** Son seguridad,
 no política — en un nodo, un workflow mal tocado los apaga sin que nadie lo
 note. `/trade` los aplica siempre.
