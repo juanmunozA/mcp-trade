@@ -28,3 +28,6 @@ ollama_data/
 # La entrega es derivada: se regenera con scripts/empaquetar.py
 entrega/
 entrega.zip
+
+# GitHub Actions: el PAT no tiene scope `workflow` y el push se rechaza
+.github/workflows/

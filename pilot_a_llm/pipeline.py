@@ -70,6 +70,15 @@ class MarketRun:
     decision: Decision | None = None
     order: object | None = None
 
+    # Estado que un paso deja para el siguiente. Son campos declarados y no
+    # atributos sueltos porque el dataclass usa `slots=True`: asignarle algo
+    # no declarado lanza AttributeError. Paso desapercibido hasta produccion,
+    # donde ningun mercado lograba pasar de `cotizar`.
+    books: tuple | None = None
+    book: object | None = None
+    intent: object | None = None
+    intent_id: int | None = None
+
     parado_en: str = ""
     motivo: str = ""
     neurons: float = 0.0
@@ -138,7 +147,7 @@ async def cotizar(r: MarketRun, s: _Servicios) -> bool:
         return r.parar("cotizar", "sin book utilizable")
 
     r.quote = Quote(by.best_ask, bn.best_ask, by.best_bid or 0, bn.best_bid or 0)
-    r._books = (by, bn)  # type: ignore[attr-defined]
+    r.books = (by, bn)
     return True
 
 
@@ -162,19 +171,19 @@ async def validar(r: MarketRun, s: _Servicios) -> bool:
     """El risk kernel. Última palabra, y no negocia con la oportunidad."""
     c, d = r.candidate, r.decision
     token = c.token_yes if d.bet is Bet.YES else c.token_no
-    by, bn = r._books  # type: ignore[attr-defined]
+    by, bn = r.books
     book = by if d.bet is Bet.YES else bn
 
-    r._intent = OrderIntent(  # type: ignore[attr-defined]
+    r.intent = OrderIntent(
         pilot="a", token_id=token, side=Side.BUY,
         price=d.price_paid, size=d.shares,
         market_slug=c.slug, reason=r.forecast.means_yes[:200],
     )
-    r._book = book  # type: ignore[attr-defined]
+    r.book = book
 
-    verdict = s.kernel.check(r._intent, mid=book.mid)  # type: ignore[attr-defined]
-    r._intent_id = await s.repo.record_intent(  # type: ignore[attr-defined]
-        r._intent, verdict, mid=book.mid, strategy="forecast"  # type: ignore[attr-defined]
+    verdict = s.kernel.check(r.intent, mid=book.mid)
+    r.intent_id = await s.repo.record_intent(
+        r.intent, verdict, mid=book.mid, strategy="forecast"
     )
     if not verdict.approved:
         return r.parar("kernel", verdict.detail)
@@ -183,8 +192,8 @@ async def validar(r: MarketRun, s: _Servicios) -> bool:
 
 async def ejecutar(r: MarketRun, s: _Servicios) -> bool:
     """Coloca la orden. La sección crítica del kernel va bajo lock."""
-    intent = r._intent      # type: ignore[attr-defined]
-    book = r._book          # type: ignore[attr-defined]
+    intent = r.intent    
+    book = r.book        
 
     placed = await s.exec_client.place(intent, book=book)
     s.kernel.on_order_sent(intent)
@@ -200,7 +209,7 @@ async def ejecutar(r: MarketRun, s: _Servicios) -> bool:
             s.bankroll.on_paper_fill(placed.price * placed.size)
 
     await s.repo.record_order(
-        placed.order_id, r._intent_id, intent,  # type: ignore[attr-defined]
+        placed.order_id, r.intent_id, intent,
         status=placed.status, is_paper=placed.is_paper,
         latency_ms=placed.latency_ms, raw=placed.raw,
     )

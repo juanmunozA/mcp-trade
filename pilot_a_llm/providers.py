@@ -620,9 +620,16 @@ class MistralProvider:
             "temperature": temperature,
         }
         if schema is not None:
-            # La familia `ministral` acepta `json_object`, no `json_schema`.
-            # El esquema se pide en el prompt y se valida al parsear.
-            body["response_format"] = {"type": "json_object"}
+            # `strict: true` fuerza decodificacion restringida. NO es opcional
+            # aqui: medido contra ministral-14b con el esquema real de 11
+            # campos, `json_object` devolvio 2 de 11 -- el modelo se invento su
+            # propia estructura ("reasoning", "metadata") y el pronostico se
+            # descartaba entero. Con el esquema estricto salen los 11.
+            body["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "forecast", "schema": schema,
+                                "strict": True},
+            }
 
         t0 = time.perf_counter()
         async with httpx.AsyncClient(timeout=120) as http:
