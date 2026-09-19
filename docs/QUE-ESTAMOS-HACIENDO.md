@@ -259,9 +259,10 @@ Y el risk kernel, con sus 35 pruebas.
 
 - **El stack en Docker nunca se levantó entero.** Se construyó en una
   máquina con ~2 GB de RAM disponible, que no da para correrlo.
-- **Los workflows de n8n nunca se importaron a un n8n real.** Están
-  validados en estructura y su lógica se probó con datos reales, pero el
-  import puede sacar cosas: versiones de nodo, credenciales.
+- **Los workflows importan bien en n8n** — comprobado contra una instancia
+  real: los cinco entran, los 38 nodos y 34 conexiones se conservan, y los
+  9 tipos de nodo se reconocen. Lo que falta ver es una **ejecución**
+  contra un agente vivo.
 - **El ciclo de aprendizaje nunca corrió completo**, porque ningún mercado
   pronosticado ha resuelto todavía.
 

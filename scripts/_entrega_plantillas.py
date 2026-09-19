@@ -132,8 +132,16 @@ La mayoría de los mercados terminan así.
 
 El agente corre solo; n8n te deja verlo y meterle mano.
 
-http://localhost:5678, crea una cuenta local (no sale a internet) e
-importa los cinco archivos de `n8n/` con *Import from File*.
+**Por CLI**, que importa los cinco de una:
+
+```bash
+docker compose exec n8n n8n import:workflow --separate --input=/workflows
+docker compose exec n8n n8n list:workflow      # comprobar
+```
+
+**O por la interfaz**: http://localhost:5678, creas una cuenta local (no
+sale a internet) e importas los cinco archivos de `n8n/` con *Import from
+File*, uno por uno.
 
 Después, dos cosas a mano:
 
@@ -277,8 +285,9 @@ Chain u otra red no llegan y no se recuperan.
 
 - El stack completo en Docker **nunca se levantó entero**: se armó en una
   máquina sin RAM para correrlo. La primera vez van a salir cosas.
-- Los workflows de n8n están validados en estructura y su lógica se probó
-  con datos reales, pero **nunca se importaron a un n8n real**.
+- Los workflows **sí importan** en n8n: los cinco entran, los 38 nodos y
+  las 34 conexiones se conservan, y los 9 tipos de nodo son reconocidos.
+  Lo que no se ha visto es una **ejecución** contra un agente vivo.
 - El ciclo de aprendizaje **nunca corrió completo**: ningún mercado
   pronosticado ha resuelto todavía.
 

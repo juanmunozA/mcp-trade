@@ -195,10 +195,5 @@
     "executionOrder": "v1",
     "timezone": "America/Bogota",
     "errorWorkflow": ""
-  },
-  "tags": [
-    {
-      "name": "mcp-trade"
-    }
-  ]
+  }
 }

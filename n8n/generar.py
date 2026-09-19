@@ -103,11 +103,14 @@ def wire(*pairs):
     return conns
 
 
-def save(fname, name, nodes, conns, tags=("mcp-trade",)):
+def save(fname, name, nodes, conns):
+    # Sin `tags`. Los cinco llevaban el mismo y el importador del CLI intenta
+    # crearlo una vez por archivo:
+    #     SQLITE_CONSTRAINT: UNIQUE constraint failed: tag_entity.name
+    # y aborta los cinco. Etiquetar se hace desde la UI si hace falta.
     wf = {"name": name, "nodes": nodes, "connections": conns,
           "settings": {"executionOrder": "v1", "timezone": "America/Bogota",
-                       "errorWorkflow": ""},
-          "tags": [{"name": t} for t in tags]}
+                       "errorWorkflow": ""}}
     p = OUT / fname
     p.write_text(json.dumps(wf, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{fname:26} {len(nodes):2} nodos")

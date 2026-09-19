@@ -93,3 +93,6 @@ services:
     volumes:
       - ./n8n_data:/home/node/.n8n
       - ./vault:/vault
+      # Para importar por CLI sin pasar por la UI:
+      #   docker compose exec n8n n8n import:workflow --separate --input=/workflows
+      - ./n8n:/workflows:ro

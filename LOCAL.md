@@ -73,8 +73,15 @@ más, y una carpeta `pgdata/` que no crece.
 
 ### n8n
 
-Entra a http://localhost:5678, crea la cuenta local (no sale a internet) e
-importa los **cinco** workflows de `n8n/` desde *Import from File*:
+Los cinco de una, por CLI:
+
+```bash
+docker compose exec n8n n8n import:workflow --separate --input=/workflows
+docker compose exec n8n n8n list:workflow
+```
+
+O desde http://localhost:5678 con *Import from File*, uno por uno. Los
+cinco:
 
 | | qué hace | por qué en n8n y no en el agente |
 |---|---|---|
