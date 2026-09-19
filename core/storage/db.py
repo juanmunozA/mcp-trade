@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import json
+import logging
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import asyncpg
 
 from core.risk import OrderIntent, Verdict
+
+log = logging.getLogger("db")
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
@@ -30,6 +34,12 @@ async def init_pool(dsn: str, *, min_size: int = 2, max_size: int = 10) -> async
     global _pool
     if _pool is None:
         is_pgbouncer = "-pooler." in dsn
+        log.info("base de datos: %s", describe_dsn(dsn))
+        if is_pgbouncer:
+            log.warning(
+                "endpoint -pooler: caché de statements desactivada. Usa el "
+                "endpoint DIRECTO de Neon — se re-planifica cada query."
+            )
         _pool = await asyncpg.create_pool(
             dsn,
             min_size=min_size,
@@ -39,6 +49,26 @@ async def init_pool(dsn: str, *, min_size: int = 2, max_size: int = 10) -> async
             statement_cache_size=0 if is_pgbouncer else 100,
         )
     return _pool
+
+
+def describe_dsn(dsn: str) -> str:
+    """
+    Host y base, nunca la contraseña. El DSN termina en logs, en reportes y
+    en el contexto del modelo; imprimirlo entero es filtrar la credencial.
+    """
+    try:
+        p = urlsplit(dsn)
+        destino = f"{p.hostname or '?'}{':' + str(p.port) if p.port else ''}"
+        base = (p.path or "/").lstrip("/") or "?"
+    except ValueError:
+        return "dsn ilegible"
+    if p.hostname and p.hostname.endswith(".neon.tech"):
+        donde = "Neon"
+    elif p.hostname in ("postgres", "localhost", "127.0.0.1"):
+        donde = "contenedor local"
+    else:
+        donde = "remota"
+    return f"{donde} · {destino}/{base}"
 
 
 async def _register_codecs(conn: asyncpg.Connection) -> None:

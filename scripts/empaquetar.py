@@ -23,7 +23,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "entrega"
 
 DIRS = ["core", "pilot_a_llm", "scripts", "searxng", "vault/contexto"]
-ARCHIVOS = ["Dockerfile", "docker-compose.yml"]
+ARCHIVOS = ["Dockerfile", "docker-compose.yml", "docker-compose.neon.yml"]
 GLOBS = ["n8n/*.json"]
 
 EXCLUIR_DIRS = {
@@ -60,9 +60,13 @@ PATRONES = [
 
 # Credenciales de juguete del compose local: solo valen contra un postgres
 # de la misma máquina.
+# Se permiten por cadena EXACTA, nunca aflojando el patrón: así una URL de
+# Neon de verdad sigue disparando la alarma.
 PERMITIDO = [
     "postgresql://trade:trade@postgres:5432/mcptrade",
     "postgresql://trade:trade@localhost:5432/mcptrade",
+    # el ejemplo que sale en .env.example y en el LEEME
+    "postgresql://usuario:clave@ep-algo.region.aws.neon.tech/neondb?sslmode=require",
 ]
 
 BINARIOS = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf", ".zip", ".woff2"}

@@ -195,9 +195,20 @@ SERVICIOS = [
      "el fallo más común al montarlo para uso programático.",
      ["2-investigacion"]),
     ("postgres", "postgres · la base", "localhost:5432",
-     "Pronósticos, resoluciones, calibración. También guarda los workflows de "
-     "n8n — con SQLite se pierden al actualizar la imagen.",
-     ["6-aprendizaje"]),
+     "Pronósticos, resoluciones, calibración.\n\n"
+     "**Puede no existir.** `DB_MODE` en el `.env` decide:\n\n"
+     "| | |\n|---|---|\n"
+     "| `local` | un contenedor más. Autocontenido, nada sale. |\n"
+     "| `neon` | postgres gestionado. **Un contenedor menos, ~250 MB de RAM** |\n\n"
+     "Con Ollama comiéndose casi toda la memoria, esos 250 MB y la carpeta "
+     "`pgdata/` —que crece sin parar— pueden decidir si el modelo cabe o se "
+     "va a swap.\n\n"
+     "A cambio, cada consulta sale a internet y si Neon no responde el ciclo "
+     "falla. Da igual aquí: son unas pocas escrituras por mercado.\n\n"
+     "Con Neon hay que usar el endpoint **DIRECTO**, no el `-pooler`: "
+     "PgBouncer baraja conexiones y el driver revienta con *prepared "
+     "statement already exists*. El arrancador avisa si te equivocas.",
+     ["6-aprendizaje", "2-configurar"]),
     ("n8n", "n8n · orquestación", "http://localhost:5678",
      "Decide **cuándo** pasa cada cosa. El agente decide **qué** pasa.\n\n"
      "Es opcional: si no lo tocas el agente corre igual, tiene sus propios "
@@ -329,16 +340,21 @@ flowchart LR
         N["n8n<br/>:5678"] -->|"cada 4 h"| A["agent<br/>:10000"]
         A --> O["ollama<br/>:11434"]
         A --> S["searxng<br/>:8888"]
-        A --> P["postgres<br/>:5432"]
+        A -.->|"DB_MODE=local"| P["postgres<br/>:5432"]
     end
     A -->|"mercados y órdenes"| PM[("Polymarket")]
     S -->|"consultas"| W[("buscadores")]
+    A -.->|"DB_MODE=neon"| NE[("Neon<br/>postgres gestionado")]
 
     style TU fill:#1e1e1e,stroke:#555
 ```
 
-Lo único que sale de tu máquina es Polymarket y las consultas de búsqueda.
-Los modelos, la base y el contexto se quedan.
+Los modelos y el contexto **nunca** salen de tu máquina. Sale Polymarket
+(es el mercado, inevitable) y las consultas de búsqueda.
+
+La base es la única pieza que elegís: en un contenedor al lado
+(`DB_MODE=local`) o en Neon (`DB_MODE=neon`), que quita ~250 MB de RAM.
+Ver [[postgres]].
 
 [[agent]] · [[ollama]] · [[searxng]] · [[postgres]] · [[n8n]]
 
