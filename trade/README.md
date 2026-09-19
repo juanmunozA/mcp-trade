@@ -72,11 +72,46 @@ Esa última línea es el negocio entero: **el edge es 1.31¢ sobre ~$1. Si tu
 slippage medio supera eso, estás operando en pérdida y el backtest más bonito
 del mundo no lo cambia.**
 
+## Dónde puede vivir el bot
+
+Polymarket restringe por jurisdicción, y la restricción se aplica a la IP del
+servidor, no a la nacionalidad del dueño de la cuenta. Tres grupos:
+
+| Grupo | Efecto |
+|---|---|
+| OFAC (IR, SY, CU, KP, Crimea, Donetsk, Lugansk) | nada, ni cerrar |
+| Close-only en frontend **y API** | cerrar sí, abrir no |
+| Close-only solo en frontend | **la API opera normal** |
+
+El segundo grupo incluye **US, DE, GB, FR, IT, PL, AU, NZ, SG, RU, TW, TH,
+BR, SK, y cuatro provincias de Canadá**. El tercero es corto: **IE, JP, NL,
+KR y MT** (Malta solo deportes).
+
+Colombia no aparece en ninguna lista: no está restringida.
+
+### Render no sirve para operar en real
+
+Medido el 2026-09-19 desde el servicio desplegado:
+
+    GET /geo → {"blocked": true, "ip": "74.220.50.246",
+                "country": "US", "region": "OH"}
+
+Render tiene cinco regiones —Ohio, Oregon, Virginia, Frankfurt, Singapur— y
+las cinco caen en el grupo close-only sobre la API. No es cuestión de elegir
+mejor la región: hay que cambiar de proveedor.
+
+Las lecturas nunca estuvieron restringidas, así que **paper funciona bien
+desde Render**. El muro aparece solo al intentar abrir una posición.
+
+Para real hay que alojar en NL, IE, JP o KR. Oracle Cloud Always Free tiene
+región en Ámsterdam; ojo que los recursos free viven únicamente en la región
+que elijas al registrarte y cambiarla después es un trámite.
+
 ## Latencia
 
 Si vas en serio con la parte atómica, el VPS tiene que estar en la región del
-matching engine (AWS us-east-1). Desde Frankfurt o desde Oracle Free Tier en
-otra región, la oportunidad se evapora antes de que tu paquete llegue.
+matching engine (AWS us-east-1) — que es US, o sea close-only. Las dos cosas
+no se pueden tener a la vez, y es otra razón para no perseguir lo atómico.
 
-Para el legging la latencia importa mucho menos — otra razón por la que ahí
-está tu espacio real.
+Para el legging la latencia importa mucho menos: desde Ámsterdam opera bien.
+Ahí está tu espacio real.
