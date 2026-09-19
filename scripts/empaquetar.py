@@ -54,6 +54,10 @@ PATRONES = [
     (r"sk-or-v1-[A-Za-z0-9]{40,}", "OpenRouter"),
     (r"xoxb-[A-Za-z0-9\-]{20,}", "Slack"),
     (r"\b\d{9,10}:AA[A-Za-z0-9_\-]{30,}", "Telegram bot"),
+    # Los authtoken de ngrok no tienen prefijo reconocible, así que se
+    # atrapan por la variable que los contiene.
+    (r"NGROK_AUTHTOKEN\s*=\s*\S{16,}", "ngrok"),
+    (r"\b2[A-Za-z0-9]{25,}_[A-Za-z0-9]{20,}\b", "ngrok (formato v2)"),
     (r"(?<![A-Za-z0-9])0x[a-fA-F0-9]{64}(?![A-Za-z0-9])", "llave privada"),
     (r"postgres(?:ql)?://[^\s:/@]+:[^\s@]+@[^\s/]+", "URL de base con contraseña"),
 ]

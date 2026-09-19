@@ -1,4 +1,5 @@
 {
+  "id": "mcpTradeMando001",
   "name": "5 · Mando manual (webhook)",
   "nodes": [
     {
@@ -101,7 +102,13 @@
         240,
         120
       ],
-      "id": "parar-todo"
+      "id": "parar-todo",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mcpTradeAgent001",
+          "name": "Agente MCP Trade"
+        }
+      }
     },
     {
       "parameters": {
@@ -126,7 +133,13 @@
         240,
         320
       ],
-      "id": "disparar-ciclo"
+      "id": "disparar-ciclo",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mcpTradeAgent001",
+          "name": "Agente MCP Trade"
+        }
+      }
     },
     {
       "parameters": {
@@ -194,6 +207,6 @@
   "settings": {
     "executionOrder": "v1",
     "timezone": "America/Bogota",
-    "errorWorkflow": ""
+    "errorWorkflow": "mcpTradeError001"
   }
 }

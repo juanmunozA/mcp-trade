@@ -473,6 +473,24 @@ echo
 echo "  Preparando la base..."
 docker compose exec -T agent python -m scripts.init_db && verde "base lista"
 
+# ── n8n: credencial y workflows ──────────────────────────────────────
+# El servidor mantiene el lock de SQLite, asi que la CLI corre en un
+# contenedor aparte con n8n parado. Es idempotente: los IDs son fijos.
+echo
+echo "  Cargando workflows en n8n..."
+docker compose stop n8n >/dev/null 2>&1
+
+cred=./n8n_data/_cred.json
+mkdir -p ./n8n_data
+printf '[{"id":"mcpTradeAgent001","name":"Agente MCP Trade","type":"httpHeaderAuth","data":{"name":"Authorization","value":"Bearer %s"}}]' "$(leer AGENT_API_TOKEN)" > "$cred"
+
+docker compose run --rm --no-deps -T n8n   import:credentials --input=/home/node/.n8n/_cred.json >/dev/null 2>&1   && verde "credencial cargada" || ojo "la credencial no se pudo cargar"
+rm -f "$cred"
+
+docker compose run --rm --no-deps -T n8n   import:workflow --separate --input=/workflows >/dev/null 2>&1   && verde "5 workflows cargados" || ojo "los workflows no se pudieron cargar"
+
+docker compose start n8n >/dev/null 2>&1
+
 echo; verde "Arriba."
 echo
 echo "    agente   http://localhost:10000/health"
@@ -544,6 +562,7 @@ else { Ok "Disco libre $discoGb GB" }
 
 if ($fallo) { Write-Host ""; Ojo "Arregla lo de arriba y vuelve a correr esto."; exit 1 }
 
+New-Item -ItemType Directory -Force ./n8n_data | Out-Null
 Write-Host ""; Write-Host "  Levantando...  (el primer arranque baja 5-20 GB)"
 docker compose up -d
 if ($LASTEXITCODE -ne 0) { Mal "docker compose fallo"; exit 1 }
@@ -562,6 +581,28 @@ Write-Host ""
 Write-Host "  Preparando la base..."
 docker compose exec -T agent python -m scripts.init_db
 if ($LASTEXITCODE -eq 0) { Ok "base lista" }
+
+# --- n8n: credencial y workflows ---
+# El servidor mantiene el lock de SQLite, asi que la CLI corre en un
+# contenedor aparte con n8n parado. Es idempotente: los IDs son fijos.
+Write-Host ""
+Write-Host "  Cargando workflows en n8n..."
+docker compose stop n8n 2>&1 | Out-Null
+
+$cred = (Resolve-Path ./n8n_data).Path + "/_cred.json"
+$tok = $cfg["AGENT_API_TOKEN"]
+$j = "[{""id"":""mcpTradeAgent001"",""name"":""Agente MCP Trade"",""type"":""httpHeaderAuth"",""data"":{""name"":""Authorization"",""value"":""Bearer $tok""}}]"
+# Sin BOM: n8n rechaza el JSON si lo lleva.
+[System.IO.File]::WriteAllText($cred, $j, (New-Object System.Text.UTF8Encoding($false)))
+
+docker compose run --rm --no-deps -T n8n import:credentials --input=/home/node/.n8n/_cred.json 2>&1 | Out-Null
+if ($LASTEXITCODE -eq 0) { Ok "credencial cargada" } else { Ojo "la credencial no se pudo cargar" }
+[System.IO.File]::Delete($cred)
+
+docker compose run --rm --no-deps -T n8n import:workflow --separate --input=/workflows 2>&1 | Out-Null
+if ($LASTEXITCODE -eq 0) { Ok "5 workflows cargados" } else { Ojo "los workflows no se pudieron cargar" }
+
+docker compose start n8n 2>&1 | Out-Null
 
 Write-Host ""; Write-Host "  Arriba." -ForegroundColor Green
 Write-Host ""

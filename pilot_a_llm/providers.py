@@ -21,12 +21,17 @@ el costo del experimento sea medible y no una sorpresa a fin de mes.
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 import httpx
+
+from pilot_a_llm.budget import COST_PER_MODEL, DEFAULT_COST, estimar_neurons
+
+log = logging.getLogger("providers")
 
 # $/1M tokens (entrada, salida). 0 = free tier.
 PRICING: dict[str, tuple[float, float]] = {
@@ -68,7 +73,11 @@ class Completion:
     thought_tokens: int = 0
     cost_usd: float = 0.0
     neurons: float = 0.0
-    """Consumo real de Cloudflare, de la cabecera `cf-ai-neurons`."""
+    """
+    Consumo de Cloudflare. Medido si la respuesta lo trae; estimado a partir
+    de los tokens si no — que hoy es el caso normal, porque la cabecera
+    `cf-ai-neurons` desapareció. Ver `budget.estimar_neurons`.
+    """
     latency_ms: int = 0
     finish_reason: str = ""
     grounded_urls: list[str] = field(default_factory=list)
@@ -312,6 +321,18 @@ class CloudflareProvider:
 
     BASE = "https://api.cloudflare.com/client/v4/accounts"
 
+    _aviso_dado = False
+
+    @classmethod
+    def _avisar_estimacion(cls) -> None:
+        """Una vez por proceso, no una por llamada."""
+        if not cls._aviso_dado:
+            cls._aviso_dado = True
+            log.warning(
+                "Cloudflare no devuelve `cf-ai-neurons`: el consumo se estima "
+                "a partir de los tokens. El 429 sigue mandando."
+            )
+
     def __init__(
         self,
         account_id: str,
@@ -373,12 +394,28 @@ class CloudflareProvider:
         text = response if isinstance(response, str) else json.dumps(response)
 
         usage = result.get("usage", {})
-        inp = usage.get("prompt_tokens", 0)
-        out = usage.get("completion_tokens", 0)
+        inp = int(usage.get("prompt_tokens", 0) or 0)
+        out = int(usage.get("completion_tokens", 0) or 0)
 
-        # Consumo REAL, no estimado. Cloudflare lo devuelve por respuesta;
-        # sin esto el presupuesto se descubre al agotarlo.
-        neurons = float(r.headers.get("cf-ai-neurons", usage.get("neurons", 0) or 0))
+        # Cloudflare ya no manda `cf-ai-neurons`: hoy solo devuelve
+        # `cf-ai-req-id`. Se sigue leyendo por si vuelve, pero el camino
+        # normal es estimar. Sin esto el presupuesto recibía 0 en cada
+        # llamada y la cuota se descubría chocando con un 429.
+        medido = r.headers.get("cf-ai-neurons") or usage.get("neurons")
+        if medido:
+            neurons = float(medido)
+        else:
+            neurons = estimar_neurons(self.model, inp, out)
+            self._avisar_estimacion()
+
+        if not inp and not out and not medido:
+            # Sin tokens no hay forma de estimar. Cobrar el peor caso es
+            # preferible a contabilizar cero y gastar a ciegas.
+            neurons = COST_PER_MODEL.get(self.model, DEFAULT_COST)
+            log.warning(
+                "%s no devolvió tokens ni neurons: se cobra el peor caso (%.1f)",
+                self.model, neurons,
+            )
 
         return Completion(
             text=text,

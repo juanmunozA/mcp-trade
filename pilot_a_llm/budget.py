@@ -12,9 +12,17 @@ Un presupuesto que solo descubres al agotarlo no es un presupuesto.
 
 CÓMO FUNCIONA
 ─────────────
-Cloudflare devuelve el consumo real en la cabecera `cf-ai-neurons` de cada
-respuesta. Lo acumulamos, y cuando quedan pocos el agente deja de aceptar
-mercados nuevos en vez de fallar a mitad de un ciclo.
+Se acumula el consumo de cada llamada y, cuando queda poco, el agente deja
+de aceptar mercados nuevos en vez de fallar a mitad de un ciclo.
+
+El consumo se **estima** a partir de los tokens: Cloudflare ya no manda la
+cabecera `cf-ai-neurons`. Durante un tiempo el código la leía, no estaba, y
+contabilizaba cero — 104 mercados pronosticados con 0 neurons registrados,
+y la cuota descubierta al chocar con un 429. Ver `estimar_neurons`.
+
+LO QUE SIGUE SIN RESOLVER
+El contador vive en memoria: si el proceso reinicia a media tarde, cree
+tener el cupo entero otra vez. El 429 lo corrige, pero tarde.
 
 La reserva existe porque el ciclo ya empezado debe poder terminar: quedarse
 sin presupuesto entre la investigación y el pronóstico tira a la basura una
@@ -38,6 +46,44 @@ COST_PER_MODEL = {
     "@cf/meta/llama-3.1-8b-instruct": 4.5,
 }
 DEFAULT_COST = 50.0
+
+
+# ── estimar el consumo cuando Cloudflare no lo dice ──────────────────────
+# Cloudflare dejó de mandar la cabecera `cf-ai-neurons`: hoy solo devuelve
+# `cf-ai-req-id`. Comprobado en vivo. El resultado fue que este presupuesto
+# recibía 0 en cada llamada y creía no gastar nada — 104 mercados
+# pronosticados, 0 neurons contabilizados, y la cuota descubierta al chocar
+# con un 429.
+#
+# Neurons por cada 1.000 tokens, (entrada, salida). Calibrado contra las
+# DOS medidas que sí tomamos cuando la cabecera existía:
+#
+#     llama-3.1-8b       4.5 neurons   (~5.5K entrada · ~0.3K salida)
+#     deepseek-r1-32b  175   neurons   (~5.5K entrada · ~2.5K salida)
+#
+# asumiendo que la salida cuesta 3× la entrada, que es lo habitual. R1
+# razona mucho antes de responder y por eso su salida pesa tanto.
+NEURONS_POR_1K: dict[str, tuple[float, float]] = {
+    "@cf/meta/llama-3.1-8b-instruct": (0.70, 2.11),
+    "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": (13.5, 40.4),
+}
+
+# Un modelo que no esté en la tabla se cobra al más caro que conocemos.
+# Subestimar es gastar a ciegas, que es exactamente el fallo que esto
+# viene a arreglar.
+NEURONS_DESCONOCIDO = max(NEURONS_POR_1K.values())
+
+
+def estimar_neurons(model: str, entrada: int, salida: int) -> float:
+    """
+    Cuántos neurons costó una llamada, a partir de sus tokens.
+
+    Es una ESTIMACIÓN y hay que tratarla como tal: sirve para frenar antes
+    de agotar la cuota, no para saber el número exacto. La única verdad
+    absoluta sigue siendo el 429, y el agente lo respeta por encima de esto.
+    """
+    ent, sal = NEURONS_POR_1K.get(model, NEURONS_DESCONOCIDO)
+    return round(entrada / 1000 * ent + salida / 1000 * sal, 2)
 
 
 @dataclass

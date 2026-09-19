@@ -1,4 +1,5 @@
 {
+  "id": "mcpTradeVigil001",
   "name": "2 · Vigilancia (escalera de alertas)",
   "nodes": [
     {
@@ -45,6 +46,12 @@
         300
       ],
       "id": "consultar-salud",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mcpTradeAgent001",
+          "name": "Agente MCP Trade"
+        }
+      },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true
     },
@@ -165,6 +172,6 @@
   "settings": {
     "executionOrder": "v1",
     "timezone": "America/Bogota",
-    "errorWorkflow": ""
+    "errorWorkflow": "mcpTradeError001"
   }
 }

@@ -75,10 +75,27 @@ services:
       ollama:
         condition: service_healthy
 
+  # Expone el agente para que un n8n remoto pueda llamarlo. El dominio es
+  # fijo y permanente, así que la URL no cambia entre reinicios.
+  #
+  #   docker compose --profile tunel up -d
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: mcptrade-ngrok
+    restart: unless-stopped
+    profiles: ["tunel"]
+    command: http agent:10000 --url=${NGROK_DOMAIN:?falta NGROK_DOMAIN} --log=stdout
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:?falta NGROK_AUTHTOKEN}
+    depends_on: [agent]
+
+  # Solo para cuando n8n corre en esta misma máquina. Con n8n en Render se
+  # usa el perfil `tunel` y este no arranca.
   n8n:
     image: n8nio/n8n:latest
     container_name: mcptrade-n8n
     restart: unless-stopped
+    profiles: ["local"]
     ports: ["5678:5678"]
     environment:
       N8N_SECURE_COOKIE: "false"

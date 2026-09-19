@@ -1,4 +1,5 @@
 {
+  "id": "mcpTradeCiclo001",
   "name": "1 · Ciclo (el orquestador decide)",
   "nodes": [
     {
@@ -55,7 +56,13 @@
         -640,
         380
       ],
-      "id": "pedir-candidatos"
+      "id": "pedir-candidatos",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mcpTradeAgent001",
+          "name": "Agente MCP Trade"
+        }
+      }
     },
     {
       "parameters": {
@@ -142,6 +149,12 @@
         440
       ],
       "id": "pronosticar",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mcpTradeAgent001",
+          "name": "Agente MCP Trade"
+        }
+      },
       "onError": "continueRegularOutput",
       "retryOnFail": true,
       "maxTries": 2,
@@ -217,6 +230,12 @@
         360
       ],
       "id": "operar",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mcpTradeAgent001",
+          "name": "Agente MCP Trade"
+        }
+      },
       "onError": "continueRegularOutput",
       "retryOnFail": true,
       "maxTries": 2,
@@ -486,6 +505,6 @@
   "settings": {
     "executionOrder": "v1",
     "timezone": "America/Bogota",
-    "errorWorkflow": ""
+    "errorWorkflow": "mcpTradeError001"
   }
 }

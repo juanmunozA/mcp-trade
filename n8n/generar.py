@@ -47,6 +47,16 @@ cinco workflows se mudan sin tocarlos.
 
 CRED = {"authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth"}
 
+# La credencial se importa aparte y cifrada:
+#   n8n import:credentials --input=cred.json
+# Referenciarla por id desde aquí evita tener que asignarla a mano en la UI.
+CRED_ID = "mcpTradeAgent001"
+CRED_REF = {"credentials": {"httpHeaderAuth": {"id": CRED_ID, "name": "Agente MCP Trade"}}}
+
+# IDs fijos: sin ellos n8n asigna uno al importar y no hay forma de apuntar
+# `errorWorkflow` a un workflow concreto desde el JSON.
+WF_ERRORES = "mcpTradeError001"
+
 
 def node(name, type_, ver, params, x, y, **extra):
     return {"parameters": params, "name": name, "type": f"n8n-nodes-base.{type_}",
@@ -59,7 +69,7 @@ def http(name, method, path, x, y, timeout=300000, **extra):
         "method": method, "url": f"={AG}{path}", **CRED,  # noqa: RUF027 — expresión n8n
         "options": {"timeout": timeout,
                     "response": {"response": {"neverError": True, "fullResponse": True}}},
-    }, x, y, **extra)
+    }, x, y, **(CRED_REF | extra))
 
 
 def code(name, js, x, y, **extra):
@@ -103,14 +113,14 @@ def wire(*pairs):
     return conns
 
 
-def save(fname, name, nodes, conns):
+def save(fname, name, nodes, conns, *, wf_id, error_wf=WF_ERRORES):
     # Sin `tags`. Los cinco llevaban el mismo y el importador del CLI intenta
     # crearlo una vez por archivo:
     #     SQLITE_CONSTRAINT: UNIQUE constraint failed: tag_entity.name
     # y aborta los cinco. Etiquetar se hace desde la UI si hace falta.
-    wf = {"name": name, "nodes": nodes, "connections": conns,
+    wf = {"id": wf_id, "name": name, "nodes": nodes, "connections": conns,
           "settings": {"executionOrder": "v1", "timezone": "America/Bogota",
-                       "errorWorkflow": ""}}
+                       "errorWorkflow": "" if wf_id == error_wf else error_wf}}
     p = OUT / fname
     p.write_text(json.dumps(wf, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{fname:26} {len(nodes):2} nodos")
@@ -253,7 +263,7 @@ save("1-ciclo.json", "1 · Ciclo (el orquestador decide)", n, wire(
     ("Anotar", "Por mercado"),
     ("Resumir ciclo", "¿Algo que contar?"),
     ("¿Algo que contar?", "Avisar ciclo", 0),
-))
+), wf_id="mcpTradeCiclo001")
 
 # ═══════════════════════════════════════════════════════════════════════
 # 2 — VIGILANCIA: escalera de alertas con memoria entre ejecuciones
@@ -301,7 +311,7 @@ save("2-vigilancia.json", "2 · Vigilancia (escalera de alertas)", n, wire(
     ("Consultar salud", "Escalera de alertas"),
     ("Escalera de alertas", "¿Avisar?"),
     ("¿Avisar?", "Avisar salud", 0),
-))
+), wf_id="mcpTradeVigil001")
 
 # ═══════════════════════════════════════════════════════════════════════
 # 3 — APRENDIZAJE: resolver, medir, y decir cuándo APAGAR
@@ -389,7 +399,7 @@ save("3-aprendizaje.json", "3 · Aprendizaje y veredicto", n, wire(
     ("¿Hay edge o apagar?", "¿Vale la pena avisar?"),
     ("¿Hay edge o apagar?", "Guardar en el vault"),
     ("¿Vale la pena avisar?", "Avisar veredicto", 0),
-))
+), wf_id="mcpTradeAprend01")
 
 # ═══════════════════════════════════════════════════════════════════════
 # 4 — ERRORES: un solo sitio donde cae todo lo que revienta
@@ -416,7 +426,7 @@ n = [
 save("4-errores.json", "4 · Errores (errorWorkflow)", n, wire(
     ("Cuando algo falla", "Formatear error"),
     ("Formatear error", "Avisar error"),
-))
+), wf_id="mcpTradeError001")
 
 # ═══════════════════════════════════════════════════════════════════════
 # 5 — MANDO: disparar y parar desde el celular
@@ -442,4 +452,4 @@ save("5-mando.json", "5 · Mando manual (webhook)", n, wire(
     ("¿Token correcto?", "Rechazado", 1),
     ("¿Qué pide?", "Parar todo", 0),
     ("¿Qué pide?", "Disparar ciclo", 1),
-))
+), wf_id="mcpTradeMando001")
