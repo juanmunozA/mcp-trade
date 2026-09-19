@@ -43,7 +43,13 @@ from pilot_a_llm.budget import Budget
 from pilot_a_llm.calibration import CalibrationMap, Resolution, ensemble_weights
 from pilot_a_llm.forecast import Forecaster, VetoConfig
 from pilot_a_llm.markets import MarketFilter, select, summarize
-from pilot_a_llm.pipeline import MarketRun, correr, resumen
+from pilot_a_llm.pipeline import (
+    ANALISIS,
+    OPERACION,
+    MarketRun,
+    correr,
+    resumen,
+)
 from pilot_a_llm.providers import (
     CloudflareProvider,
     GeminiProvider,
@@ -58,6 +64,11 @@ log = logging.getLogger("pilot_a")
 
 PILOT = "a"
 RESOLVER_INTERVAL_S = 6 * 3600
+ANALISIS_TTL_S = int(os.getenv("ANALISIS_TTL_S", "3600"))
+"""
+Cuánto vale un pronóstico antes de operarlo. El precio se recotiza siempre,
+así que lo que caduca es la evidencia, no el book.
+"""
 MARKETS_PER_CYCLE = int(os.getenv("MARKETS_PER_CYCLE", "15"))
 MARKET_PAGES = int(os.getenv("MARKET_PAGES", "8"))       # 100 por página
 CONCURRENCY = int(os.getenv("FORECAST_CONCURRENCY", "4"))
@@ -100,6 +111,10 @@ class PilotA:
         # Lo que el explorador eligió, por slug. `/market` solo acepta estos:
         # es el filtro y la whitelist del kernel actuando como puerta.
         self._picks: dict = {}
+        # Lo que /forecast dejó listo, y lo que /trade ya consumió: sin esto
+        # el orquestador podría operar sin analizar, o dos veces el mismo.
+        self._analizados: dict = {}
+        self._operados: set = set()
         self._bankroll_usd: float = 0.0
         self._scout_note: str = ""
         # Mismo techo de concurrencia que el ciclo interno. Sin esto, n8n en
@@ -158,6 +173,8 @@ class PilotA:
             kill_fn=self._kill_now,
             candidates_fn=self._candidates_now,
             market_fn=self._market_now,
+            forecast_fn=self._forecast_now,
+            trade_fn=self._trade_now,
         )
         await self._api.start()
 
@@ -386,6 +403,8 @@ class PilotA:
         # por el filtro ni está en la whitelist del kernel, así que no entra
         # a la ruta de ejecución por mucho que lo pidan.
         self._picks = {c.slug: c for c in picks}
+        self._analizados.clear()
+        self._operados.clear()
         return picks
 
     async def _cycle(self) -> None:
@@ -528,6 +547,96 @@ class PilotA:
                 }
                 for c in picks
             ],
+        }
+
+    async def _forecast_now(self, slug: str) -> dict:
+        """
+        POST /forecast — investiga y pronostica. NO toca el mercado.
+
+        Deja el resultado guardado para que `/trade` lo use. El orquestador
+        ve la probabilidad, los vetos y la divergencia, y decide si vale la
+        pena operarlo.
+        """
+        c = self._picks.get(slug)
+        if c is None:
+            return {"slug": slug, "ok": False,
+                    "motivo": "no es candidato — corre GET /candidates primero"}
+        if self.forecaster.quota_exhausted:
+            return {"slug": slug, "ok": False, "motivo": "cuota de inferencia agotada"}
+
+        r = MarketRun(candidate=c, bankroll_usd=self._bankroll_usd)
+        async with self._market_sem:
+            await correr(r, self, lock=self._order_lock, pasos=ANALISIS)
+        self._to_vault(r)
+        self._analizados[slug] = (r, datetime.now(UTC))
+
+        f = r.forecast
+        return {
+            "slug": slug,
+            "ok": f is not None and not r.parado_en,
+            "pregunta": c.question,
+            "categoria": c.category,
+            "parado_en": r.parado_en,
+            "motivo": r.motivo,
+            "vetado": bool(f and f.vetoed),
+            "p": round(f.p_calibrated, 4) if f else None,
+            "precio_mercado": round(c.price, 4),
+            "divergencia": round(abs(f.p_calibrated - c.price), 4) if f else None,
+            "escalado": r.escalado,
+            "dias": c.days_to_resolution,
+            "fuentes": len(r.evidence.items) if r.evidence else 0,
+            "costo_usd": round(r.cost_usd, 6),
+        }
+
+    async def _trade_now(self, slug: str) -> dict:
+        """
+        POST /trade — cotiza, dimensiona, valida riesgo y ordena.
+
+        Exige un pronóstico previo de `/forecast`. Tres guardas, y las tres
+        fallan cerrado: sin análisis no se opera, un análisis viejo no se
+        opera, y un mercado ya operado no se repite. Un orquestador mal
+        editado no puede saltarse el análisis ni duplicar una posición.
+        """
+        previo = self._analizados.get(slug)
+        if previo is None:
+            return {"slug": slug, "opero": False,
+                    "motivo": "sin pronóstico — corre POST /forecast primero"}
+
+        r, cuando = previo
+        edad = (datetime.now(UTC) - cuando).total_seconds()
+        if edad > ANALISIS_TTL_S:
+            return {"slug": slug, "opero": False,
+                    "motivo": f"pronóstico de hace {edad / 60:.0f} min "
+                              f"(máximo {ANALISIS_TTL_S // 60})"}
+        if slug in self._operados:
+            return {"slug": slug, "opero": False, "motivo": "ya se operó en este ciclo"}
+        if r.forecast is None or r.forecast.vetoed:
+            return {"slug": slug, "opero": False,
+                    "motivo": r.motivo or "vetado en el análisis"}
+        if self.kernel is None or self.kernel.killed:
+            motivo = self.kernel.kill_reason if self.kernel else "kernel sin inicializar"
+            return {"slug": slug, "opero": False, "motivo": f"kill switch: {motivo}"}
+
+        bank = await self.bankroll.read()
+        if bank.deployable_usd <= 1.0:
+            return {"slug": slug, "opero": False, "motivo": "sin capital desplegable"}
+        r.bankroll_usd = bank.deployable_usd
+
+        self._operados.add(slug)
+        await correr(r, self, lock=self._order_lock, pasos=OPERACION)
+        await save_run(r, bankroll_usd=bank.deployable_usd)
+        self._last_cycle = datetime.now(UTC)
+
+        d = r.decision
+        return {
+            "slug": slug,
+            "opero": r.opero,
+            "parado_en": r.parado_en or "completado",
+            "motivo": r.motivo,
+            "accion": r.accion,
+            "edge": round(d.edge, 4) if (d is not None and d) else None,
+            "size_usd": round(d.size_usd, 2) if (d is not None and d) else None,
+            "orden_id": r.order.order_id if r.order else None,
         }
 
     async def _market_now(self, slug: str) -> dict:

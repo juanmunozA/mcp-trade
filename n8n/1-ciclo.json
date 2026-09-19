@@ -1,5 +1,5 @@
 {
-  "name": "1 · Ciclo de pronóstico (fan-out por mercado)",
+  "name": "1 · Ciclo (el orquestador decide)",
   "nodes": [
     {
       "parameters": {
@@ -16,7 +16,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -640,
+        -860,
         300
       ],
       "id": "cada-4-horas"
@@ -27,7 +27,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -640,
+        -860,
         460
       ],
       "id": "disparo-manual"
@@ -52,7 +52,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -420,
+        -640,
         380
       ],
       "id": "pedir-candidatos"
@@ -81,24 +81,23 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -200,
+        -420,
         380
       ],
       "id": "¿hay-candidatos?"
     },
     {
       "parameters": {
-        "fieldToSplitOut": "body.candidatos",
-        "options": {}
+        "jsCode": "// POLÍTICA: qué mercados vale la pena analizar. Editable sin tocar código.\nconst cs = $json.body.candidatos || [];\n\nconst SIN_ALPHA = ['crypto'];   // PolyBench: miscalibración severa ahí\nconst DIAS_MIN  = 2;            // resolver mañana no da tiempo a nada\nconst TOPE      = 8;            // cuántos analizar por ciclo\n\nconst pasan = cs\n  .filter(c => !SIN_ALPHA.includes(c.categoria))\n  .filter(c => (c.dias ?? 999) >= DIAS_MIN)\n  .sort((a, b) => b.puntaje - a.puntaje)\n  .slice(0, TOPE);\n\nreturn pasan.map(c => ({ json: c }));"
       },
-      "name": "Un item por mercado",
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
+      "name": "Política · qué mirar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        20,
+        -200,
         300
       ],
-      "id": "un-item-por-mercado"
+      "id": "política-·-qué-mirar"
     },
     {
       "parameters": {
@@ -111,7 +110,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        240,
+        20,
         300
       ],
       "id": "por-mercado"
@@ -119,7 +118,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/market",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/forecast",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -135,14 +134,14 @@
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ slug: $json.slug }) }}"
       },
-      "name": "Pronosticar mercado",
+      "name": "Pronosticar",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        460,
-        420
+        240,
+        440
       ],
-      "id": "pronosticar-mercado",
+      "id": "pronosticar",
       "onError": "continueRegularOutput",
       "retryOnFail": true,
       "maxTries": 2,
@@ -151,14 +150,102 @@
     },
     {
       "parameters": {
-        "jsCode": "// Cada item es el resultado de UN mercado. Aquí se arma el desglose que\n// antes solo existía en los logs del contenedor.\nconst rs = $input.all().map(i => i.json.body ?? i.json);\nconst ok = rs.filter(r => r && r.corrido);\nconst ordenes = ok.filter(r => r.opero);\nconst porPaso = {};\nfor (const r of ok) porPaso[r.parado_en || '?'] = (porPaso[r.parado_en || '?'] || 0) + 1;\n\nconst linea = r => `${r.opero ? '🟢' : (r.parado_en === 'veto' ? '🛑' : '·')} `\n  + `<b>${(r.pregunta || r.slug || '').slice(0, 70)}</b>\\n`\n  + `   ${r.parado_en}${r.motivo ? ' — ' + String(r.motivo).slice(0, 90) : ''}`\n  + (r.opero ? `\\n   ${r.accion} $${r.size_usd} · p=${r.p_pronostico} vs ${r.precio_mercado} · edge ${r.edge}` : '');\n\nconst destacados = ok.filter(r => r.opero || r.parado_en === 'veto');\n\nreturn [{ json: {\n  vistos: rs.length,\n  corridos: ok.length,\n  ordenes: ordenes.length,\n  escalados: ok.filter(r => r.escalado).length,\n  desglose: porPaso,\n  costo_usd: +ok.reduce((a, r) => a + (r.costo_usd || 0), 0).toFixed(6),\n  hay_algo: destacados.length > 0,\n  texto: `<b>Ciclo</b> · ${ok.length}/${rs.length} mercados · `\n       + `${ordenes.length} órdenes\\n`\n       + Object.entries(porPaso).map(([k, v]) => `${k}:${v}`).join(' · ')\n       + (destacados.length ? '\\n\\n' + destacados.slice(0, 8).map(linea).join('\\n') : ''),\n} }];"
+        "jsCode": "// POLÍTICA: con el pronóstico en la mano, ¿vale la pena operarlo?\n// Esto es lo que antes estaba enterrado en Python.\n//\n// Los tres vetos y el risk kernel NO están aquí: los aplica el agente\n// siempre. Son seguridad, no política — apagarlos no debe ser editable.\nconst f = $json.body ?? $json;\n\nconst DIVERGENCIA_MIN = 0.06;   // menos que esto no paga el spread\nconst SOLO_ESCALADOS  = false;  // true = exige segunda opinión del ensemble\n\nlet operar = true, razon = 'pasa';\nif (!f.ok)                            { operar = false; razon = f.motivo || f.parado_en || 'análisis falló'; }\nelse if (f.vetado)                    { operar = false; razon = 'vetado por el agente'; }\nelse if (f.divergencia == null)        { operar = false; razon = 'sin divergencia'; }\nelse if (f.divergencia < DIVERGENCIA_MIN) { operar = false; razon = `divergencia ${f.divergencia} < ${DIVERGENCIA_MIN}`; }\nelse if (SOLO_ESCALADOS && !f.escalado)   { operar = false; razon = 'sin segunda opinión'; }\n\nreturn [{ json: { ...f, operar, razon } }];"
+      },
+      "name": "Política · ¿operar?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        440
+      ],
+      "id": "política-·-¿operar?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.operar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "¿Operar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        440
+      ],
+      "id": "¿operar?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.AGENT_URL || 'http://agent:10000' }}/trade",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ slug: $json.slug }) }}"
+      },
+      "name": "Operar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        360
+      ],
+      "id": "operar",
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Une la decisión de la política con lo que devolvió /trade.\nconst p = $('Política · ¿operar?').item.json;\nreturn [{ json: { ...p, ...($json.body ?? $json) } }];"
+      },
+      "name": "Anotar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        360
+      ],
+      "id": "anotar"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Un item por mercado. Distingue tres cosas que antes se confundían:\n// lo que el AGENTE descartó, lo que la POLÍTICA descartó, y lo que operó.\nconst rs = $input.all().map(i => i.json);\nconst ordenes  = rs.filter(r => r.opero);\nconst porAgente = rs.filter(r => !r.operar && (r.vetado || !r.ok));\nconst porPolitica = rs.filter(r => !r.operar && r.ok && !r.vetado);\nconst rechazadas = rs.filter(r => r.operar && !r.opero);\n\nconst razones = {};\nfor (const r of rs) if (!r.operar) razones[r.razon] = (razones[r.razon] || 0) + 1;\n\nconst linea = r => (r.opero ? '🟢 ' : r.vetado ? '🛑 ' : '· ')\n  + `<b>${(r.pregunta || r.slug || '').slice(0, 68)}</b>\\n`\n  + (r.opero\n      ? `   ${r.accion} $${r.size_usd} · p=${r.p} vs ${r.precio_mercado} · edge ${r.edge}`\n      : `   ${r.razon || r.motivo || ''}`.slice(0, 110));\n\nconst destacados = rs.filter(r => r.opero || r.vetado);\n\nreturn [{ json: {\n  vistos: rs.length,\n  ordenes: ordenes.length,\n  freno_el_agente: porAgente.length,\n  freno_la_politica: porPolitica.length,\n  freno_el_kernel: rechazadas.length,\n  razones,\n  costo_usd: +rs.reduce((a, r) => a + (r.costo_usd || 0), 0).toFixed(6),\n  hay_algo: destacados.length > 0,\n  texto: `<b>Ciclo</b> · ${rs.length} mercados · ${ordenes.length} órdenes\\n`\n       + `frenó: agente ${porAgente.length} · política ${porPolitica.length} · `\n       + `kernel ${rechazadas.length}\\n`\n       + Object.entries(razones).map(([k, v]) => `${k}: ${v}`).join(' · ')\n       + (destacados.length ? '\\n\\n' + destacados.slice(0, 8).map(linea).join('\\n') : ''),\n} }];"
       },
       "name": "Resumir ciclo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        460,
-        180
+        240,
+        120
       ],
       "id": "resumir-ciclo"
     },
@@ -186,8 +273,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        680,
-        180
+        460,
+        120
       ],
       "id": "¿algo-que-contar?"
     },
@@ -211,8 +298,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        900,
-        180
+        680,
+        120
       ],
       "id": "avisar-ciclo"
     },
@@ -224,8 +311,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        20,
-        500
+        -200,
+        520
       ],
       "id": "sin-candidatos"
     }
@@ -268,7 +355,7 @@
       "main": [
         [
           {
-            "node": "Un item por mercado",
+            "node": "Política · qué mirar",
             "type": "main",
             "index": 0
           }
@@ -282,7 +369,7 @@
         ]
       ]
     },
-    "Un item por mercado": {
+    "Política · qué mirar": {
       "main": [
         [
           {
@@ -304,14 +391,65 @@
         ],
         [
           {
-            "node": "Pronosticar mercado",
+            "node": "Pronosticar",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Pronosticar mercado": {
+    "Pronosticar": {
+      "main": [
+        [
+          {
+            "node": "Política · ¿operar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Política · ¿operar?": {
+      "main": [
+        [
+          {
+            "node": "¿Operar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Operar?": {
+      "main": [
+        [
+          {
+            "node": "Operar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Por mercado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Operar": {
+      "main": [
+        [
+          {
+            "node": "Anotar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anotar": {
       "main": [
         [
           {

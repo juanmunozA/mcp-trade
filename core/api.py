@@ -15,18 +15,26 @@ DÓNDE ESTÁ EL CORTE
 ───────────────────
 La unidad que n8n orquesta es **un mercado**, no un ciclo entero:
 
-    GET  /candidates   el explorador solo. Sin IA, sin costo.
-    POST /market       UN mercado por el pipeline completo, atómico.
+    GET  /candidates   el explorador. Sin IA, sin costo.
+    POST /forecast     investiga y pronostica. NO toca el mercado.
+    POST /trade        cotiza, dimensiona, valida riesgo y ordena.
 
-Así cada mercado es una ejecución propia en n8n: se ve dónde murió, se
-reintenta solo ese, y se ramifica según el resultado.
+El corte entre `/forecast` y `/trade` es donde el orquestador decide: ve
+la probabilidad, la divergencia y los vetos, y elige si vale la pena
+operarlo. Esa política deja de estar enterrada en Python.
 
-El corte NO puede ser más fino que eso. Los pasos `validar` y `ejecutar`
-comparten el estado en memoria del risk kernel y corren bajo un lock:
-entre `check()` y `on_order_sent()` hay awaits, y dos mercados que los
-crucen a la vez pasan el mismo límite antes de que ninguno lo consuma.
-Poner un salto HTTP ahí reintroduce esa carrera —ya la tuvimos— y encima
-la hace sobrevivir a reinicios. Por eso `/market` es indivisible.
+`/market` hace las dos de un tirón, para quien no quiera orquestar.
+
+MÁS FINO NO SE PUEDE. `validar` y `ejecutar` comparten el estado en
+memoria del risk kernel y corren bajo un lock: entre `check()` y
+`on_order_sent()` hay awaits, y dos mercados que los crucen a la vez pasan
+el mismo límite antes de que ninguno lo consuma. Un salto HTTP ahí
+reintroduce esa carrera —ya la tuvimos— y la hace sobrevivir a reinicios.
+
+LO QUE EL ORQUESTADOR NO DECIDE
+Los tres vetos y el risk kernel. Son seguridad, no política: si vivieran
+en nodos editables, un workflow mal tocado los apaga sin que nadie lo
+note. `/trade` los aplica siempre, aunque el orquestador insista.
 
 ENDPOINTS
     GET  /health      estado, presupuesto, kill switch  (también UptimeRobot)
@@ -90,6 +98,8 @@ class AgentAPI:
         kill_fn: Callable[[str], None],
         candidates_fn: Callable[[int], Awaitable[dict]] | None = None,
         market_fn: Callable[[str], Awaitable[dict]] | None = None,
+        forecast_fn: Callable[[str], Awaitable[dict]] | None = None,
+        trade_fn: Callable[[str], Awaitable[dict]] | None = None,
         port: int | None = None,
         token: str | None = None,
     ) -> None:
@@ -102,6 +112,8 @@ class AgentAPI:
         self._kill_fn = kill_fn
         self._candidates_fn = candidates_fn
         self._market_fn = market_fn
+        self._forecast_fn = forecast_fn
+        self._trade_fn = trade_fn
 
         self._started = time.monotonic()
         self._server: asyncio.AbstractServer | None = None
@@ -222,6 +234,17 @@ class AgentAPI:
                 return 400, {"error": "falta 'slug' en el body"}
             return 200, await self._market_fn(slug)
 
+        for ruta, fn in (("/forecast", self._forecast_fn), ("/trade", self._trade_fn)):
+            if path == ruta and method == "POST":
+                if fn is None:
+                    return 404, {"error": "no disponible"}
+                if self._busy.locked():
+                    return 409, {"error": "ya hay un ciclo corriendo", "retry": True}
+                slug = str(body.get("slug", "")).strip()
+                if not slug:
+                    return 400, {"error": "falta 'slug' en el body"}
+                return 200, await fn(slug)
+
         if path == "/resolve" and method == "POST":
             return 200, await self._resolve_fn()
 
@@ -232,7 +255,8 @@ class AgentAPI:
 
         return 404, {"error": "no existe", "rutas": [
             "GET /health", "GET /report", "GET /candidates",
-            "POST /market", "POST /cycle", "POST /resolve", "POST /kill",
+            "POST /forecast", "POST /trade", "POST /market",
+            "POST /cycle", "POST /resolve", "POST /kill",
         ]}
 
     # ── helpers ──────────────────────────────────────────────────────────

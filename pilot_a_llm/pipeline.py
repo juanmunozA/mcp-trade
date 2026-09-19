@@ -212,10 +212,23 @@ async def ejecutar(r: MarketRun, s: _Servicios) -> bool:
     return True
 
 
-PASOS = [investigar, pronosticar, cotizar, decidir, validar, ejecutar]
+ANALISIS = [investigar, pronosticar]
 """
-El flujo, en orden. Esto ES la documentación del pipeline: para añadir un
-paso se inserta una función aquí, no se opera un método de 80 líneas.
+Mirar, sin tocar el mercado. No coloca órdenes ni consume riesgo: se puede
+correr sobre cualquier candidato y descartarlo después sin consecuencia.
+"""
+
+OPERACION = [cotizar, decidir, validar, ejecutar]
+"""
+Actuar. Indivisible: `validar` y `ejecutar` comparten el estado en memoria
+del kernel bajo un lock, y entre `check()` y `on_order_sent()` hay awaits.
+Partirlo devuelve la carrera que ese lock existe para evitar.
+"""
+
+PASOS = ANALISIS + OPERACION
+"""
+El flujo completo. El corte entre las dos fases es donde el orquestador
+puede meterse: ver el pronóstico y decidir si vale la pena operarlo.
 """
 
 # Pasos que tocan el risk kernel y no pueden solaparse: entre `check()` y
@@ -225,13 +238,16 @@ BAJO_LOCK = {"validar", "ejecutar"}
 
 
 async def correr(
-    r: MarketRun, s: _Servicios, *, lock: asyncio.Lock
+    r: MarketRun, s: _Servicios, *, lock: asyncio.Lock, pasos: list | None = None
 ) -> MarketRun:
     """
     Atraviesa el pipeline. Nunca lanza: un mercado que falla no puede
     tumbar el ciclo, y queda registrado dónde se rompió.
+
+    `pasos` permite correr solo una fase — ANALISIS u OPERACION — para que
+    el orquestador decida en medio.
     """
-    for paso in PASOS:
+    for paso in pasos or PASOS:
         try:
             if paso.__name__ in BAJO_LOCK:
                 async with lock:

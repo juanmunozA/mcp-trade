@@ -15,11 +15,19 @@ pierden en la próxima corrida.
 
 QUÉ ORQUESTA Y QUÉ NO
 ─────────────────────
-n8n decide CUÁNDO pasa cada cosa y qué hacer con el resultado. El agente
-decide QUÉ pasa. La unidad que n8n reparte es un mercado (`POST /market`),
-que es indivisible: `validar` y `ejecutar` comparten el estado en memoria
-del risk kernel bajo un lock, y un salto HTTP entre ellos reintroduce la
-carrera que ese lock existe para evitar. Ver core/api.py.
+El agente expone tres verbos y n8n decide el camino entre ellos:
+
+    GET  /candidates   qué hay        →  POLÍTICA: qué mirar
+    POST /forecast     qué opina      →  POLÍTICA: ¿vale la pena operarlo?
+    POST /trade        actúa
+
+Los dos nodos `Política · …` son lo que antes estaba enterrado en Python.
+Se editan aquí sin tocar el agente.
+
+Lo que NO es editable: los tres vetos y el risk kernel. Son seguridad, no
+política — `/trade` los aplica siempre. Y `/trade` exige un `/forecast`
+previo, fresco y no repetido, así que un workflow mal editado no puede
+saltarse el análisis ni duplicar una posición. Ver core/api.py.
 """
 from __future__ import annotations
 
@@ -109,69 +117,125 @@ def save(fname, name, nodes, conns, tags=("mcp-trade",)):
 # 1 — CICLO: un mercado = una ejecución visible, reintentable, ramificable
 # ═══════════════════════════════════════════════════════════════════════
 RESUMEN_JS = r"""
-// Cada item es el resultado de UN mercado. Aquí se arma el desglose que
-// antes solo existía en los logs del contenedor.
-const rs = $input.all().map(i => i.json.body ?? i.json);
-const ok = rs.filter(r => r && r.corrido);
-const ordenes = ok.filter(r => r.opero);
-const porPaso = {};
-for (const r of ok) porPaso[r.parado_en || '?'] = (porPaso[r.parado_en || '?'] || 0) + 1;
+// Un item por mercado. Distingue tres cosas que antes se confundían:
+// lo que el AGENTE descartó, lo que la POLÍTICA descartó, y lo que operó.
+const rs = $input.all().map(i => i.json);
+const ordenes  = rs.filter(r => r.opero);
+const porAgente = rs.filter(r => !r.operar && (r.vetado || !r.ok));
+const porPolitica = rs.filter(r => !r.operar && r.ok && !r.vetado);
+const rechazadas = rs.filter(r => r.operar && !r.opero);
 
-const linea = r => `${r.opero ? '🟢' : (r.parado_en === 'veto' ? '🛑' : '·')} `
-  + `<b>${(r.pregunta || r.slug || '').slice(0, 70)}</b>\n`
-  + `   ${r.parado_en}${r.motivo ? ' — ' + String(r.motivo).slice(0, 90) : ''}`
-  + (r.opero ? `\n   ${r.accion} $${r.size_usd} · p=${r.p_pronostico} vs ${r.precio_mercado} · edge ${r.edge}` : '');
+const razones = {};
+for (const r of rs) if (!r.operar) razones[r.razon] = (razones[r.razon] || 0) + 1;
 
-const destacados = ok.filter(r => r.opero || r.parado_en === 'veto');
+const linea = r => (r.opero ? '🟢 ' : r.vetado ? '🛑 ' : '· ')
+  + `<b>${(r.pregunta || r.slug || '').slice(0, 68)}</b>\n`
+  + (r.opero
+      ? `   ${r.accion} $${r.size_usd} · p=${r.p} vs ${r.precio_mercado} · edge ${r.edge}`
+      : `   ${r.razon || r.motivo || ''}`.slice(0, 110));
+
+const destacados = rs.filter(r => r.opero || r.vetado);
 
 return [{ json: {
   vistos: rs.length,
-  corridos: ok.length,
   ordenes: ordenes.length,
-  escalados: ok.filter(r => r.escalado).length,
-  desglose: porPaso,
-  costo_usd: +ok.reduce((a, r) => a + (r.costo_usd || 0), 0).toFixed(6),
+  freno_el_agente: porAgente.length,
+  freno_la_politica: porPolitica.length,
+  freno_el_kernel: rechazadas.length,
+  razones,
+  costo_usd: +rs.reduce((a, r) => a + (r.costo_usd || 0), 0).toFixed(6),
   hay_algo: destacados.length > 0,
-  texto: `<b>Ciclo</b> · ${ok.length}/${rs.length} mercados · `
-       + `${ordenes.length} órdenes\n`
-       + Object.entries(porPaso).map(([k, v]) => `${k}:${v}`).join(' · ')
+  texto: `<b>Ciclo</b> · ${rs.length} mercados · ${ordenes.length} órdenes\n`
+       + `frenó: agente ${porAgente.length} · política ${porPolitica.length} · `
+       + `kernel ${rechazadas.length}\n`
+       + Object.entries(razones).map(([k, v]) => `${k}: ${v}`).join(' · ')
        + (destacados.length ? '\n\n' + destacados.slice(0, 8).map(linea).join('\n') : ''),
 } }];
 """.strip()
 
-n = [
-    sched("Cada 4 horas", {"field": "hours", "hoursInterval": 4}, -640, 300),
-    node("Disparo manual", "manualTrigger", 1, {}, -640, 460),
-    http("Pedir candidatos", "GET", "/candidates", -420, 380, timeout=120000),
-    iff("¿Hay candidatos?", "={{ $json.body.n }}", "number", "gt", 0, -200, 380),
-    node("Un item por mercado", "splitOut", 1,
-         {"fieldToSplitOut": "body.candidatos", "options": {}}, 20, 300),
-    node("Por mercado", "splitInBatches", 3,
-         {"batchSize": 1, "options": {"reset": False}}, 240, 300),
-    http("Pronosticar mercado", "POST", "/market", 460, 420, timeout=900000),
-    code("Resumir ciclo", RESUMEN_JS, 460, 180),
-    iff("¿Algo que contar?", "={{ $json.hay_algo }}", "boolean", "true", True, 680, 180),
-    telegram("Avisar ciclo", "$json.texto", 900, 180),
-    code("Sin candidatos", "return [{json:{nota: $json.body.nota || 'sin candidatos'}}];",
-         20, 500),
-]
-n[6]["parameters"]["sendBody"] = True
-n[6]["parameters"]["specifyBody"] = "json"
-n[6]["parameters"]["jsonBody"] = "={{ JSON.stringify({ slug: $json.slug }) }}"
-# Un mercado que revienta no puede tumbar el ciclo: se sigue con el siguiente.
-n[6] |= {"onError": "continueRegularOutput", "retryOnFail": True,
-         "maxTries": 2, "waitBetweenTries": 5000, "alwaysOutputData": True}
+QUE_MIRAR_JS = r"""
+// POLÍTICA: qué mercados vale la pena analizar. Editable sin tocar código.
+const cs = $json.body.candidatos || [];
 
-save("1-ciclo.json", "1 · Ciclo de pronóstico (fan-out por mercado)", n, wire(
+const SIN_ALPHA = ['crypto'];   // PolyBench: miscalibración severa ahí
+const DIAS_MIN  = 2;            // resolver mañana no da tiempo a nada
+const TOPE      = 8;            // cuántos analizar por ciclo
+
+const pasan = cs
+  .filter(c => !SIN_ALPHA.includes(c.categoria))
+  .filter(c => (c.dias ?? 999) >= DIAS_MIN)
+  .sort((a, b) => b.puntaje - a.puntaje)
+  .slice(0, TOPE);
+
+return pasan.map(c => ({ json: c }));
+""".strip()
+
+OPERAR_JS = r"""
+// POLÍTICA: con el pronóstico en la mano, ¿vale la pena operarlo?
+// Esto es lo que antes estaba enterrado en Python.
+//
+// Los tres vetos y el risk kernel NO están aquí: los aplica el agente
+// siempre. Son seguridad, no política — apagarlos no debe ser editable.
+const f = $json.body ?? $json;
+
+const DIVERGENCIA_MIN = 0.06;   // menos que esto no paga el spread
+const SOLO_ESCALADOS  = false;  // true = exige segunda opinión del ensemble
+
+let operar = true, razon = 'pasa';
+if (!f.ok)                            { operar = false; razon = f.motivo || f.parado_en || 'análisis falló'; }
+else if (f.vetado)                    { operar = false; razon = 'vetado por el agente'; }
+else if (f.divergencia == null)        { operar = false; razon = 'sin divergencia'; }
+else if (f.divergencia < DIVERGENCIA_MIN) { operar = false; razon = `divergencia ${f.divergencia} < ${DIVERGENCIA_MIN}`; }
+else if (SOLO_ESCALADOS && !f.escalado)   { operar = false; razon = 'sin segunda opinión'; }
+
+return [{ json: { ...f, operar, razon } }];
+""".strip()
+
+n = [
+    sched("Cada 4 horas", {"field": "hours", "hoursInterval": 4}, -860, 300),
+    node("Disparo manual", "manualTrigger", 1, {}, -860, 460),
+    http("Pedir candidatos", "GET", "/candidates", -640, 380, timeout=120000),
+    iff("¿Hay candidatos?", "={{ $json.body.n }}", "number", "gt", 0, -420, 380),
+    code("Política · qué mirar", QUE_MIRAR_JS, -200, 300),
+    node("Por mercado", "splitInBatches", 3,
+         {"batchSize": 1, "options": {"reset": False}}, 20, 300),
+    http("Pronosticar", "POST", "/forecast", 240, 440, timeout=900000),
+    code("Política · ¿operar?", OPERAR_JS, 460, 440),
+    iff("¿Operar?", "={{ $json.operar }}", "boolean", "true", True, 680, 440),
+    http("Operar", "POST", "/trade", 900, 360, timeout=120000),
+    code("Anotar",
+         "// Une la decisión de la política con lo que devolvió /trade.\n"
+         "const p = $('Política · ¿operar?').item.json;\n"
+         "return [{ json: { ...p, ...($json.body ?? $json) } }];", 1120, 360),
+    code("Resumir ciclo", RESUMEN_JS, 240, 120),
+    iff("¿Algo que contar?", "={{ $json.hay_algo }}", "boolean", "true", True, 460, 120),
+    telegram("Avisar ciclo", "$json.texto", 680, 120),
+    code("Sin candidatos", "return [{json:{nota: $json.body.nota || 'sin candidatos'}}];",
+         -200, 520),
+]
+for i in (6, 9):   # Pronosticar y Operar mandan el slug
+    n[i]["parameters"] |= {
+        "sendBody": True, "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ slug: $json.slug }) }}"}
+    # Un mercado que revienta no puede tumbar el ciclo.
+    n[i] |= {"onError": "continueRegularOutput", "retryOnFail": True,
+             "maxTries": 2, "waitBetweenTries": 5000, "alwaysOutputData": True}
+
+save("1-ciclo.json", "1 · Ciclo (el orquestador decide)", n, wire(
     ("Cada 4 horas", "Pedir candidatos"),
     ("Disparo manual", "Pedir candidatos"),
     ("Pedir candidatos", "¿Hay candidatos?"),
-    ("¿Hay candidatos?", "Un item por mercado", 0),
+    ("¿Hay candidatos?", "Política · qué mirar", 0),
     ("¿Hay candidatos?", "Sin candidatos", 1),
-    ("Un item por mercado", "Por mercado"),
+    ("Política · qué mirar", "Por mercado"),
     ("Por mercado", "Resumir ciclo", 0),      # done
-    ("Por mercado", "Pronosticar mercado", 1),  # loop
-    ("Pronosticar mercado", "Por mercado"),
+    ("Por mercado", "Pronosticar", 1),        # loop
+    ("Pronosticar", "Política · ¿operar?"),
+    ("Política · ¿operar?", "¿Operar?"),
+    ("¿Operar?", "Operar", 0),
+    ("¿Operar?", "Por mercado", 1),
+    ("Operar", "Anotar"),
+    ("Anotar", "Por mercado"),
     ("Resumir ciclo", "¿Algo que contar?"),
     ("¿Algo que contar?", "Avisar ciclo", 0),
 ))
