@@ -49,16 +49,16 @@ ARRANQUE = [
      "El token protege la API: sin él, cualquiera en tu red puede disparar "
      "ciclos o parar el agente.\n\n"
      "Opcional pero recomendado: `GROQ_API_KEY`. Ver [[3-ensemble]].",
-     ["3-ensemble"]),
+     ["3-ensemble", "neon"]),
     ("3-arrancar", "Arrancar",
      "```bash\n./arrancar.sh       # Linux / Mac\n.\\arrancar.ps1      # Windows\n```\n\n"
      "Es una compuerta, no un atajo. Comprueba Docker, **la RAM contra el "
      "modelo elegido**, disco y `.env` antes de levantar nada. Si elegiste un "
      "modelo que no cabe te lo dice ahí, en vez de dejarlo morir por falta de "
      "memoria a los veinte minutos.\n\n"
-     "Después levanta los cinco servicios, espera la descarga del modelo "
+     "Después levanta los cuatro servicios, espera la descarga del modelo "
      "(5-20 GB, puede tardar una hora) y prepara la base.",
-     ["agent", "postgres"]),
+     ["agent", "neon"]),
     ("4-verificar", "Verificar que quedó bien",
      "```bash\ndocker compose logs -f agent\n```\n\n"
      "Cada 4 horas elige mercados y pronostica:\n\n"
@@ -139,7 +139,7 @@ FLUJO = [
      "`skill_vs_market > 0` → pronostica mejor que el mercado.\n"
      "`skill_vs_market <= 0` → **apágalo**, por bien que se vea el PnL.\n\n"
      "A las 30 resoluciones la calibración se activa sola.",
-     ["postgres", "3-aprendizaje"]),
+     ["neon", "3-aprendizaje"]),
 ]
 
 DECISIONES = {
@@ -194,20 +194,15 @@ SERVICIOS = [
      "Si devuelve 403 le falta `formats: [json]` en `searxng/settings.yml`. Es "
      "el fallo más común al montarlo para uso programático.",
      ["2-investigacion"]),
-    ("postgres", "postgres · la base", "localhost:5432",
+    ("neon", "Neon · la base", "postgres gestionado, plan gratuito",
      "Pronósticos, resoluciones, calibración.\n\n"
-     "**Puede no existir.** `DB_MODE` en el `.env` decide:\n\n"
-     "| | |\n|---|---|\n"
-     "| `local` | un contenedor más. Autocontenido, nada sale. |\n"
-     "| `neon` | postgres gestionado. **Un contenedor menos, ~250 MB de RAM** |\n\n"
-     "Con Ollama comiéndose casi toda la memoria, esos 250 MB y la carpeta "
-     "`pgdata/` —que crece sin parar— pueden decidir si el modelo cabe o se "
-     "va a swap.\n\n"
-     "A cambio, cada consulta sale a internet y si Neon no responde el ciclo "
+     "**No corre en tu máquina.** Son ~250 MB de RAM menos y no hay carpeta "
+     "`pgdata/` creciendo — con Ollama encima, eso se nota.\n\n"
+     "A cambio cada consulta sale a internet, y si Neon no responde el ciclo "
      "falla. Da igual aquí: son unas pocas escrituras por mercado.\n\n"
-     "Con Neon hay que usar el endpoint **DIRECTO**, no el `-pooler`: "
-     "PgBouncer baraja conexiones y el driver revienta con *prepared "
-     "statement already exists*. El arrancador avisa si te equivocas.",
+     "La cadena va en `DATABASE_URL` y usa el endpoint **DIRECTO**, no el "
+     "`-pooler`: PgBouncer baraja conexiones y el driver revienta con "
+     "*prepared statement already exists*.",
      ["6-aprendizaje", "2-configurar"]),
     ("n8n", "n8n · orquestación", "http://localhost:5678",
      "Decide **cuándo** pasa cada cosa. El agente decide **qué** pasa.\n\n"
@@ -340,23 +335,19 @@ flowchart LR
         N["n8n<br/>:5678"] -->|"cada 4 h"| A["agent<br/>:10000"]
         A --> O["ollama<br/>:11434"]
         A --> S["searxng<br/>:8888"]
-        A -.->|"DB_MODE=local"| P["postgres<br/>:5432"]
     end
     A -->|"mercados y órdenes"| PM[("Polymarket")]
     S -->|"consultas"| W[("buscadores")]
-    A -.->|"DB_MODE=neon"| NE[("Neon<br/>postgres gestionado")]
+    A -->|"pronósticos"| NE[("Neon<br/>postgres gestionado")]
 
     style TU fill:#1e1e1e,stroke:#555
 ```
 
-Los modelos y el contexto **nunca** salen de tu máquina. Sale Polymarket
-(es el mercado, inevitable) y las consultas de búsqueda.
+Los modelos y el contexto **nunca** salen de tu máquina. Salen Polymarket
+(es el mercado, inevitable), las consultas de búsqueda, y la base, que vive
+en [[neon]] para no gastar RAM local.
 
-La base es la única pieza que elegís: en un contenedor al lado
-(`DB_MODE=local`) o en Neon (`DB_MODE=neon`), que quita ~250 MB de RAM.
-Ver [[postgres]].
-
-[[agent]] · [[ollama]] · [[searxng]] · [[postgres]] · [[n8n]]
+[[agent]] · [[ollama]] · [[searxng]] · [[neon]] · [[n8n]]
 
 ---
 

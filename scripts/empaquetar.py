@@ -23,7 +23,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "entrega"
 
 DIRS = ["core", "pilot_a_llm", "scripts", "searxng", "vault/contexto"]
-ARCHIVOS = ["Dockerfile", "docker-compose.yml", "docker-compose.neon.yml"]
+ARCHIVOS = ["Dockerfile", "docker-compose.yml"]
 GLOBS = ["n8n/*.json"]
 
 EXCLUIR_DIRS = {

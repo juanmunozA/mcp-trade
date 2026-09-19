@@ -1,33 +1,10 @@
-# Stack 100% local. Nada sale a ninguna nube salvo Polymarket (los datos de
-# mercado) y los buscadores que consulta SearXNG.
+#   docker compose up -d
+#   docker compose logs -f agent
 #
-#   docker compose up -d                  todo
-#   docker compose logs -f agent          ver el agente trabajando
-#   docker compose exec ollama ollama pull deepseek-r1:14b
-#
-# Primer arranque: Ollama descarga el modelo (5-20 GB según el tamaño).
-# Tarda. Después queda en ./ollama_data y no se vuelve a bajar.
+# Primer arranque: Ollama descarga el modelo (5-20 GB). Queda en
+# ./ollama_data y no se vuelve a bajar.
 
 services:
-  # ── base de datos ──────────────────────────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    container_name: mcptrade-pg
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: trade
-      POSTGRES_PASSWORD: trade
-      POSTGRES_DB: mcptrade
-    ports: ["5432:5432"]
-    volumes: ["./pgdata:/var/lib/postgresql/data"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U trade -d mcptrade"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    command: postgres -c shared_buffers=256MB -c max_wal_size=2GB
-
-  # ── modelos ────────────────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     container_name: mcptrade-ollama
@@ -35,12 +12,11 @@ services:
     ports: ["11434:11434"]
     volumes: ["./ollama_data:/root/.ollama"]
     environment:
-      # Mantiene el modelo residente en RAM. Sin esto Ollama lo descarga a
-      # los 5 minutos y la siguiente llamada paga la carga entera otra vez
-      # — que en CPU son minutos, no segundos.
+      # Sin esto Ollama descarga el modelo a los 5 minutos y la siguiente
+      # llamada vuelve a pagar la carga entera, que en CPU son minutos.
       OLLAMA_KEEP_ALIVE: "-1"
-      # Una petición a la vez: en CPU dos concurrentes se pelean los
-      # núcleos y las dos tardan el doble. Con GPU se puede subir a 2-4.
+      # En CPU dos peticiones a la vez se pelean los núcleos y las dos
+      # tardan el doble. Con GPU se puede subir a 2-4.
       OLLAMA_NUM_PARALLEL: "1"
       OLLAMA_MAX_LOADED_MODELS: "1"
       OLLAMA_CONTEXT_LENGTH: "16384"
@@ -50,14 +26,12 @@ services:
       timeout: 10s
       retries: 10
       start_period: 120s
-    # Descarga el modelo al arrancar y después sirve. Idempotente: si ya
-    # está en el volumen, `pull` no baja nada.
     entrypoint: >
       sh -c "ollama serve &
              sleep 8 &&
              ollama pull ${OLLAMA_MODEL:-deepseek-r1:8b} &&
              wait"
-    # Descomenta si tienes GPU NVIDIA — el pronóstico pasa de ~60 s a ~6 s.
+    # Descomenta con GPU NVIDIA: el pronóstico pasa de ~60 s a ~6 s.
     # deploy:
     #   resources:
     #     reservations:
@@ -66,9 +40,6 @@ services:
     #           count: all
     #           capabilities: [gpu]
 
-  # ── búsqueda web ───────────────────────────────────────────────────────
-  # Ollama no navega. Sin esto el agente pronostica eventos actuales con
-  # conocimiento congelado del entrenamiento, que para esto es inútil.
   searxng:
     image: searxng/searxng:latest
     container_name: mcptrade-searxng
@@ -77,12 +48,10 @@ services:
     volumes: ["./searxng:/etc/searxng"]
     environment:
       SEARXNG_BASE_URL: http://localhost:8888/
-      # El agente pide JSON; por defecto SearXNG solo sirve HTML.
       SEARXNG_SECRET: ${SEARXNG_SECRET:-cambia-esto-por-algo-aleatorio}
     cap_drop: [ALL]
     cap_add: [CHOWN, SETGID, SETUID]
 
-  # ── el agente ──────────────────────────────────────────────────────────
   agent:
     build: .
     container_name: mcptrade-agent
@@ -91,25 +60,21 @@ services:
     environment:
       PORT: 10000
       LOCAL_MODE: "true"
-      # Dentro de la red de Docker los servicios se ven por nombre.
       OLLAMA_HOST: http://ollama:11434
       SEARXNG_HOST: http://searxng:8080
-      DATABASE_URL: postgresql://trade:trade@postgres:5432/mcptrade
+      # Sin valor por defecto: si falta, compose falla antes de levantar
+      # nada en vez de arrancar contra una base que no existe.
+      DATABASE_URL: ${DATABASE_URL:?falta DATABASE_URL (cadena de Neon) en el .env}
       VAULT_DIR: /vault
     ports: ["10000:10000"]
     volumes:
-      # El vault se monta desde el host: lo abres con Obsidian de escritorio
-      # mientras el agente escribe dentro del contenedor.
       - ./vault:/vault
-      # El kill switch debe sobrevivir a reinicios del contenedor.
+      # El kill switch sobrevive reinicios del contenedor.
       - ./state:/app/state
     depends_on:
-      postgres:
-        condition: service_healthy
       ollama:
         condition: service_healthy
 
-  # ── orquestación ───────────────────────────────────────────────────────
   n8n:
     image: n8nio/n8n:latest
     container_name: mcptrade-n8n
@@ -119,25 +84,12 @@ services:
       N8N_SECURE_COOKIE: "false"
       GENERIC_TIMEZONE: America/Bogota
       TZ: America/Bogota
-      # Persistencia en Postgres: con SQLite n8n pierde los workflows al
-      # actualizar la imagen. Es un bug conocido y documentado.
-      DB_TYPE: postgresdb
-      DB_POSTGRESDB_HOST: postgres
-      DB_POSTGRESDB_DATABASE: mcptrade
-      DB_POSTGRESDB_USER: trade
-      DB_POSTGRESDB_PASSWORD: trade
-      DB_POSTGRESDB_SCHEMA: n8n
-      # Si el agente corre nativo (máquina sin RAM para Ollama en Docker),
-      # pon AGENT_URL=http://host.docker.internal:10000 en el .env y los
-      # cinco workflows se mudan sin tocarlos.
+      DB_TYPE: sqlite
+      # Con el agente nativo: AGENT_URL=http://host.docker.internal:10000
       AGENT_URL: ${AGENT_URL:-http://agent:10000}
       AGENT_API_TOKEN: ${AGENT_API_TOKEN:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     volumes:
       - ./n8n_data:/home/node/.n8n
-      # n8n también ve el vault: puede escribir notas de contexto.
       - ./vault:/vault
-    depends_on:
-      postgres:
-        condition: service_healthy

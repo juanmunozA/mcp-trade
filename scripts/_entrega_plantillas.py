@@ -63,31 +63,22 @@ Intel y AMD no sirven.
 cp .env.example .env
 ```
 
-Pon tres cosas en `.env`:
+Pon cuatro cosas en `.env`:
 
 - `OLLAMA_MODEL` — el que quepa en tu RAM
 - `AGENT_API_TOKEN` — algo largo y aleatorio
 - `SEARXNG_SECRET` — otro distinto
+- `DATABASE_URL` — la cadena de Neon (abajo)
 
-### Dónde vive la base de datos
+### La base de datos
 
-`DB_MODE` decide. Por defecto `local`: un contenedor de postgres más,
-autocontenido, nada sale de tu máquina.
-
-Si quien te entregó esto te pasó una cadena de **Neon**, puedes ahorrarte
-ese contenedor:
+`DATABASE_URL` te la pasa quien te entregó esto: una cadena de **Neon**
+(postgres gestionado, plan gratuito). No corre ningún postgres en tu
+máquina — son ~250 MB de RAM menos, que con Ollama encima se notan.
 
 ```
-DB_MODE=neon
 DATABASE_URL=postgresql://usuario:clave@ep-algo.region.aws.neon.tech/neondb?sslmode=require
 ```
-
-Quita ~250 MB de RAM y la carpeta `pgdata/`, que crece sin parar. En una
-máquina donde Ollama ya se come casi toda la memoria, eso puede decidir si
-el modelo cabe o se va a swap.
-
-A cambio cada consulta sale a internet, y si Neon no responde el ciclo
-falla. Para este agente da igual: hace unas pocas escrituras por mercado.
 
 **Usa el endpoint DIRECTO, no el que dice `-pooler`.** PgBouncer baraja
 conexiones y el driver revienta con *prepared statement already exists*.
@@ -104,10 +95,7 @@ modelo y prepara la base. **El primer arranque tarda**: 5-20 GB.
 A mano sería:
 
 ```bash
-docker compose up -d                                   # DB_MODE=local
-# o, con Neon:
-docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d
-
+docker compose up -d
 docker compose logs -f ollama
 docker compose exec agent python -m scripts.init_db
 ```
@@ -122,7 +110,6 @@ docker compose exec agent python -m scripts.init_db
 | n8n | http://localhost:5678 |
 | ollama | http://localhost:11434 |
 | searxng | http://localhost:8888 |
-| postgres | localhost:5432 — *solo si `DB_MODE=local`* |
 
 ```bash
 docker compose logs -f agent
@@ -359,26 +346,10 @@ STRATEGIST_INTERVAL_MIN=240
 FORECAST_CONCURRENCY=1
 
 
-# ═══ 6. DÓNDE VIVE LA BASE DE DATOS ═══
-#
-#   local  = un contenedor de postgres más. Autocontenido, nada sale.
-#   neon   = postgres gestionado en la nube (plan gratuito).
-#
-# `neon` quita un contenedor (~250 MB de RAM) y la carpeta `pgdata/`, que
-# crece sin parar. En una máquina donde Ollama ya se come casi toda la
-# memoria, eso puede decidir si el modelo cabe o se va a swap.
-#
-# A cambio, cada consulta sale a internet y si Neon no responde el ciclo
-# falla. Para este agente da igual: hace unas pocas escrituras por mercado.
-DB_MODE=local
-
-# Solo si DB_MODE=neon. Te la pasa quien te entregó esto.
-# Usa el endpoint DIRECTO, NO el que dice `-pooler`: PgBouncer baraja
-# conexiones y el driver revienta con «prepared statement already exists».
-#   postgresql://usuario:clave@ep-algo.region.aws.neon.tech/neondb?sslmode=require
-#
-# Con DB_MODE=local déjala como está.
-DATABASE_URL=postgresql://trade:trade@postgres:5432/mcptrade
+# ═══ 6. BASE DE DATOS ═══
+# Te la pasa quien te entregó esto. Usa el endpoint DIRECTO, NO el que
+# dice `-pooler`: PgBouncer baraja conexiones y el driver revienta.
+DATABASE_URL=
 
 
 # ═══ 7. NO TOCAR ═══
@@ -442,24 +413,12 @@ for clave in OLLAMA_MODEL AGENT_API_TOKEN SEARXNG_SECRET; do
 done
 (( fallo )) || verde ".env completo"
 
-# --- dónde vive la base ---
-modo_db=$(leer DB_MODE); modo_db=${modo_db:-local}
-compose=(-f docker-compose.yml)
-if [[ "$modo_db" == "neon" ]]; then
-  compose+=(-f docker-compose.neon.yml)
-  url=$(leer DATABASE_URL)
-  if [[ -z "$url" || "$url" == *"@postgres:"* ]]; then
-    rojo "DB_MODE=neon pero DATABASE_URL apunta al contenedor local (o está vacía)"
-    echo "      Pega la cadena de Neon que te dieron."
-    fallo=1
-  elif [[ "$url" == *"-pooler."* ]]; then
-    ojo "DATABASE_URL usa el endpoint -pooler"
-    echo "      Cambialo por el DIRECTO: PgBouncer rompe el driver."
-  else
-    verde "base: Neon (un contenedor menos)"
-  fi
-else
-  verde "base: contenedor local"
+url=$(leer DATABASE_URL)
+if [[ -z "$url" ]]; then
+  rojo "DATABASE_URL está vacía — pega la cadena de Neon que te dieron"
+  fallo=1
+elif [[ "$url" == *"-pooler."* ]]; then
+  ojo "DATABASE_URL usa el endpoint -pooler; cambialo por el DIRECTO"
 fi
 
 modelo=$(leer OLLAMA_MODEL)
@@ -491,11 +450,11 @@ fi
 (( fallo )) && { echo; ojo "Arregla lo de arriba y vuelve a correr esto."; exit 1; }
 
 echo; echo "  Levantando...  (el primer arranque baja 5-20 GB)"
-docker compose "${compose[@]}" up -d || exit 1
+docker compose up -d || exit 1
 
 echo; echo "  Esperando a Ollama..."
 for i in $(seq 1 240); do
-  if docker compose "${compose[@]}" exec -T ollama ollama list 2>/dev/null | grep -q "${modelo%%:*}"; then
+  if docker compose exec -T ollama ollama list 2>/dev/null | grep -q "${modelo%%:*}"; then
     verde "modelo '${modelo}' listo"; break
   fi
   printf '\r  ... %d min' $(( i / 4 )); sleep 15
@@ -503,7 +462,7 @@ done
 echo
 
 echo "  Preparando la base..."
-docker compose "${compose[@]}" exec -T agent python -m scripts.init_db && verde "base lista"
+docker compose exec -T agent python -m scripts.init_db && verde "base lista"
 
 echo; verde "Arriba."
 echo
@@ -548,24 +507,12 @@ foreach ($k in @("OLLAMA_MODEL", "AGENT_API_TOKEN", "SEARXNG_SECRET")) {
 }
 if (-not $fallo) { Ok ".env completo" }
 
-# --- donde vive la base ---
-$modoDb = if ($cfg["DB_MODE"]) { $cfg["DB_MODE"] } else { "local" }
-$compose = @("-f", "docker-compose.yml")
-if ($modoDb -eq "neon") {
-    $compose += @("-f", "docker-compose.neon.yml")
-    $url = $cfg["DATABASE_URL"]
-    if (-not $url -or $url -like "*@postgres:*") {
-        Mal "DB_MODE=neon pero DATABASE_URL apunta al contenedor local (o esta vacia)"
-        Write-Host "       Pega la cadena de Neon que te dieron."
-        $fallo = $true
-    } elseif ($url -like "*-pooler.*") {
-        Ojo "DATABASE_URL usa el endpoint -pooler"
-        Write-Host "       Cambialo por el DIRECTO: PgBouncer rompe el driver."
-    } else {
-        Ok "base: Neon (un contenedor menos)"
-    }
-} else {
-    Ok "base: contenedor local"
+$url = $cfg["DATABASE_URL"]
+if (-not $url) {
+    Mal "DATABASE_URL esta vacia - pega la cadena de Neon que te dieron"
+    $fallo = $true
+} elseif ($url -like "*-pooler.*") {
+    Ojo "DATABASE_URL usa el endpoint -pooler; cambialo por el DIRECTO"
 }
 
 $modelo = $cfg["OLLAMA_MODEL"]
@@ -589,13 +536,13 @@ else { Ok "Disco libre $discoGb GB" }
 if ($fallo) { Write-Host ""; Ojo "Arregla lo de arriba y vuelve a correr esto."; exit 1 }
 
 Write-Host ""; Write-Host "  Levantando...  (el primer arranque baja 5-20 GB)"
-docker compose @compose up -d
+docker compose up -d
 if ($LASTEXITCODE -ne 0) { Mal "docker compose fallo"; exit 1 }
 
 Write-Host ""; Write-Host "  Esperando a Ollama..."
 $base = ($modelo -split ':')[0]
 for ($i = 1; $i -le 240; $i++) {
-    if ((docker compose @compose exec -T ollama ollama list 2>$null) -match [regex]::Escape($base)) {
+    if ((docker compose exec -T ollama ollama list 2>$null) -match [regex]::Escape($base)) {
         Ok "modelo '$modelo' listo"; break
     }
     Write-Host ("`r  ... {0} min" -f [math]::Floor($i / 4)) -NoNewline
@@ -604,7 +551,7 @@ for ($i = 1; $i -le 240; $i++) {
 Write-Host ""
 
 Write-Host "  Preparando la base..."
-docker compose @compose exec -T agent python -m scripts.init_db
+docker compose exec -T agent python -m scripts.init_db
 if ($LASTEXITCODE -eq 0) { Ok "base lista" }
 
 Write-Host ""; Write-Host "  Arriba." -ForegroundColor Green
