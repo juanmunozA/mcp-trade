@@ -54,6 +54,7 @@ from pilot_a_llm.providers import (
     CloudflareProvider,
     GeminiProvider,
     GroqProvider,
+    MistralProvider,
     OllamaProvider,
 )
 from pilot_a_llm.research import Researcher
@@ -245,37 +246,70 @@ class PilotA:
 
     def _proveedores_nube(self) -> tuple[dict, dict]:
         """
-        Cloudflare para el ensemble, Gemini para buscar.
+        Sin máquinas propias: los modelos corren en servidores ajenos.
 
-        ORDEN = CASCADA: el primero se consulta siempre, así que tiene que
-        ser el barato. llama cuesta 4.5 neurons y DeepSeek 175; con DeepSeek
-        de primero, un ciclo de 40 mercados agotaba el cupo diario entero.
+        ORDEN = CASCADA. El primero se consulta SIEMPRE, así que tiene que
+        ser el de mayor cupo; el caro solo ve lo que el barato marca.
+        Medido, por pronóstico y por día:
+
+            ministral-14b (Mistral)      ~256/día    ← primero
+            deepseek-r1-32b (Cloudflare)  ~50/día    ← solo escalados
+            gemini                        250/día    ← respaldo
+
+        Con DeepSeek de primero, un ciclo de 40 mercados agotaba el cupo
+        diario entero. Pasó, y por eso el orden importa.
+
+        Mistral entra de primero porque su cuota es diez veces la de
+        Cloudflare. No es mejor juez —ante la misma pregunta, ministral-8b
+        dijo 0.30 y el 14b 0.70— pero de filtro sirve, y deja el cupo caro
+        para los mercados que valen el gasto.
         """
         if self.s.gemini_api_key is None:
             raise SystemExit(
                 "falta GEMINI_API_KEY (la búsqueda web no es opcional).\n"
                 "¿Querías modo local? Pon LOCAL_MODE=true en el .env."
             )
-        acc, tok = self.s.cloudflare_account_id, self.s.cloudflare_api_token
-        if not (acc and tok):
-            raise SystemExit("falta CLOUDFLARE_ACCOUNT_ID/API_TOKEN para el ensemble")
 
-        secret = tok.get_secret_value()
-        providers = {
-            "llama-3.1-8b": CloudflareProvider(
-                acc, secret, "@cf/meta/llama-3.1-8b-instruct"
-            ),
-            "deepseek-r1-32b": CloudflareProvider(
+        providers: dict = {}
+
+        if self.s.mistral_api_key:
+            providers[self.s.mistral_model] = MistralProvider(
+                self.s.mistral_api_key.get_secret_value(), self.s.mistral_model
+            )
+
+        acc, tok = self.s.cloudflare_account_id, self.s.cloudflare_api_token
+        if acc and tok:
+            secret = tok.get_secret_value()
+            if not providers:
+                # Sin Mistral, el escalón barato lo hace llama.
+                providers["llama-3.1-8b"] = CloudflareProvider(
+                    acc, secret, "@cf/meta/llama-3.1-8b-instruct"
+                )
+            providers["deepseek-r1-32b"] = CloudflareProvider(
                 acc, secret, "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
-            ),
-        }
+            )
+
+        if not providers:
+            raise SystemExit(
+                "el ensemble necesita al menos MISTRAL_API_KEY o "
+                "CLOUDFLARE_ACCOUNT_ID/API_TOKEN"
+            )
+
         gemini = GeminiProvider(
             self.s.gemini_api_key.get_secret_value(), self.s.strategist_model
         )
         self.researcher = Researcher(gemini)
-        log.info("modo NUBE | ensemble=%s", list(providers))
-        # Respaldo en otra nube: cuando Cloudflare agota sus neurons, Gemini
-        # sigue pronosticando con su propia cuota.
+
+        # Groq suma una cuarta familia si está. Cuota chica (~18/día), así
+        # que va al final: solo lo alcanzan los que sobreviven la cascada.
+        if self.s.groq_api_key:
+            providers[self.s.groq_model] = GroqProvider(
+                self.s.groq_api_key.get_secret_value(), self.s.groq_model
+            )
+
+        log.info("modo NUBE | cascada=%s", list(providers))
+        # Respaldo en otra nube: cuando el resto agota su cuota, Gemini
+        # sigue pronosticando con la suya.
         return providers, {"gemini-respaldo": gemini}
 
     async def _load_learning(self) -> tuple[CalibrationMap | None, dict]:
