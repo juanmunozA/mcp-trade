@@ -366,6 +366,22 @@ class PilotA:
                     self._stop.wait(), timeout=self.s.strategist_interval_min * 60
                 )
 
+    def _persistir_kill(self, motivo: str) -> None:
+        """
+        Gancho del kernel. Es sincrono porque el kernel lo es, asi que
+        agenda la escritura; el freno local ya quedo puesto pase lo que pase
+        con la base.
+        """
+        with contextlib.suppress(RuntimeError):
+            asyncio.get_running_loop().create_task(self._guardar_kill(motivo))
+
+    async def _guardar_kill(self, motivo: str) -> None:
+        try:
+            await db.guardar_kill(PILOT, motivo)
+            log.warning("kill switch persistido en la base: %s", motivo)
+        except Exception as exc:  # noqa: BLE001
+            log.error("NO se pudo persistir el kill switch: %r", exc)
+
     async def explorar(self, limit: int = 0) -> list:
         """
         El explorador, solo. Filtra, puntúa, abre la whitelist del kernel y
@@ -426,7 +442,14 @@ class PilotA:
 
         # La whitelist del kernel se cierra sobre los mercados de ESTE ciclo.
         tokens = frozenset(t for c in picks for t in (c.token_yes, c.token_no))
-        self.kernel = RiskKernel(PILOT, RiskLimits.from_env(PILOT, allowed_token_ids=tokens))
+        self.kernel = RiskKernel(
+            PILOT, RiskLimits.from_env(PILOT, allowed_token_ids=tokens),
+            on_trip=self._persistir_kill,
+        )
+        # Un kill guardado en la base gana sobre cualquier arranque limpio:
+        # en disco efimero el archivo local no sobrevive al reinicio.
+        if (motivo := await db.leer_kill(PILOT)) and not self.kernel.killed:
+            self.kernel.restaurar_kill(motivo)
         if self.kernel.killed:
             await self.alerts.killed(PILOT, self.kernel.kill_reason, self.kernel.snapshot())
             self._stop.set()
@@ -749,6 +772,10 @@ class PilotA:
         """POST /kill — botón de pánico desde n8n o Telegram."""
         if self.kernel is not None:
             self.kernel.trip(reason)
+        else:
+            # Sin kernel todavia (antes del primer ciclo) igual hay que
+            # dejarlo grabado, o el proximo arranque no se entera.
+            self._persistir_kill(f"[manual] {reason}")
         self._stop.set()
 
     def _status(self) -> dict:

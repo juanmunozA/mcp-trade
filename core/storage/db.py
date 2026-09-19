@@ -51,6 +51,46 @@ async def init_pool(dsn: str, *, min_size: int = 2, max_size: int = 10) -> async
     return _pool
 
 
+# ── kill switch durable ──────────────────────────────────────────────────
+# El kernel lo escribe a disco; en un contenedor efimero eso se borra en
+# cada reinicio. Aqui sobrevive a todo.
+
+async def leer_kill(pilot: str, schema: str = "pilot_a") -> str | None:
+    """El motivo del kill activo, o None si el piloto puede operar."""
+    row = await pool().fetchrow(
+        f"SELECT reason FROM {schema}.kill_switch "
+        f"WHERE pilot = $1 AND cleared_at IS NULL",
+        pilot,
+    )
+    return row["reason"] if row else None
+
+
+async def guardar_kill(pilot: str, reason: str, schema: str = "pilot_a") -> None:
+    """
+    Idempotente: un kill ya activo no se pisa con uno nuevo. El primero es
+    el que explica por que se paro.
+    """
+    await pool().execute(
+        f"""
+        INSERT INTO {schema}.kill_switch (pilot, reason) VALUES ($1, $2)
+        ON CONFLICT (pilot) DO UPDATE
+           SET reason = EXCLUDED.reason, tripped_at = now(),
+               cleared_at = NULL, cleared_by = NULL
+         WHERE {schema}.kill_switch.cleared_at IS NOT NULL
+        """,
+        pilot, reason,
+    )
+
+
+async def limpiar_kill(pilot: str, quien: str, schema: str = "pilot_a") -> None:
+    """Desarmar es un acto humano; queda registrado quien lo hizo."""
+    await pool().execute(
+        f"UPDATE {schema}.kill_switch SET cleared_at = now(), cleared_by = $2 "
+        f"WHERE pilot = $1 AND cleared_at IS NULL",
+        pilot, quien,
+    )
+
+
 def describe_dsn(dsn: str) -> str:
     """
     Host y base, nunca la contraseña. El DSN termina en logs, en reportes y

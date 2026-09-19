@@ -337,3 +337,17 @@ CREATE TABLE IF NOT EXISTS pilot_b.inventory (
     avg_cost_down   NUMERIC(10, 6) NOT NULL DEFAULT 0,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+
+-- El kill switch, donde de verdad dura.
+--
+-- El kernel lo escribe a disco, pero en un contenedor de disco efimero eso
+-- se borra en cada reinicio: el freno de emergencia se soltaria solo, justo
+-- cuando el agente ya perdio la cuenta de sus posiciones. Aqui sobrevive.
+CREATE TABLE IF NOT EXISTS pilot_a.kill_switch (
+    pilot       TEXT PRIMARY KEY,
+    reason      TEXT NOT NULL,
+    tripped_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    cleared_at  TIMESTAMPTZ,
+    cleared_by  TEXT
+);

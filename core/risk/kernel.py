@@ -18,6 +18,7 @@ Reglas de diseño, en orden de importancia:
 
 from __future__ import annotations
 
+import contextlib
 import os
 import time
 from collections import deque
@@ -167,11 +168,26 @@ class RiskKernel:
         state_dir: Path | str = "state",
         clock=time.monotonic,
         today=lambda: datetime.now(UTC).date(),
+        on_trip=None,
+        on_reset=None,
     ) -> None:
+        """
+        `on_trip` / `on_reset` avisan a quien pueda persistir el kill switch
+        donde de verdad dure.
+
+        El archivo de `state_dir` basta cuando hay disco propio, pero en un
+        contenedor de disco efimero se borra en cada reinicio — y ahi el
+        freno de emergencia se sueltaria solo, justo cuando el agente ya
+        perdio la cuenta de sus posiciones. El kernel no habla con la base
+        (es sincrono y sin dependencias, y asi se queda): avisa, y quien
+        tenga la base se encarga.
+        """
         self.pilot = pilot
         self.limits = limits
         self._clock = clock
         self._today_fn = today
+        self._on_trip = on_trip
+        self._on_reset = on_reset
 
         self._state_dir = Path(state_dir)
         self._state_dir.mkdir(parents=True, exist_ok=True)
@@ -235,6 +251,26 @@ class RiskKernel:
         stamp = datetime.now(UTC).isoformat(timespec="seconds")
         self._kill_reason = f"[{stamp}] {reason}"
         self._kill_file.write_text(self._kill_reason, encoding="utf-8")
+        if self._on_trip is not None:
+            # Nunca puede impedir el kill: si el aviso falla, el freno ya
+            # esta puesto y eso es lo que importa.
+            with contextlib.suppress(Exception):
+                self._on_trip(self._kill_reason)
+
+    def restaurar_kill(self, reason: str) -> None:
+        """
+        Marca el piloto muerto por un kill que YA estaba guardado fuera.
+
+        No es lo mismo que `trip()`: el gancho no se dispara, porque el
+        motivo viene precisamente de ahi. Llamar a `trip()` para esto
+        reescribiria el registro y anidaria el texto en cada reinicio
+        ("kill persistido: kill persistido: ..."), perdiendo la causa real.
+        """
+        if self._killed:
+            return
+        self._killed = True
+        self._kill_reason = reason
+        self._kill_file.write_text(reason, encoding="utf-8")
 
     def reset_kill(self, operator_ack: str) -> None:
         """
@@ -249,6 +285,9 @@ class RiskKernel:
         self._killed = False
         self._kill_reason = ""
         self._kill_file.unlink(missing_ok=True)
+        if self._on_reset is not None:
+            with contextlib.suppress(Exception):
+                self._on_reset()
 
     # ── el check ─────────────────────────────────────────────────────────
 
