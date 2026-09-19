@@ -34,6 +34,7 @@ cd mcp-trade
 cp .env.local.example .env
 #   → edita OLLAMA_MODEL según tu RAM
 #   → pon algo aleatorio en AGENT_API_TOKEN y SEARXNG_SECRET
+#   → pega la cadena de Neon en DATABASE_URL
 
 docker compose up -d
 ```
@@ -66,7 +67,9 @@ docker compose logs -f agent
 | **n8n** | http://localhost:5678 | Orquestación: cuándo corre cada cosa |
 | **ollama** | http://localhost:11434 | Los modelos |
 | **searxng** | http://localhost:8888 | Búsqueda web |
-| **postgres** | localhost:5432 | Pronósticos, resoluciones, calibración |
+
+La base no corre aquí: va en Neon. Son ~250 MB de RAM que Ollama necesita
+más, y una carpeta `pgdata/` que no crece.
 
 ### n8n
 
@@ -75,7 +78,7 @@ importa los **cinco** workflows de `n8n/` desde *Import from File*:
 
 | | qué hace | por qué en n8n y no en el agente |
 |---|---|---|
-| `1-ciclo.json` | **un mercado = una ejecución** | ves cuál murió dónde y reintentas solo ese |
+| `1-ciclo.json` | **decide el camino**: qué mirar y qué operar | la política sale de Python y se edita en la UI |
 | `2-vigilancia.json` | salud cada 10 min | avisa al **3er** fallo seguido, no en cada parpadeo |
 | `3-aprendizaje.json` | resolver + veredicto diario | te dice cuándo **apagarlo** |
 | `4-errores.json` | atrapa cualquier workflow que reviente | sin esto un workflow roto se calla |
@@ -96,30 +99,43 @@ Docker los servicios se ven por nombre.
 genera desde [n8n/generar.py](n8n/generar.py), y `python n8n/generar.py`
 los reescribe.
 
-#### El fan-out, que es lo que cambia
+#### Dónde decide n8n
 
-Antes n8n disparaba `POST /cycle` y esperaba 10 minutos a una caja negra.
-Ahora reparte:
+El agente expone tres verbos y n8n elige el camino entre ellos:
 
 ```
-GET /candidates        →  el explorador. Sin IA, sin costo.
+GET /candidates     qué hay
+      ↓
+  POLÍTICA · qué mirar        ← nodo de código, editable
       ↓ un item por mercado
-POST /market {slug}    →  UN mercado por el pipeline, atómico
-      ↓ resultado por mercado: parado_en, motivo, decisión
+POST /forecast      qué opina · NO toca el mercado
+      ↓
+  POLÍTICA · ¿operar?         ← nodo de código, editable
+      ↓ si sí
+POST /trade         cotiza, dimensiona, valida riesgo, ordena
 ```
 
-Cada mercado es su propia ejecución: se ve dónde murió, se reintenta solo
-ese, y se ramifica según el resultado.
+Los dos nodos `Política · …` son lo que antes estaba enterrado en Python:
+qué categorías descartar, días mínimos hasta resolución, cuántos analizar
+por ciclo, y el umbral de divergencia por debajo del cual no paga el
+spread. Se cambian en la UI sin tocar el agente.
 
-**Hasta ahí llega el corte, y es a propósito.** `validar` y `ejecutar`
-comparten el estado en memoria del risk kernel y corren bajo un lock —
-entre `check()` y `on_order_sent()` hay `await`s, y dos mercados que los
-crucen a la vez pasan el mismo límite antes de que ninguno lo consuma. Un
-salto HTTP ahí devuelve esa carrera y encima la hace sobrevivir a
-reinicios. Por eso `/market` es indivisible.
+**Lo que no es editable: los tres vetos y el risk kernel.** Son seguridad,
+no política — en un nodo, un workflow mal tocado los apaga sin que nadie lo
+note. `/trade` los aplica siempre.
 
-`/market` solo acepta slugs que el explorador ya eligió. Un workflow mal
-editado no puede meter un mercado arbitrario en la ruta de ejecución.
+Y `/trade` tiene tres guardas que fallan cerrado: exige un `/forecast`
+previo, de menos de una hora, y no repetido. Sin eso el orquestador podría
+operar sin analizar o duplicar una posición.
+
+**Más fino no se corta.** `validar` y `ejecutar` comparten el estado en
+memoria del kernel y corren bajo un lock — entre `check()` y
+`on_order_sent()` hay `await`s, y dos mercados que los crucen a la vez pasan
+el mismo límite antes de que ninguno lo consuma. Un salto HTTP ahí devuelve
+esa carrera y la hace sobrevivir a reinicios.
+
+`POST /market` hace análisis y operación de un tirón, para quien no quiera
+orquestar. Todos aceptan solo slugs que el explorador ya eligió.
 
 ### Groq (opcional, pero vale la pena)
 
@@ -173,13 +189,15 @@ quieres que use. `Ctrl+G` para la vista de grafo.
 curl -X POST http://localhost:10000/cycle \
      -H "Authorization: Bearer $AGENT_API_TOKEN"
 
-# o paso a paso, como lo hace n8n
-curl "http://localhost:10000/candidates?n=3" \
-     -H "Authorization: Bearer $AGENT_API_TOKEN"
-curl -X POST http://localhost:10000/market \
-     -H "Authorization: Bearer $AGENT_API_TOKEN" \
-     -H "Content-Type: application/json" \
-     -d '{"slug":"el-slug-que-devolvio-candidates"}'
+# paso a paso, como lo hace n8n
+AUTH="Authorization: Bearer $AGENT_API_TOKEN"
+JSON="Content-Type: application/json"
+
+curl "http://localhost:10000/candidates?n=3" -H "$AUTH"
+curl -X POST http://localhost:10000/forecast -H "$AUTH" -H "$JSON" \
+     -d '{"slug":"<el-slug-que-devolvio-candidates>"}'
+curl -X POST http://localhost:10000/trade    -H "$AUTH" -H "$JSON" \
+     -d '{"slug":"<el-mismo-slug>"}'
 
 # ¿hay edge o hay que apagarlo?
 curl http://localhost:10000/report \

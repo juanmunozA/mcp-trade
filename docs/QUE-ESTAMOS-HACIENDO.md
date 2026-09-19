@@ -74,23 +74,36 @@ Aparte de eso se **consumen** tres servicios externos (no se hospedan):
 
 ```
 Polymarket · ~800 mercados activos
-     ↓ filtro + puntaje (sin IA, sin costo)
-8 candidatos
-     ↓ SearXNG busca, el modelo destila hechos con fecha
+     ↓ filtro + puntaje (sin IA, sin costo)          GET /candidates
+candidatos
+     ↓
+  ╔═ POLÍTICA · qué mirar ═══════════════╗           n8n, editable
+  ║  fuera las categorías mal calibradas ║
+  ║  mínimo de días hasta resolución     ║
+  ║  ordenar por puntaje, tope por ciclo ║
+  ╚══════════════════════════════════════╝
+     ↓
+SearXNG busca, el modelo destila hechos con fecha    POST /forecast
      ├─ sin hechos ──────────────→ PASS · veto evidencia
      ↓
 DeepSeek pronostica → (Groq da segunda opinión si escala)
      ↓
-LOS TRES VETOS
+LOS TRES VETOS                                       ← el agente, no editable
      ├─ la pregunta es ambigua ──→ PASS
      ├─ los modelos no coinciden → PASS
      ├─ discrepa +35 puntos ─────→ PASS
      ↓
-Cotizar · precios reales, se paga el ask
+  ╔═ POLÍTICA · ¿operar? ════════════════╗           n8n, editable
+  ║  umbral de divergencia               ║
+  ║  ¿exigir segunda opinión?            ║
+  ╚══════════════════════════════════════╝
+     ├─ no ──────────────────────→ PASS
+     ↓
+Cotizar · precios reales, se paga el ask             POST /trade
      ↓ Kelly fraccional × 0.20
      ├─ edge insuficiente ───────→ PASS
      ↓
-RISK KERNEL · límites duros
+RISK KERNEL · límites duros                          ← el agente, no editable
      ├─ rechaza ─────────────────→ PASS
      ↓
    ORDEN
@@ -103,31 +116,61 @@ agente que encuentra oportunidad en todo no está evaluando.
 
 ---
 
-## Qué hace n8n
+## Qué hace n8n: decide el camino
 
-Es el **reloj y el panel**. No tiene lógica de negocio, a propósito:
+No es un cron con interfaz. El agente expone tres verbos y **n8n decide el
+camino entre ellos**:
 
 ```
-n8n      →  CUÁNDO pasa cada cosa, y qué hacer con el resultado
-agente   →  QUÉ pasa (investigar, pronosticar, decidir, arriesgar)
+GET  /candidates    qué hay        →  POLÍTICA: qué mercados mirar
+POST /forecast      qué opina      →  POLÍTICA: ¿vale la pena operarlo?
+POST /trade         actúa
 ```
 
-Llama a los endpoints HTTP del agente por horario:
+Los dos puntos marcados **POLÍTICA** son nodos de código editables desde la
+interfaz. Ahí vive lo que antes estaba enterrado en Python:
+
+**Qué mirar** — descartar categorías donde el modelo está mal calibrado
+(medido: en cripto los LLM tienen miscalibración severa y retornos
+negativos), exigir un mínimo de días hasta la resolución, ordenar por
+puntaje de oportunidad, y cuántos analizar por ciclo.
+
+**¿Operar?** — el umbral de divergencia por debajo del cual no compensa
+pagar el spread, y si se exige o no una segunda opinión del ensemble.
+
+Cambiar cualquiera de esos criterios ya no requiere tocar el código del
+agente.
+
+### Lo que el orquestador NO decide
+
+**Los tres vetos y el risk kernel.** Son seguridad, no política: si
+vivieran en nodos editables, un workflow mal tocado los apagaría sin que
+nadie lo note. `/trade` los aplica siempre, aunque el orquestador insista.
+
+Y `/trade` exige un `/forecast` previo, de menos de una hora, y no
+repetido. Un workflow mal editado no puede operar sin analizar, ni duplicar
+una posición.
+
+### Los cinco workflows
 
 | workflow | cuándo | qué hace |
 |---|---|---|
-| `1-ciclo` | cada 4 h | pide los candidatos y pronostica uno por uno |
+| `1-ciclo` | cada 4 h | el camino de arriba, un mercado por ejecución |
 | `2-vigilancia` | cada 10 min | consulta la salud del agente |
 | `3-aprendizaje` | cada 6 h + diario | registra resultados, dicta el veredicto |
 | `4-errores` | cuando algo revienta | avisa con el nodo y el mensaje |
 | `5-mando` | webhook | disparar o parar desde el celular |
 
-### Lo que aporta
+### Lo demás que aporta
 
 **Un mercado = una ejecución.** Antes era una llamada de diez minutos a
 ciegas: si un mercado moría, eso solo existía en los logs del contenedor.
-Ahora cada mercado es su propia fila que se ve, se reintenta sola y se
-ramifica según el resultado.
+Ahora cada mercado es su propia fila que se ve y se reintenta sola.
+
+**Separa quién frenó qué.** El resumen distingue lo que descartó el agente,
+lo que descartó la política y lo que rechazó el kernel. Eso es lo que dice
+si los umbrales están bien puestos: si la política frena todo, están muy
+estrictos; si el kernel rechaza mucho, el dimensionamiento está mal.
 
 **Memoria entre ejecuciones.** La vigilancia recuerda el chequeo anterior,
 así que avisa al **tercer** fallo seguido y una sola vez. Sin memoria solo
@@ -137,11 +180,11 @@ leer las alertas, o no avisar nunca.
 **El veredicto.** Dice *apagar* cuando el agente no le gana al mercado,
 aunque esté ganando plata.
 
-### Es opcional
+### Sigue siendo opcional
 
-El agente tiene sus propios bucles internos y corre igual sin n8n. Si n8n
-se cae, el agente ni se entera. Lo que aporta es **poder verlo y meterle
-mano** — que no es poco cuando la cosa va a correr sola durante semanas.
+El agente tiene sus propios bucles internos y corre igual sin n8n, con la
+política por defecto que trae dentro. Si n8n se cae, el agente ni se
+entera.
 
 ---
 

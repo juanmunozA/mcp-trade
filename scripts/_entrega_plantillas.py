@@ -144,7 +144,7 @@ Después, dos cosas a mano:
 
 | | |
 |---|---|
-| `1-ciclo` | pronostica; un mercado = una ejecución que puedes reintentar sola |
+| `1-ciclo` | **decide qué mirar y qué operar**; un mercado = una ejecución |
 | `2-vigilancia` | salud cada 10 min |
 | `3-aprendizaje` | registra resultados y dice si vale la pena seguir |
 | `4-errores` | atrapa cualquier workflow que reviente |
@@ -169,7 +169,7 @@ Abre `vault/` como vault en [Obsidian](https://obsidian.md), entra a
 | `0-arranque` | los pasos de esta guía |
 | `1-flujo` | qué le hace a cada mercado |
 | `2-decisiones` | en qué puede terminar |
-| `6-servicios` | los cinco contenedores |
+| `6-servicios` | los cuatro contenedores y la base |
 | `7-orquestacion` | los workflows de n8n |
 | `contexto` | lo que escribes tú |
 
