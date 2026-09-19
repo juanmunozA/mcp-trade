@@ -539,6 +539,137 @@ class GroqProvider:
         )
 
 
+# ─────────────────────────── Mistral ─────────────────────────────────────
+
+
+class MistralProvider:
+    """
+    El caballo de carga: volumen barato para triaje y destilación.
+
+    QUÉ DA EL FREE TIER, MEDIDO CONTRA LA API
+    El tope no son tokens sino **$10/mes**, y el pay-as-you-go viene
+    desactivado: al llegar a cero las llamadas fallan en vez de generar
+    factura. Es un tope duro.
+
+        ministral-8b    $0.00097 por pronóstico  →  ~343/día
+        ministral-14b   $0.00130 por pronóstico  →  ~256/día
+
+    LO QUE NO DA
+    Probado con la key real: `mistral-large` devuelve 403 `tier_not_allowed`,
+    y `mistral-small`/`medium` devuelven 429 persistente incluso tras 75
+    segundos de espera, mientras `ministral-14b` responde al instante. El
+    free tier es la familia `ministral` y nada más — aunque la página de
+    límites de la consola liste los otros.
+
+    POR ESO VA DE PRIMERO, NO DE JUEZ
+    Un modelo de 8-14B no está tan bien calibrado como llama-3.3-70b en
+    Groq o deepseek-r1-32b en Cloudflare. Pero esos rinden ~18 y ~50
+    pronósticos diarios; este rinde cientos. Se usa donde importa el
+    volumen —filtrar mercados, destilar páginas web— y se deja el juicio
+    fino para los caros.
+
+    Y suma una cuarta familia al ensemble, que es lo que mantiene vivo el
+    veto por desacuerdo.
+    """
+
+    BASE = "https://api.mistral.ai/v1"
+
+    # $/1M tokens (entrada, salida). Verificado contra la web de precios.
+    PRECIOS = {
+        "ministral-3b": (0.10, 0.10),
+        "ministral-8b": (0.15, 0.15),
+        "ministral-14b": (0.20, 0.20),
+    }
+
+    def __init__(self, api_key: str, model: str = "ministral-8b-latest") -> None:
+        self.name = "mistral"
+        self.model = model
+        self._key = api_key
+
+    def _precio(self) -> tuple[float, float]:
+        for prefijo, p in self.PRECIOS.items():
+            if self.model.startswith(prefijo):
+                return p
+        # Desconocido: se cobra al más caro que conocemos, para no
+        # subestimar el gasto contra un tope en dólares.
+        return max(self.PRECIOS.values())
+
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        system: str | None = None,
+        schema: dict | None = None,
+        max_tokens: int = 4096,
+        temperature: float = 0.0,
+        search: bool = False,
+        thinking_budget: int | None = None,
+    ) -> Completion:
+        if search:
+            raise ProviderError("Mistral no navega; la búsqueda la hace Gemini o SearXNG")
+
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        body: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        if schema is not None:
+            # La familia `ministral` acepta `json_object`, no `json_schema`.
+            # El esquema se pide en el prompt y se valida al parsear.
+            body["response_format"] = {"type": "json_object"}
+
+        t0 = time.perf_counter()
+        async with httpx.AsyncClient(timeout=120) as http:
+            r = await http.post(
+                f"{self.BASE}/chat/completions",
+                headers={"Authorization": f"Bearer {self._key}"},
+                json=body,
+            )
+        latency = int((time.perf_counter() - t0) * 1000)
+
+        if r.status_code == 429:
+            raise QuotaExhausted(
+                "mistral: 429. O se acabaron los $10 del mes, o se pasó el "
+                "límite por minuto del modelo."
+            )
+        if r.status_code == 403:
+            raise ProviderError(
+                f"mistral: '{self.model}' no está en tu plan. El free tier "
+                f"solo da la familia ministral (3b/8b/14b)."
+            )
+        if r.status_code != 200:
+            raise ProviderError(f"mistral HTTP {r.status_code}: {r.text[:300]}")
+
+        data = r.json()
+        choice = (data.get("choices") or [{}])[0]
+        text = (choice.get("message") or {}).get("content", "")
+        usage = data.get("usage", {})
+        inp = int(usage.get("prompt_tokens", 0) or 0)
+        out = int(usage.get("completion_tokens", 0) or 0)
+
+        # El tope es en dólares, así que el costo hay que contarlo de verdad.
+        pin, pout = self._precio()
+        costo = round(inp / 1e6 * pin + out / 1e6 * pout, 8)
+
+        return Completion(
+            text=text,
+            provider=self.name,
+            model=self.model,
+            input_tokens=inp,
+            output_tokens=out,
+            cost_usd=costo,
+            latency_ms=latency,
+            finish_reason=choice.get("finish_reason", ""),
+            raw=data,
+        )
+
+
 # ─────────────────────────── Ollama local ────────────────────────────────
 
 

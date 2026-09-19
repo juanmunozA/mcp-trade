@@ -88,6 +88,12 @@ class Settings(BaseSettings):
     """
     searxng_host: str = "http://localhost:8888"
 
+    # Mistral: volumen barato. El free tier tope $10/mes, solo la familia
+    # `ministral` (large da 403, small/medium 429 persistente — probado).
+    mistral_api_key: SecretStr | None = None
+    mistral_model: str = "ministral-14b-latest"
+    mistral_model_triage: str = "ministral-8b-latest"
+
     # Groq: segunda opinión rápida en modo local. Opcional.
     groq_api_key: SecretStr | None = None
     groq_model: str = "llama-3.3-70b-versatile"
