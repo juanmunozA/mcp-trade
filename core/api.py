@@ -55,8 +55,10 @@ ENDPOINTS
     POST /kill        para todo (botón de pánico desde n8n o Telegram)
 
 SEGURIDAD
-Si `AGENT_API_TOKEN` está definido, todo menos /health exige
-`Authorization: Bearer <token>`. En Render el servicio es público: sin
+Si `AGENT_API_TOKEN` está definido, todo menos /health y /ui exige
+`Authorization: Bearer <token>`. `AGENT_API_TOKEN_RO`, si existe, abre
+solo los GET: sirve para pasarle el tablero a alguien sin darle el
+botón de pánico ni la posibilidad de quemarte la cuota. En Render el servicio es público: sin
 token, cualquiera podría disparar ciclos y quemarte el presupuesto.
 
 `/market` solo acepta slugs que el explorador ya eligió en `/candidates`.
@@ -120,6 +122,10 @@ class AgentAPI:
     ) -> None:
         self.port = port or int(os.getenv("PORT", "10000"))
         self.token = token if token is not None else os.getenv("AGENT_API_TOKEN", "")
+        # Token para mirar sin poder tocar. Existe para compartir el
+        # tablero: con el de siempre, quien lo reciba puede parar los
+        # agentes y quemar la cuota del dia.
+        self.token_ro = os.getenv("AGENT_API_TOKEN_RO", "")
         self._status_fn = status_fn
         self._cycle_fn = cycle_fn
         self._resolve_fn = resolve_fn
@@ -214,11 +220,20 @@ class AgentAPI:
             except Exception:  # noqa: BLE001
                 pass
 
-    def _autorizado(self, headers: dict, query: dict) -> bool:
+    def _nivel(self, headers: dict, query: dict) -> str | None:
+        """`total`, `lectura`, o None si el token no sirve."""
         if not self.token:
-            return True
-        sent = headers.get("authorization", "").removeprefix("Bearer ").strip()
-        return sent == self.token or str(query.get("token", "")) == self.token
+            return "total"
+        sent = (headers.get("authorization", "").removeprefix("Bearer ").strip()
+                or str(query.get("token", "")))
+        if sent == self.token:
+            return "total"
+        if self.token_ro and sent == self.token_ro:
+            return "lectura"
+        return None
+
+    def _autorizado(self, headers: dict, query: dict) -> bool:
+        return self._nivel(headers, query) is not None
 
     async def _stream(self, writer, query: dict) -> None:
         """
@@ -269,10 +284,18 @@ class AgentAPI:
             status = self._safe_status()
             return (503 if status.get("killed") else 200), status
 
-        if self.token:
-            sent = headers.get("authorization", "").removeprefix("Bearer ").strip()
-            if sent != self.token:
-                return 401, {"error": "token inválido o ausente"}
+        nivel = self._nivel(headers, query)
+        if nivel is None:
+            return 401, {"error": "token inválido o ausente"}
+
+        if path == "/acceso" and method == "GET":
+            return 200, {"nivel": nivel, "escribe": nivel == "total"}
+
+        # Un token de lectura no dispara ciclos ni para agentes. El tope
+        # es el metodo, no una lista de rutas: una ruta nueva que escriba
+        # queda protegida sin que nadie se acuerde de agregarla.
+        if nivel == "lectura" and method != "GET":
+            return 403, {"error": "este token es de solo lectura"}
 
         if path == "/report" and method == "GET":
             return 200, await self._report_fn()
@@ -353,7 +376,7 @@ class AgentAPI:
 
         return 404, {"error": "no existe", "rutas": [
             "GET /ui", "GET /health", "GET /report", "GET /candidates", "GET /geo",
-            "GET /stream (SSE)", "GET /events", "GET /diagnostico",
+            "GET /stream (SSE)", "GET /events", "GET /diagnostico", "GET /acceso",
             "GET /activity", "GET /precio?token=...",
             "POST /forecast", "POST /trade", "POST /market",
             "POST /cycle", "POST /resolve", "POST /kill",

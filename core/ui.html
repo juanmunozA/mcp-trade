@@ -254,7 +254,7 @@ AGENTES.forEach(function(a){
            cargando:false,desde:0};
   HIST[a.id]={};
 });
-var token="",auto=true,restan=15,armado=0;
+var token="",auto=true,restan=15,armado=0,SOLOLEO=false;
 try{token=localStorage.getItem("mcp_token")||""}catch(e){}
 
 function $(i){return document.getElementById(i)}
@@ -341,7 +341,8 @@ function leer(a){
     token?pedir(a.url,"/report",true):Promise.resolve(null),
     token?pedir(a.url,"/geo",true):Promise.resolve(null),
     token?pedir(a.url,"/activity?n=14",true):Promise.resolve(null),
-    token?pedir(a.url,"/diagnostico",true):Promise.resolve(null)
+    token?pedir(a.url,"/diagnostico",true):Promise.resolve(null),
+    token?pedir(a.url,"/acceso",true):Promise.resolve(null)
   ]).then(function(r){
     st.cargando=false;
     st.err=(r[0]&&r[0]._err)||null;
@@ -351,6 +352,9 @@ function leer(a){
     st.geo=(r[2]&&!r[2]._err)?r[2]:null;
     st.act=(r[3]&&!r[3]._err)?r[3]:null;
     st.diag=(r[4]&&!r[4]._err)?r[4]:null;
+    // Basta con que UN agente diga solo-lectura: el tablero se comporta
+    // como el permiso mas bajo que tiene.
+    if(r[5]&&!r[5]._err&&r[5].escribe===false)SOLOLEO=true;
     if(st.health){
       if(st.health.budget)push(a.id,"presupuesto",st.health.budget.pct_consumido);
       if(st.health.inventario)push(a.id,"desbalance",st.health.inventario.worst_imbalance);
@@ -527,6 +531,8 @@ function pintar(){
   $("tick").innerHTML='<span class="pulse'+((vivo&&auto)?"":" off")+'"></span>'+
     (auto?("en "+restan+"s"):"pausado");
   $("key").hidden=!!token;
+  $("bKill").hidden=SOLOLEO;
+  $("modo").textContent+=SOLOLEO?" · solo lectura":"";
   pintarDiag();
 }
 
