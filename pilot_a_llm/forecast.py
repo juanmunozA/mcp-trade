@@ -62,7 +62,19 @@ class VetoConfig:
     lecturas correctas, 0.005 y 0.095.
     """
 
-    min_models: int = 1
+    min_models: int = 2
+    """
+    Dos opiniones para mover dinero.
+
+    Con una, `disagreement` vale 0 siempre y el veto por desacuerdo -- una
+    de las tres defensas -- deja de existir. Medido: 158 de 205
+    pronosticos los firmo un solo modelo, y la orden de los Brewers salio
+    de ahi, con un dato inventado que nadie contrasto.
+
+    Cuesta volumen: hoy solo el 23% de los ciclos junta dos modelos. Es
+    el precio correcto -- no operar le gana a operar a ciegas.
+    """
+
     require_evidence: bool = True
 
     min_escalation: float = 0.05

@@ -59,6 +59,26 @@ class EdgeConfig:
     Por debajo de esto no distingues señal de tu propio error de
     calibración.
     """
+    longshot_umbral: float = 0.20
+    longshot_factor: float = 2.0
+    """
+    Comprar barato lo improbable pide el DOBLE de ventaja.
+
+    El sesgo de longshot esta documentado y va en una sola direccion: los
+    mercados de baja probabilidad estan sobrevalorados, porque la gente
+    paga de mas por el billete de loteria. Comprar YES a 0.15 es apostar
+    contra esa evidencia, asi que el listado tiene que ser mas alto.
+
+    Apostar al lado favorito -- YES caro, o NO contra un YES barato -- va
+    A FAVOR del sesgo y conserva el umbral normal. La asimetria es el
+    punto: no es "los extremos son peligrosos", es que un extremo lo es y
+    el otro no.
+
+    Medido: Brewers campeon, mercado 0.152, agente 0.250, ventaja 0.0586.
+    Pasaba el umbral plano de 0.05 y con esto no pasa -- necesitaria
+    0.10, o sea creer que el mercado se equivoca al doble.
+    """
+
     fee_bps: float = 0.0          # verifica la tabla vigente de Polymarket
     slippage_buffer: float = 0.01  # 1 punto, medido de tus propios fills
 
@@ -206,9 +226,13 @@ def decide(
 
     common = dict(p_model=p_model, p_market=p_market, p_final=p_final)
 
-    if edge < cfg.min_edge:
+    umbral = cfg.min_edge
+    if price < cfg.longshot_umbral:
+        umbral *= cfg.longshot_factor
+    if edge < umbral:
+        extra = " (longshot: el doble)" if umbral > cfg.min_edge else ""
         return _pass(
-            f"edge {edge:+.4f} bajo el umbral {cfg.min_edge} "
+            f"edge {edge:+.4f} bajo el umbral {umbral:.3f}{extra} "
             f"(tras {cost:.4f} de costos)",
             edge=edge, price_paid=price, **common,
         )
