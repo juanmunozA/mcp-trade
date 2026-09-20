@@ -52,6 +52,11 @@ class _Servicios(Protocol):
     bankroll: object
     repo: object
     vault: object
+    # El tope del kernel. Cruza la frontera entre PilotA y los pasos, asi
+    # que es parte del contrato y no un atributo privado al que se llega
+    # por casualidad: sin declararlo aqui, escribirlo mal no da error de
+    # tipos y revienta recien en produccion.
+    max_order_usd: float
 
 
 @dataclass(slots=True)

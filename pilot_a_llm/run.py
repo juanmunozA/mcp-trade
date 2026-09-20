@@ -102,7 +102,7 @@ class PilotA:
         self._api: AgentAPI | None = None
         self._last_cycle: datetime | None = None
         self._cycle_stats: dict = {}
-        self._max_order_usd: float = 0.0
+        self.max_order_usd: float = 0.0
         self.budget = Budget()
         self.vault = Vault(os.getenv("VAULT_DIR", "vault"))
         # Serializa el tramo check→orden del kernel cuando hay concurrencia.
@@ -155,7 +155,7 @@ class PilotA:
         # La whitelist del kernel se abre por ciclo, con los tokens de los
         # mercados elegidos. Aquí solo se valida que los límites existan.
         limits = RiskLimits.from_env(PILOT)
-        self._max_order_usd = limits.max_order_usd
+        self.max_order_usd = limits.max_order_usd
         """
         El techo REAL de una orden. Sin esto, edge.py dimensiona con Kelly
         hasta su propio máximo y el kernel rechaza todo lo que lo supere —
