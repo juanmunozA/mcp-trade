@@ -326,17 +326,26 @@ def select(
     *,
     limit: int = 20,
     now: datetime | None = None,
+    vistos: frozenset[str] = frozenset(),
 ) -> list[Candidate]:
     """
     De cientos de mercados a los N que merecen investigación.
 
     `limit` es un presupuesto, no una meta. Si solo 6 mercados valen la
     pena, se investigan 6. Forzar 20 significa gastar en los 14 peores.
+
+    `vistos` son los slugs ya pronosticados hace poco. Van al final de su
+    categoría, no se descartan: si no hay nada nuevo se vuelven a elegir.
+
+    Sin esto el puntaje es determinista y los mismos mercados ganan todos
+    los ciclos. Medido en producción: 178 pronósticos sobre 26 mercados,
+    uno repetido 33 veces. Cada repetición cuesta plata y no aporta una
+    muestra nueva de calibración, porque todas resuelven igual.
     """
     now = now or datetime.now(UTC)
     f = f or MarketFilter()
     candidates = [c for m in markets if (c := passes(m, f, now)) is not None]
-    candidates.sort(key=lambda c: c.score, reverse=True)
+    candidates.sort(key=lambda c: (c.slug in vistos, -c.score))
 
     # Reparto por categoria. Se recorre en orden de puntaje y se toma el
     # mejor de cada una por ronda, asi que dentro de cada categoria siguen
@@ -350,7 +359,7 @@ def select(
             for cat in sorted(por_cat, key=lambda k: -por_cat[k][0].score):
                 if ronda < len(por_cat[cat]):
                     repartidos.append(por_cat[cat][ronda])
-        repartidos.sort(key=lambda c: c.score, reverse=True)
+        repartidos.sort(key=lambda c: (c.slug in vistos, -c.score))
         candidates = repartidos
 
     return candidates[:limit]

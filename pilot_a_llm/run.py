@@ -388,6 +388,31 @@ class PilotA:
         except Exception as exc:  # noqa: BLE001
             log.error("NO se pudo persistir el kill switch: %r", exc)
 
+    async def _vistos(self) -> frozenset[str]:
+        """
+        Lo pronosticado hace poco, para que el explorador prefiera lo nuevo.
+
+        La ventana es corta a proposito. Con un filtro estrecho puede que
+        solo 26 mercados pasen, y excluir todo lo visto dejaria al agente
+        sin nada que hacer. Esto no excluye: reordena.
+        """
+        try:
+            horas = int(os.getenv("REVISIT_HOURS", "48"))
+        except ValueError:
+            horas = 48
+        if horas <= 0:
+            return frozenset()
+        try:
+            rows = await db.pool().fetch(
+                "SELECT DISTINCT slug FROM pilot_a.forecasts "
+                "WHERE ts > now() - make_interval(hours => $1)", horas
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Sin base, el explorador sigue: peor es no explorar.
+            log.warning("no se pudo leer lo ya pronosticado: %s", exc)
+            return frozenset()
+        return frozenset(r["slug"] for r in rows if r["slug"])
+
     async def explorar(self, limit: int = 0) -> list:
         """
         El explorador, solo. Filtra, puntúa, abre la whitelist del kernel y
@@ -440,7 +465,7 @@ class PilotA:
             )
 
         raw = await self._fetch_markets()
-        picks = select(raw, self._filtro(), limit=tope)
+        picks = select(raw, self._filtro(), limit=tope, vistos=await self._vistos())
         log.info("%d mercados → %d candidatos\n%s", len(raw), len(picks), summarize(picks))
         if not picks:
             self._scout_note = "ningún mercado pasó el filtro"
