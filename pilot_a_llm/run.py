@@ -41,7 +41,12 @@ from core.risk import RiskKernel, RiskLimits
 from core.storage import db
 from pilot_a_llm.bankroll import BankrollReader
 from pilot_a_llm.budget import Budget
-from pilot_a_llm.calibration import CalibrationMap, Resolution, ensemble_weights
+from pilot_a_llm.calibration import (
+    MIN_SAMPLES_TO_CALIBRATE,
+    CalibrationMap,
+    Resolution,
+    ensemble_weights,
+)
 from pilot_a_llm.forecast import Forecaster, VetoConfig
 from pilot_a_llm.markets import CATEGORIAS, MarketFilter, select, summarize
 from pilot_a_llm.pipeline import (
@@ -391,6 +396,28 @@ class PilotA:
         except Exception as exc:  # noqa: BLE001
             log.error("NO se pudo persistir el kill switch: %r", exc)
 
+    async def _slots_rapidos(self, tope: int) -> int:
+        """
+        Cuantos lugares del ciclo reservar para mercados que cierran ya.
+
+        Depende de cuantas resoluciones haya: con cero, la mitad del ciclo
+        va a conseguir datos porque sin ellos no hay nada que aprender.
+        Al acercarse a las 30 la reserva baja sola, y al llegar desaparece
+        -- el ciclo vuelve a perseguir edge sin que nadie toque nada.
+        """
+        meta = MIN_SAMPLES_TO_CALIBRATE
+        try:
+            n = await db.pool().fetchval(
+                "SELECT count(DISTINCT condition_id) FROM pilot_a.resolutions"
+            ) or 0
+        except Exception as exc:  # noqa: BLE001
+            log.warning("no se pudo contar resoluciones: %s", exc)
+            return 0
+        if n >= meta:
+            return 0
+        falta = 1.0 - (n / meta)
+        return max(1, round(tope * 0.5 * falta))
+
     async def _vistos(self) -> frozenset[str]:
         """
         Lo pronosticado hace poco, para que el explorador prefiera lo nuevo.
@@ -469,7 +496,8 @@ class PilotA:
 
         raw = await self._fetch_markets()
         vistos = await self._vistos()
-        picks = select(raw, self._filtro(), limit=tope, vistos=vistos)
+        rapidos = await self._slots_rapidos(tope)
+        picks = select(raw, self._filtro(rapidos), limit=tope, vistos=vistos)
         emit("explorar", f"{len(raw)} mercados → {len(picks)} candidatos",
              crudos=len(raw), elegidos=len(picks), ya_vistos=len(vistos),
              categorias=sorted({c.category for c in picks}),
@@ -503,8 +531,7 @@ class PilotA:
         self._operados.clear()
         return picks
 
-    @staticmethod
-    def _filtro() -> MarketFilter:
+    def _filtro(self, slots_rapidos: int = 0) -> MarketFilter:
         """
         El filtro, con el horizonte configurable.
 
@@ -542,6 +569,8 @@ class PilotA:
             min_days=int(os.getenv("MARKET_MIN_DAYS", "2")),
             max_days=int(os.getenv("MARKET_MAX_DAYS", "150")),
             min_liquidity_usd=float(os.getenv("MARKET_MIN_LIQUIDITY", "15000")),
+            slots_rapidos=slots_rapidos,
+            dias_rapido=int(os.getenv("MARKET_DIAS_RAPIDO", "3")),
             **extra,
         )
 

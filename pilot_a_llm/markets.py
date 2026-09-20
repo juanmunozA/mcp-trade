@@ -118,6 +118,24 @@ class MarketFilter:
     allowed_categories: frozenset[str] = frozenset(CATEGORY_PATTERNS) | {"otros"}
     sports_narrative_only: bool = False
 
+    slots_rapidos: int = 0
+    dias_rapido: int = 3
+    """
+    Lugares del ciclo reservados para mercados que cierran en `dias_rapido`.
+
+    El puntaje premia un horizonte de ~21 dias, que es donde se encuentran
+    precios mal puestos. Pero eso significa tres semanas sin una sola
+    resolucion, y sin resoluciones la calibracion nunca enciende: el
+    agente opina y nadie le corrige.
+
+    Medido: 233 pronosticos, 0 resueltos, el mas cercano a 6 dias.
+
+    Mientras falten resoluciones, un mercado que cierra manana vale mas
+    que uno bien puntuado, porque ensena. Con `slots_rapidos` en 0 esto
+    no hace nada, asi que al llegar las muestras el ciclo vuelve solo a
+    perseguir edge en vez de datos.
+    """
+
     max_per_category: int = 2
     """
     Cuantos mercados como maximo de una misma categoria por ciclo.
@@ -282,7 +300,12 @@ def passes(market: dict, f: MarketFilter, now: datetime) -> Candidate | None:
     except (ValueError, AttributeError):
         return None
     days = (end - now).days
-    if not f.min_days <= days <= f.max_days:
+    # El piso baja a 0 cuando se reservan lugares para mercados rapidos:
+    # "no alcanzas a investigar" vale para buscar edge, no para calibrar.
+    # Un pronostico sobre algo que resuelve manana mide igual de bien si
+    # el agente esta sobreconfiado.
+    piso = 0 if f.slots_rapidos > 0 else f.min_days
+    if not piso <= days <= f.max_days:
         return None
 
     slug = market.get("slug", "")
@@ -362,7 +385,34 @@ def select(
         repartidos.sort(key=lambda c: (c.slug in vistos, -c.score))
         candidates = repartidos
 
-    return candidates[:limit]
+    elegidos = candidates[:limit]
+    if f.slots_rapidos > 0 and limit > 0:
+        elegidos = _con_rapidos(candidates, elegidos, f, vistos, limit)
+    return elegidos
+
+
+def _con_rapidos(
+    todos: list[Candidate], elegidos: list[Candidate],
+    f: MarketFilter, vistos: frozenset[str], limit: int,
+) -> list[Candidate]:
+    """
+    Mete mercados de cierre corto aunque no ganen por puntaje.
+
+    Desplaza a los de horizonte mas lejano, no a los de peor puntaje: lo
+    que se cede es tiempo de espera, no calidad.
+    """
+    ya = {c.slug for c in elegidos}
+    rapidos = [c for c in todos
+               if c.days_to_resolution <= f.dias_rapido and c.slug not in ya]
+    rapidos.sort(key=lambda c: (c.slug in vistos, c.days_to_resolution, -c.score))
+    cupo = min(f.slots_rapidos, limit, len(rapidos))
+    if not cupo:
+        return elegidos
+
+    resto = sorted(elegidos, key=lambda c: -c.days_to_resolution)[cupo:]
+    salida = rapidos[:cupo] + resto
+    salida.sort(key=lambda c: -c.score)
+    return salida[:limit]
 
 
 def summarize(candidates: list[Candidate]) -> str:
