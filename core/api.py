@@ -43,6 +43,9 @@ ENDPOINTS
     GET  /ui          el tablero. Lo sirve el agente y no un artifact
                       porque una página externa no puede leer esta API:
                       la CSP de claude.ai bloquea fetch a otro host.
+    GET  /diagnostico en qué se va el trabajo y qué se rompe
+    GET  /stream      SSE: lo que pasa, mientras pasa
+    GET  /events      el anillo de eventos  [?n=80&desde=id]
     GET  /geo         desde qué país ve Polymarket al bot
     GET  /activity    lo último que hizo, mercado por mercado  [?n=25]
     GET  /precio      historial de precio de un outcome  [?token=&rango=]
@@ -76,7 +79,10 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from urllib.parse import parse_qs, unquote
 
+from core.events import BUS
+
 log = logging.getLogger("api")
+NL = chr(10)
 
 _STATUS = {
     200: "OK", 202: "Accepted", 400: "Bad Request", 401: "Unauthorized",
@@ -108,6 +114,7 @@ class AgentAPI:
         forecast_fn: Callable[[str], Awaitable[dict]] | None = None,
         trade_fn: Callable[[str], Awaitable[dict]] | None = None,
         activity_fn: Callable[[int], Awaitable[dict]] | None = None,
+        diag_fn: Callable[[], Awaitable[dict]] | None = None,
         port: int | None = None,
         token: str | None = None,
     ) -> None:
@@ -123,6 +130,7 @@ class AgentAPI:
         self._forecast_fn = forecast_fn
         self._trade_fn = trade_fn
         self._activity_fn = activity_fn
+        self._diag_fn = diag_fn
 
         self._started = time.monotonic()
         self._server: asyncio.AbstractServer | None = None
@@ -185,6 +193,13 @@ class AgentAPI:
                 await self._respond(writer, 413, {"error": "body demasiado grande"})
                 return
 
+            if path == "/stream" and method == "GET":
+                if not self._autorizado(headers, query):
+                    await self._respond(writer, 401, {"error": "token inválido"})
+                    return
+                await self._stream(writer, query)
+                return
+
             code, payload = await self._route(method, path, headers, query, body)
             await self._respond(writer, code, payload)
 
@@ -198,6 +213,46 @@ class AgentAPI:
                 await writer.wait_closed()
             except Exception:  # noqa: BLE001
                 pass
+
+    def _autorizado(self, headers: dict, query: dict) -> bool:
+        if not self.token:
+            return True
+        sent = headers.get("authorization", "").removeprefix("Bearer ").strip()
+        return sent == self.token or str(query.get("token", "")) == self.token
+
+    async def _stream(self, writer, query: dict) -> None:
+        """
+        SSE: la conexion queda abierta y los eventos salen al ocurrir.
+
+        Arranca mandando el anillo para que quien llega tarde no vea una
+        pantalla vacia, y late cada 20 s — sin eso, el proxy de Render
+        corta una conexion silenciosa.
+        """
+        head = (
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/event-stream; charset=utf-8\r\n"
+            "Cache-Control: no-store\r\n"
+            "Connection: keep-alive\r\n"
+            "X-Accel-Buffering: no\r\n"
+            "Access-Control-Allow-Origin: *\r\n\r\n"
+        )
+        writer.write(head.encode())
+        await writer.drain()
+
+        q = BUS.subscribe()
+        try:
+            for ev in BUS.recent(_as_int(query.get("n"), default=40)):
+                writer.write(_sse(ev))
+            await writer.drain()
+            while True:
+                try:
+                    ev = await asyncio.wait_for(q.get(), timeout=20)
+                    writer.write(_sse(ev))
+                except TimeoutError:
+                    writer.write(b": latido\n\n")
+                await writer.drain()
+        finally:
+            BUS.unsubscribe(q)
 
     async def _route(
         self, method: str, path: str, headers: dict, query: dict, body: dict
@@ -273,6 +328,18 @@ class AgentAPI:
                 return 400, {"error": "falta 'token' (token_id del outcome)"}
             return 200, await _precio(token, str(query.get("rango", "1d")))
 
+        if path == "/diagnostico" and method == "GET":
+            if self._diag_fn is None:
+                return 404, {"error": "no disponible"}
+            return 200, await self._diag_fn()
+
+        if path == "/events" and method == "GET":
+            return 200, {
+                "n": BUS.total, "suscriptores": BUS.n_suscriptores,
+                "items": BUS.recent(_as_int(query.get("n"), default=80),
+                                    desde=_as_int(query.get("desde"), default=0)),
+            }
+
         if path == "/geo" and method == "GET":
             return 200, await _geoblock()
 
@@ -286,6 +353,7 @@ class AgentAPI:
 
         return 404, {"error": "no existe", "rutas": [
             "GET /ui", "GET /health", "GET /report", "GET /candidates", "GET /geo",
+            "GET /stream (SSE)", "GET /events", "GET /diagnostico",
             "GET /activity", "GET /precio?token=...",
             "POST /forecast", "POST /trade", "POST /market",
             "POST /cycle", "POST /resolve", "POST /kill",
@@ -406,6 +474,12 @@ async def _geoblock() -> dict:
         return {"http": r.status_code, "web": datos, "at": _now()}
     except Exception as exc:  # noqa: BLE001
         return {"error": f"{type(exc).__name__}: {exc}", "at": _now()}
+
+
+def _sse(ev: dict) -> bytes:
+    """Un evento en formato SSE. `id` deja que el cliente reanude."""
+    cuerpo = json.dumps(ev, default=str, ensure_ascii=False)
+    return f"id: {ev['id']}\nevent: {ev['kind']}\ndata: {cuerpo}\n\n".encode()
 
 
 def _now() -> str:

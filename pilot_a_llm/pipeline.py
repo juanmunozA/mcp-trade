@@ -29,10 +29,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Protocol
 
+from core.events import emit
 from core.risk import OrderIntent, RiskKernel, Side
 from pilot_a_llm.edge import Bet, Decision, EdgeConfig, Quote, decide
 from pilot_a_llm.markets import Candidate
@@ -261,7 +263,11 @@ async def correr(
     `pasos` permite correr solo una fase — ANALISIS u OPERACION — para que
     el orquestador decida en medio.
     """
+    slug = r.candidate.slug
     for paso in pasos or PASOS:
+        t0 = time.monotonic()
+        emit("paso", f"{paso.__name__}: {slug[:44]}",
+             slug=slug, paso=paso.__name__)
         try:
             if paso.__name__ in BAJO_LOCK:
                 async with lock:
@@ -269,14 +275,41 @@ async def correr(
             else:
                 seguir = await paso(r, s)
         except Exception as exc:  # noqa: BLE001
-            log.warning("%s falló en %s: %s", r.candidate.slug[:40], paso.__name__, exc)
+            log.warning("%s falló en %s: %s", slug[:40], paso.__name__, exc)
             r.parar(paso.__name__, f"excepción: {exc!r}"[:300])
+            # Una excepcion NO es un PASS prudente. Marcarla distinto es
+            # lo que hubiera hecho visible que 105 de 178 PASS eran
+            # caidas y no decisiones.
+            emit("error", f"{paso.__name__} se rompió en {slug[:36]}",
+                 slug=slug, paso=paso.__name__, error=repr(exc)[:200])
             break
+        ms = round((time.monotonic() - t0) * 1000)
         if not seguir:
+            emit("parada", f"{slug[:36]} paró en {paso.__name__}: {r.motivo[:90]}",
+                 slug=slug, paso=paso.__name__, motivo=r.motivo, ms=ms)
             break
+        emit("ok", f"{paso.__name__} ok: {slug[:40]}",
+             slug=slug, paso=paso.__name__, ms=ms, **_detalle(r, paso.__name__))
 
     _log(r)
     return r
+
+
+def _detalle(r: MarketRun, paso: str) -> dict:
+    """Lo que vale la pena ver del paso recien terminado, y nada mas."""
+    if paso == "pronosticar" and r.forecast:
+        return {"p": round(r.forecast.p_calibrated, 4),
+                "precio": round(r.candidate.price, 4),
+                "modelos": list(getattr(r.forecast, "per_model", {}) or {})}
+    if paso == "cotizar" and r.quote:
+        return {"ask_yes": r.quote.ask_yes, "ask_no": r.quote.ask_no}
+    if paso == "decidir" and r.decision:
+        return {"apuesta": str(r.decision.bet), "usd": round(r.decision.size_usd, 2),
+                "shares": round(r.decision.shares, 1)}
+    if paso == "ejecutar" and r.order:
+        return {"orden": r.order.order_id, "estado": r.order.status,
+                "precio": r.order.price, "size": r.order.size}
+    return {}
 
 
 def _log(r: MarketRun) -> None:

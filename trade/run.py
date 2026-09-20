@@ -22,6 +22,7 @@ from datetime import UTC, datetime, timedelta
 
 from core.alerts import Level, Telegram
 from core.api import AgentAPI
+from core.events import BUS, emit
 from core.config import Mode, get_settings
 from core.polymarket.client import ReadOnlyClient, build_execution_client
 from core.polymarket.models import Market
@@ -107,6 +108,7 @@ class PilotB:
             report_fn=self._reporte,
             kill_fn=self._kill_ahora,
             activity_fn=self._actividad,
+            diag_fn=self._diag,
         )
         await self._api.start()
 
@@ -134,6 +136,18 @@ class PilotB:
         day = (datetime.now(UTC) - timedelta(days=1)).date()
         stats = await self.repo.daily_summary(day)
         return stats | self.engine.summary()
+
+    async def _diag(self) -> dict:
+        """Lo que decide si el legging funciona: rechazos y costo del par."""
+        inv = self.engine.summary() if self.engine else {}
+        k = self.kernel.snapshot() if self.kernel else {}
+        return {
+            "inventario": inv, "riesgo": k,
+            "eventos": BUS.total,
+            "ultimo_dato": self._last_data.isoformat(timespec="seconds")
+            if self._last_data else None,
+            "at": datetime.now(UTC).isoformat(timespec="seconds"),
+        }
 
     async def _actividad(self, n: int = 25) -> dict:
         """
@@ -194,6 +208,15 @@ class PilotB:
                 continue
 
             proposal = self.engine.evaluate(market, bu, bd)
+            # El libro se mira cada pocos segundos: emitir SIEMPRE ahogaria
+            # el stream. Solo sale lo que cambia algo -- una propuesta.
+            if proposal.intents:
+                emit("propuesta", f"{proposal.kind}: {market.slug[:42]}",
+                     slug=market.slug, tipo=proposal.kind,
+                     nota=getattr(proposal, "note", "")[:140],
+                     ask_up=bu.best_ask, ask_down=bd.best_ask,
+                     combinado=round((bu.best_ask or 0) + (bd.best_ask or 0), 4),
+                     n=len(proposal.intents))
             for intent in proposal.intents:
                 book = bu if intent.token_id == market.token_up else bd
                 await self._submit(intent, mid=book.mid, strategy=proposal.kind)
@@ -210,6 +233,10 @@ class PilotB:
         if not verdict.approved:
             # No es ruido: es la señal de si tus límites están bien puestos.
             log.debug("rechazada [%s] %s", verdict.code, verdict.detail)
+            emit("rechazo", f"{verdict.code}: {verdict.detail[:110]}",
+                 slug=intent.market_slug, codigo=verdict.code,
+                 detalle=verdict.detail[:200], precio=intent.price,
+                 size=intent.size)
             if self.kernel.killed:
                 await self._on_kill()
             return
@@ -223,6 +250,10 @@ class PilotB:
             status=placed.status, is_paper=placed.is_paper,
             latency_ms=placed.latency_ms, raw=placed.raw,
         )
+
+        emit("orden", f"{intent.side} {intent.size:.0f} @ {intent.price:.3f} · {placed.status}",
+             slug=intent.market_slug, estado=placed.status, precio=placed.price,
+             size=placed.size, latencia_ms=placed.latency_ms, estrategia=strategy)
 
         if placed.status == "filled":
             self.kernel.on_order_closed()

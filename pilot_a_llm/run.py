@@ -35,6 +35,7 @@ from core import net
 from core.alerts import Level, Telegram
 from core.api import AgentAPI
 from core.config import Mode, get_settings
+from core.events import BUS, emit
 from core.polymarket.client import ReadOnlyClient, build_execution_client
 from core.risk import RiskKernel, RiskLimits
 from core.storage import db
@@ -177,6 +178,7 @@ class PilotA:
             forecast_fn=self._forecast_now,
             trade_fn=self._trade_now,
             activity_fn=self._activity_now,
+            diag_fn=self._diagnostico,
         )
         await self._api.start()
 
@@ -466,7 +468,12 @@ class PilotA:
             )
 
         raw = await self._fetch_markets()
-        picks = select(raw, self._filtro(), limit=tope, vistos=await self._vistos())
+        vistos = await self._vistos()
+        picks = select(raw, self._filtro(), limit=tope, vistos=vistos)
+        emit("explorar", f"{len(raw)} mercados → {len(picks)} candidatos",
+             crudos=len(raw), elegidos=len(picks), ya_vistos=len(vistos),
+             categorias=sorted({c.category for c in picks}),
+             nuevos=sum(1 for c in picks if c.slug not in vistos))
         log.info("%d mercados → %d candidatos\n%s", len(raw), len(picks), summarize(picks))
         if not picks:
             self._scout_note = "ningún mercado pasó el filtro"
@@ -835,6 +842,63 @@ class PilotA:
             self.forecaster.weights = weights
         report = await learning_report()
         return {"resueltos": len(resolved)} | report
+
+    async def _diagnostico(self) -> dict:
+        """
+        La vista que faltaba: en que se va el trabajo y que se rompe.
+
+        Existe porque el agente parecia prudente -- 178 PASS-- y estaba
+        roto: 105 de esos PASS eran excepciones. Un contador de PASS no
+        distingue "no encontre nada" de "me cai", y esa diferencia es la
+        unica que importaba.
+        """
+        q = db.pool()
+        motivos = await q.fetch(
+            """
+            SELECT CASE
+                     WHEN pass_reason LIKE '%%excepci%%' THEN 'se rompió'
+                     WHEN pass_reason LIKE '%%ningún modelo%%' THEN 'sin modelo'
+                     WHEN pass_reason LIKE '%%ambigua%%'  THEN 'pregunta ambigua'
+                     WHEN pass_reason LIKE '%%divergencia%%' THEN 'veto por divergencia'
+                     WHEN pass_reason = '' OR pass_reason IS NULL THEN 'decisión limpia'
+                     ELSE 'otro'
+                   END AS motivo,
+                   count(*) AS n, max(ts) AS ultimo
+            FROM pilot_a.forecasts WHERE action = 'PASS'
+            GROUP BY 1 ORDER BY 2 DESC
+            """
+        )
+        ensemble = await q.fetch(
+            "SELECT n_models, count(*) n FROM pilot_a.forecasts GROUP BY 1 ORDER BY 1"
+        )
+        modelos = await q.fetch(
+            "SELECT key AS modelo, count(*) n FROM pilot_a.forecasts "
+            "CROSS JOIN LATERAL jsonb_each(per_model) GROUP BY 1 ORDER BY 2 DESC"
+        )
+        sesgo = await q.fetchrow(
+            """
+            SELECT count(*) n, count(DISTINCT slug) mercados,
+                   avg(p_calibrated - p_market) sesgo,
+                   count(*) FILTER (WHERE p_calibrated < p_market) debajo,
+                   count(*) FILTER (WHERE abs(p_calibrated - p_market) > 0.30) lejos
+            FROM pilot_a.forecasts
+            """
+        )
+        cats = await q.fetch(
+            "SELECT category, count(*) n, count(DISTINCT slug) mercados "
+            "FROM pilot_a.forecasts GROUP BY 1 ORDER BY 2 DESC"
+        )
+        d = dict(sesgo)
+        d["sesgo"] = float(d["sesgo"]) if d["sesgo"] is not None else None
+        d["por_mercado"] = round(d["n"] / d["mercados"], 2) if d["mercados"] else 0
+        return {
+            "pass": [dict(r) for r in motivos],
+            "ensemble": [dict(r) for r in ensemble],
+            "modelos": [dict(r) for r in modelos],
+            "resumen": d,
+            "categorias": [dict(r) for r in cats],
+            "at": datetime.now(UTC).isoformat(timespec="seconds"),
+        }
 
     async def _activity_now(self, n: int = 25) -> dict:
         """
