@@ -219,7 +219,12 @@ def decide(
         return _pass("Kelly no positivo tras costos", edge=edge, price_paid=price, **common)
 
     size = min(bankroll_usd * f_full * cfg.kelly_fraction, cfg.max_position_usd)
-    shares = size / price
+    # Hacia ABAJO, no al mas cercano: el kernel compara precio x shares
+    # contra el tope, y redondear hacia arriba lo cruza por milesimas.
+    # Medido: con tope $5.00 y precio 0.35, round() da 14.29 shares =
+    # $5.0015, y el kernel rechaza con "$5.00 > $5.00" -- tirando a la
+    # basura la investigacion entera del mercado por un centesimo.
+    shares = math.floor((size / price) * 100) / 100
     ev = shares * (p_win - price)
 
     return Decision(
@@ -233,7 +238,7 @@ def decide(
         edge=edge,
         kelly_full=f_full,
         size_usd=round(size, 2),
-        shares=round(shares, 2),
+        shares=shares,
         expected_value_usd=round(ev, 4),
         **common,
     )
