@@ -74,7 +74,7 @@ log = logging.getLogger("api")
 
 _STATUS = {
     200: "OK", 202: "Accepted", 400: "Bad Request", 401: "Unauthorized",
-    404: "Not Found", 409: "Conflict", 413: "Payload Too Large",
+    204: "No Content", 404: "Not Found", 409: "Conflict", 413: "Payload Too Large",
     500: "Internal Server Error",
 }
 
@@ -194,6 +194,11 @@ class AgentAPI:
     async def _route(
         self, method: str, path: str, headers: dict, query: dict, body: dict
     ) -> tuple[int, dict]:
+        # El preflight viaja SIN el token, asi que se responde antes
+        # de exigirlo. No revela nada: solo que cabeceras se aceptan.
+        if method == "OPTIONS":
+            return 204, {}
+
         if path in ("/", "/health", "/healthz"):
             status = self._safe_status()
             return (503 if status.get("killed") else 200), status
@@ -281,7 +286,16 @@ class AgentAPI:
             f"HTTP/1.1 {code} {_STATUS.get(code, 'OK')}\r\n"
             "Content-Type: application/json; charset=utf-8\r\n"
             f"Content-Length: {len(body)}\r\n"
-            "Cache-Control: no-store\r\nConnection: close\r\n\r\n"
+            "Cache-Control: no-store\r\n"
+            # El tablero es una pagina en otro origen y el navegador
+            # exige esto para dejarla leer la respuesta. Abierto a
+            # cualquiera porque todo menos /health pide el token: sin
+            # el, un origen permitido tampoco obtiene nada.
+            "Access-Control-Allow-Origin: *\r\n"
+            "Access-Control-Allow-Headers: authorization, content-type\r\n"
+            "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
+            "Access-Control-Max-Age: 86400\r\n"
+            "Connection: close\r\n\r\n"
         ).encode()
         writer.write(head + body)
         await writer.drain()
