@@ -41,6 +41,8 @@ ENDPOINTS
     GET  /report      tablero de aprendizaje: ¿hay edge?
     GET  /candidates  mercados elegidos por el explorador  [?n=8]
     GET  /geo         desde qué país ve Polymarket al bot
+    GET  /activity    lo último que hizo, mercado por mercado  [?n=25]
+    GET  /precio      historial de precio de un outcome  [?token=&rango=]
     POST /market      un mercado por el pipeline           {"slug": "..."}
     POST /cycle       ciclo completo (equivale a candidates + todos)
     POST /resolve     busca mercados resueltos y aprende
@@ -101,6 +103,7 @@ class AgentAPI:
         market_fn: Callable[[str], Awaitable[dict]] | None = None,
         forecast_fn: Callable[[str], Awaitable[dict]] | None = None,
         trade_fn: Callable[[str], Awaitable[dict]] | None = None,
+        activity_fn: Callable[[int], Awaitable[dict]] | None = None,
         port: int | None = None,
         token: str | None = None,
     ) -> None:
@@ -115,6 +118,7 @@ class AgentAPI:
         self._market_fn = market_fn
         self._forecast_fn = forecast_fn
         self._trade_fn = trade_fn
+        self._activity_fn = activity_fn
 
         self._started = time.monotonic()
         self._server: asyncio.AbstractServer | None = None
@@ -251,6 +255,17 @@ class AgentAPI:
                     return 400, {"error": "falta 'slug' en el body"}
                 return 200, await fn(slug)
 
+        if path == "/activity" and method == "GET":
+            if self._activity_fn is None:
+                return 404, {"error": "no disponible"}
+            return 200, await self._activity_fn(_as_int(query.get("n"), default=25))
+
+        if path == "/precio" and method == "GET":
+            token = str(query.get("token", "")).strip()
+            if not token:
+                return 400, {"error": "falta 'token' (token_id del outcome)"}
+            return 200, await _precio(token, str(query.get("rango", "1d")))
+
         if path == "/geo" and method == "GET":
             return 200, await _geoblock()
 
@@ -264,6 +279,7 @@ class AgentAPI:
 
         return 404, {"error": "no existe", "rutas": [
             "GET /health", "GET /report", "GET /candidates", "GET /geo",
+            "GET /activity", "GET /precio?token=...",
             "POST /forecast", "POST /trade", "POST /market",
             "POST /cycle", "POST /resolve", "POST /kill",
         ]}
@@ -299,6 +315,35 @@ class AgentAPI:
         ).encode()
         writer.write(head + body)
         await writer.drain()
+
+
+async def _precio(token_id: str, rango: str = "1d") -> dict:
+    """
+    Historial de precio de un outcome, por el agente y no por el navegador.
+
+    El tablero no puede pedirlo directo: el ISP del operador envenena el DNS
+    de polymarket.com, y aunque no lo hiciera el CLOB no manda cabeceras
+    CORS. El agente sí lo alcanza, asi que hace de puente.
+    """
+    import httpx
+
+    fidelity = {"1h": 1, "6h": 5, "1d": 10, "1w": 60, "max": 180}.get(rango, 10)
+    try:
+        async with httpx.AsyncClient(timeout=20) as cli:
+            r = await cli.get(
+                "https://clob.polymarket.com/prices-history",
+                params={"market": token_id, "interval": rango, "fidelity": fidelity},
+            )
+        if r.status_code != 200:
+            return {"error": f"HTTP {r.status_code}", "puntos": []}
+        datos = r.json().get("history", [])
+        return {
+            "token": token_id, "rango": rango, "n": len(datos),
+            "puntos": [{"t": d.get("t"), "p": d.get("p")} for d in datos],
+            "at": _now(),
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"{type(exc).__name__}: {exc}", "puntos": []}
 
 
 async def _geoblock() -> dict:

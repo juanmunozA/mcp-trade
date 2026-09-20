@@ -176,6 +176,7 @@ class PilotA:
             market_fn=self._market_now,
             forecast_fn=self._forecast_now,
             trade_fn=self._trade_now,
+            activity_fn=self._activity_now,
         )
         await self._api.start()
 
@@ -834,6 +835,36 @@ class PilotA:
             self.forecaster.weights = weights
         report = await learning_report()
         return {"resueltos": len(resolved)} | report
+
+    async def _activity_now(self, n: int = 25) -> dict:
+        """
+        Lo ultimo que pronostico, mercado por mercado.
+
+        Lleva `token_yes` porque el tablero grafica el precio con el, y
+        `outcome` para poder marcar los que ya resolvieron.
+        """
+        n = max(1, min(n, 100))
+        rows = await db.pool().fetch(
+            """
+            SELECT f.ts, f.slug, f.question, f.category, f.action,
+                   f.p_calibrated, f.p_market, f.edge, f.size_usd,
+                   f.end_date, f.days_to_resolution, f.token_yes,
+                   f.condition_id, f.confidence, f.pass_reason,
+                   r.outcome, r.brier
+            FROM pilot_a.forecasts f
+            LEFT JOIN pilot_a.resolutions r ON r.forecast_id = f.id
+            ORDER BY f.ts DESC LIMIT $1
+            """,
+            n,
+        )
+        items = []
+        for r in rows:
+            d = dict(r)
+            for k in ("p_calibrated", "p_market", "edge", "size_usd", "brier"):
+                if d.get(k) is not None:
+                    d[k] = float(d[k])
+            items.append(d)
+        return {"n": len(items), "items": items, "at": datetime.now(UTC).isoformat(timespec="seconds")}
 
     @staticmethod
     async def _report_now() -> dict:

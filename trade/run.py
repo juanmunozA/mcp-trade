@@ -106,6 +106,7 @@ class PilotB:
             resolve_fn=self._no_aplica,
             report_fn=self._reporte,
             kill_fn=self._kill_ahora,
+            activity_fn=self._actividad,
         )
         await self._api.start()
 
@@ -133,6 +134,34 @@ class PilotB:
         day = (datetime.now(UTC) - timedelta(days=1)).date()
         stats = await self.repo.daily_summary(day)
         return stats | self.engine.summary()
+
+    async def _actividad(self, n: int = 25) -> dict:
+        """
+        En que mercados esta parado y como va cada uno.
+
+        `token_up` viaja para que el tablero pueda pedir el precio; sin el
+        solo se veria el inventario, no contra que se mueve.
+        """
+        items = []
+        for m in self.markets.values():
+            inv = self.engine.inventory(m.condition_id)
+            items.append({
+                "condition_id": m.condition_id,
+                "slug": m.slug,
+                "token_up": m.token_up,
+                "token_down": m.token_down,
+                "shares_up": round(inv.shares_up, 2),
+                "shares_down": round(inv.shares_down, 2),
+                "avg_cost_up": round(inv.avg_cost_up, 4),
+                "avg_cost_down": round(inv.avg_cost_down, 4),
+                "paired": round(inv.paired, 2),
+                "imbalance": round(inv.imbalance, 2),
+                "combined_cost": round(inv.combined_cost, 4),
+                "locked_edge": round(inv.locked_edge, 4),
+            })
+        items.sort(key=lambda x: abs(x["imbalance"]), reverse=True)
+        return {"n": len(items), "items": items[:max(1, min(n, 100))],
+                "at": datetime.now(UTC).isoformat(timespec="seconds")}
 
     def _kill_ahora(self, reason: str) -> None:
         if self.kernel is not None:
