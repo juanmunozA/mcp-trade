@@ -42,6 +42,49 @@ class Resolution:
     category: str = ""
 
 
+def por_mercado(records: list[Resolution]) -> list[Resolution]:
+    """
+    Un mercado, una muestra.
+
+    El agente vuelve a pronosticar los mismos mercados en cada ciclo:
+    medido en producción, 178 pronósticos sobre 26 mercados, con uno
+    repetido 33 veces. Cuando ese mercado resuelva, las 33 filas traerán
+    el MISMO resultado.
+
+    Contarlas como 33 muestras independientes hace que un solo mercado
+    cruce el umbral de 30 y encienda la calibración por su cuenta. La
+    curva quedaría ajustada a un único desenlace con una confianza que
+    nadie se ganó — el umbral existe justamente para impedir eso, y así
+    no lo impide.
+
+    Se colapsa al promedio y no al primero ni al último: el primero se
+    hizo sin información y el último con casi todo ya visible, y
+    quedarse con cualquiera de los dos sesga la curva en una dirección
+    conocida.
+
+    Un registro sin mercado queda como grupo propio, así que quien no
+    llene la clave obtiene el comportamiento de antes.
+    """
+    grupos: dict[str, list[Resolution]] = {}
+    for i, r in enumerate(records):
+        grupos.setdefault(r.market_slug or f"#{i}", []).append(r)
+
+    salida = []
+    for clave, rs in grupos.items():
+        con_precio = [r.p_market for r in rs if r.p_market is not None]
+        salida.append(Resolution(
+            p_forecast=sum(r.p_forecast for r in rs) / len(rs),
+            # Empate hacia SÍ: da igual, un mercado con desenlaces
+            # contradictorios ya es un bug de datos, no un caso real.
+            outcome=sum(1 for r in rs if r.outcome) * 2 >= len(rs),
+            model=rs[0].model,
+            market_slug=clave,
+            p_market=(sum(con_precio) / len(con_precio)) if con_precio else None,
+            category=rs[0].category,
+        ))
+    return salida
+
+
 @dataclass(frozen=True, slots=True)
 class Bin:
     lo: float
@@ -235,6 +278,9 @@ class CalibrationMap:
         prior_strength: float = 10.0,
         _segmentar: bool = True,
     ) -> None:
+        # `n` cuenta mercados, no filas. El umbral pide 30 desenlaces
+        # independientes, y 30 pronósticos del mismo mercado son uno.
+        records = por_mercado(records)
         self.n = len(records)
         self.active = self.n >= MIN_SAMPLES_TO_CALIBRATE
         self._centers: list[float] = []
@@ -323,10 +369,15 @@ def ensemble_weights(
 
     Los modelos sin historial suficiente reciben peso uniforme: no los
     castigas por ser nuevos, pero tampoco les crees por el nombre.
+
+    El historial se colapsa por mercado antes de puntuar, por lo mismo
+    que la calibración: acertarle 33 veces al mismo mercado es acertarle
+    una vez.
     """
     if not history:
         return {}
 
+    history = {m: por_mercado(rs) for m, rs in history.items()}
     scored = {m: brier(rs) for m, rs in history.items() if len(rs) >= min_samples}
     if not scored:
         uniform = 1.0 / len(history)

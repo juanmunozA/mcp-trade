@@ -319,14 +319,18 @@ class PilotA:
         correcto: calibrar con 8 muestras es superstición.
         """
         rows = await db.pool().fetch(
-            "SELECT p_forecast, outcome, p_market, category FROM pilot_a.resolutions"
+            "SELECT p_forecast, outcome, p_market, category, condition_id "
+            "FROM pilot_a.resolutions"
         )
         if not rows:
             return None, {}
+        # `condition_id` identifica el mercado: sin él, los 30 pronósticos
+        # del mismo mercado contarían como 30 muestras independientes.
         records = [
             Resolution(
                 p_forecast=float(r["p_forecast"]), outcome=r["outcome"],
                 p_market=float(r["p_market"]), category=r["category"] or "",
+                market_slug=r["condition_id"],
             )
             for r in rows
         ]
@@ -335,7 +339,8 @@ class PilotA:
 
         per_model = await db.pool().fetch(
             """
-            SELECT key AS model, (value)::text::numeric AS p, r.outcome, f.p_market
+            SELECT key AS model, (value)::text::numeric AS p, r.outcome,
+                   f.p_market, r.condition_id
             FROM pilot_a.forecasts f
             JOIN pilot_a.resolutions r ON r.forecast_id = f.id
             CROSS JOIN LATERAL jsonb_each(f.per_model)
@@ -344,7 +349,8 @@ class PilotA:
         history: dict[str, list[Resolution]] = {}
         for r in per_model:
             history.setdefault(r["model"], []).append(
-                Resolution(float(r["p"]), r["outcome"], p_market=float(r["p_market"]))
+                Resolution(float(r["p"]), r["outcome"], p_market=float(r["p_market"]),
+                           market_slug=r["condition_id"])
             )
         weights = ensemble_weights(history) if history else {}
         if weights:
