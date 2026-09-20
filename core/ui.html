@@ -2,725 +2,882 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Torre de Control</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
 <style>
 :root{
-  --ground:#F4F2EE;--surface:#fff;--surface-2:#FAF8F5;
-  --ink:#15181D;--muted:#6A6F78;--faint:#9A9EA6;
-  --line:#E2DED7;--line-soft:#EDE9E3;
-  --accent:#A85D30;--accent-soft:#F2E4D9;
-  --ok:#3D7A5D;--ok-soft:#E3EFE8;
-  --warn:#8A6A18;--warn-soft:#F5EBD3;
-  --bad:#9A3A33;--bad-soft:#F6E2DF;
+  --ground:#F2F0EC;--surface:#fff;--surface-2:#FAF8F5;--surface-3:#F5F2ED;
+  --ink:#14171C;--muted:#676C75;--faint:#9B9FA7;
+  --line:#E1DDD6;--line-soft:#ECE8E2;
+  --accent:#A85D30;--accent-soft:#F3E5DA;
+  --ok:#3B7A5C;--ok-soft:#E2EFE8;
+  --warn:#8A6A18;--warn-soft:#F5EBD2;
+  --bad:#99392F;--bad-soft:#F6E1DE;
   --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
   --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:9px;
 }
-@media (prefers-color-scheme:dark){:root{
-  --ground:#131519;--surface:#1A1D23;--surface-2:#1F232A;
-  --ink:#E7E4DE;--muted:#8D9198;--faint:#6A6E75;
-  --line:#282C34;--line-soft:#22262D;
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --ground:#111317;--surface:#191C21;--surface-2:#1E2228;--surface-3:#232830;
+  --ink:#E8E5DF;--muted:#8E9299;--faint:#686C73;
+  --line:#272B33;--line-soft:#21252B;
   --accent:#D9895A;--accent-soft:#33241B;
-  --ok:#5FA57F;--ok-soft:#1B2A22;
-  --warn:#C9A244;--warn-soft:#2C2517;
-  --bad:#D46A5F;--bad-soft:#2E1C1A;
+  --ok:#5DA57E;--ok-soft:#1A2A22;
+  --warn:#C9A244;--warn-soft:#2B2417;
+  --bad:#D46A5F;--bad-soft:#2D1B19;
 }}
+:root[data-theme=dark]{
+  --ground:#111317;--surface:#191C21;--surface-2:#1E2228;--surface-3:#232830;
+  --ink:#E8E5DF;--muted:#8E9299;--faint:#686C73;
+  --line:#272B33;--line-soft:#21252B;
+  --accent:#D9895A;--accent-soft:#33241B;
+  --ok:#5DA57E;--ok-soft:#1A2A22;
+  --warn:#C9A244;--warn-soft:#2B2417;
+  --bad:#D46A5F;--bad-soft:#2D1B19;
+}
 *{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--ground);color:var(--ink);font-family:var(--sans);
-  font-size:15px;line-height:1.5;padding-inline:20px;padding-block:0 56px;
-  -webkit-font-smoothing:antialiased}
-.wrap{max-width:1240px;margin:0 auto}
-header{position:sticky;top:0;z-index:20;background:var(--ground);
-  border-bottom:1px solid var(--line);margin-inline:-20px;padding:14px 20px 12px}
-.hd{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.015em}
-.h-sub{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
-.hd-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.btn{font-family:var(--sans);font-size:12.5px;font-weight:500;background:var(--surface);
-  color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 11px;
-  cursor:pointer;line-height:1.3}
+html{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  padding-inline:20px;padding-block:0 60px}
+.wrap{max-width:1320px;margin:0 auto}
+h1,h2,h3{margin:0;text-wrap:balance}
+
+header{position:sticky;top:0;z-index:40;background:var(--ground);
+  border-bottom:1px solid var(--line);margin-inline:-20px;padding:13px 20px 11px}
+.hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand h1{font-size:18.5px;font-weight:700;letter-spacing:-.018em;line-height:1.2}
+.brand span{font-family:var(--mono);font-size:11px;color:var(--faint);display:block}
+.hd-r{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.btn{font:500 12.5px/1.3 var(--sans);background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:6px;padding:6px 11px;cursor:pointer;
+  transition:border-color .12s,color .12s}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
 .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
-.btn-danger{color:var(--bad);border-color:var(--bad)}
-.tick{font-family:var(--mono);font-size:11.5px;color:var(--muted);min-width:104px;
-  text-align:right;font-variant-numeric:tabular-nums}
-.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);
-  margin-right:6px;vertical-align:1px}
-.pulse.off{background:var(--faint)}
-@media (prefers-reduced-motion:no-preference){.pulse:not(.off){animation:lat 2.4s ease-in-out infinite}}
-@keyframes lat{0%,100%{opacity:1}50%{opacity:.25}}
-.key{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;
-  padding:11px 13px;background:var(--warn-soft);border:1px solid var(--line);
-  border-left:3px solid var(--warn);border-radius:7px}
-.key p{margin:0;font-size:13px;flex:1 1 260px}
-.key input{font-family:var(--mono);font-size:12.5px;background:var(--surface);
-  color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 9px;
-  width:230px;max-width:100%}
-.alarma{margin-top:14px;padding:13px 15px;border-radius:7px;background:var(--bad-soft);
-  border:1px solid var(--bad)}
-.alarma strong{font-family:var(--cond);letter-spacing:.06em;text-transform:uppercase;
-  font-size:12.5px;color:var(--bad)}
-.alarma p{margin:3px 0 0;font-size:13.5px}
-.agentes{display:grid;gap:18px;margin-top:18px;
-  grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;
-  overflow:hidden;display:flex;flex-direction:column}
-.p-top{display:flex;align-items:center;gap:10px;padding:13px 16px;
-  border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
-.p-name{font-size:15.5px;font-weight:600}
-.p-svc{font-family:var(--mono);font-size:11px;color:var(--faint);display:block;margin-top:1px}
-.p-chips{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.chip{font-family:var(--cond);font-size:11px;font-weight:600;letter-spacing:.07em;
-  text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap;
-  border:1px solid transparent}
-.c-ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
-.c-warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
-.c-bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
-.c-mute{background:var(--surface);color:var(--muted);border-color:var(--line)}
-.tiles{display:grid;gap:1px;background:var(--line-soft);
-  grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
-  border-bottom:1px solid var(--line-soft)}
-.tile{background:var(--surface);padding:12px 14px 13px;min-width:0}
-.t-lab{font-family:var(--cond);font-size:10.5px;font-weight:600;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
-.t-val{font-family:var(--mono);font-size:19px;font-weight:500;
-  font-variant-numeric:tabular-nums;letter-spacing:-.02em;display:block;overflow-wrap:anywhere}
-.t-val.sm{font-size:15px}
-.t-sub{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-top:2px}
-.t-val.is-bad{color:var(--bad)}.t-val.is-ok{color:var(--ok)}.t-val.is-warn{color:var(--warn)}
-.spark{display:block;margin-top:6px;width:100%;height:20px}
-.filas{padding:6px 16px 14px}
-.fila{display:flex;gap:12px;align-items:baseline;padding:7px 0;
-  border-bottom:1px solid var(--line-soft);font-size:13px}
-.fila:last-child{border-bottom:0}
-.f-k{color:var(--muted)}
-.f-v{font-family:var(--mono);font-size:12.5px;margin-left:auto;text-align:right;
-  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.sec{font-family:var(--cond);font-size:10.5px;font-weight:600;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--faint);padding:12px 0 2px}
-.vacio{font-size:13px;color:var(--muted);font-style:italic;padding:8px 0;margin:0}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger:hover{background:var(--bad-soft)}
+.live{display:flex;align-items:center;gap:6px;font:400 11.5px var(--mono);
+  color:var(--muted);font-variant-numeric:tabular-nums}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none}
+.dot.on{background:var(--ok)}
+.dot.warn{background:var(--warn)}
+@media (prefers-reduced-motion:no-preference){.dot.on{animation:lat 2.2s ease-in-out infinite}}
+@keyframes lat{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* actividad */
-.act{margin-top:18px;background:var(--surface);border:1px solid var(--line);
-  border-radius:10px;overflow:hidden}
-.act-h{padding:12px 16px;border-bottom:1px solid var(--line-soft);background:var(--surface-2);
-  display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-.act-h h2{font-size:14px;font-weight:600;margin:0}
-.act-h span{font-size:12.5px;color:var(--muted)}
+.key{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;
+  padding:11px 14px;background:var(--warn-soft);border:1px solid var(--line);
+  border-left:3px solid var(--warn);border-radius:var(--r)}
+.key p{margin:0;font-size:13px;flex:1 1 280px}
+.key input{font:400 12.5px var(--mono);background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:240px;max-width:100%}
+.key input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+.alarma{margin-top:14px;padding:12px 15px;border-radius:var(--r);
+  background:var(--bad-soft);border:1px solid var(--bad)}
+.alarma strong{font:600 12.5px var(--cond);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--bad)}
+.alarma p{margin:3px 0 0;font-size:13.5px}
+
+.grid{display:grid;gap:16px;margin-top:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(350px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.card-h{display:flex;align-items:center;gap:10px;padding:12px 16px;
+  border-bottom:1px solid var(--line-soft);background:var(--surface-2);flex-wrap:wrap}
+.card-h h2{font-size:14.5px;font-weight:600}
+.card-h .sub{font-size:12.5px;color:var(--muted)}
+.card-h .r{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.name{font-size:15.5px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.name small{display:block;font:400 11px var(--mono);color:var(--faint)}
+
+.chip{font:600 10.5px var(--cond);letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 8px;border-radius:4px;white-space:nowrap;border:1px solid transparent}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.chip.mute{background:var(--surface);color:var(--muted);border-color:var(--line)}
+.chip.acc{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+
+.tiles{display:grid;gap:1px;background:var(--line-soft);
+  grid-template-columns:repeat(auto-fit,minmax(125px,1fr));
+  border-bottom:1px solid var(--line-soft)}
+.tile{background:var(--surface);padding:12px 14px 11px;min-width:0}
+.lab{display:block;font:600 10px var(--cond);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.val{display:block;font:500 20px/1.15 var(--mono);font-variant-numeric:tabular-nums;
+  letter-spacing:-.025em;overflow-wrap:anywhere}
+.val.sm{font-size:15.5px}
+.val.bad{color:var(--bad)}.val.ok{color:var(--ok)}.val.warn{color:var(--warn)}
+.sub2{display:block;font:400 10.5px var(--mono);color:var(--faint);margin-top:3px}
+.mini{height:26px;margin-top:5px}
+
+.rows{padding:5px 16px 13px}
+.row{display:flex;gap:12px;align-items:baseline;padding:6.5px 0;
+  border-bottom:1px solid var(--line-soft);font-size:13px}
+.row:last-child{border-bottom:0}
+.row .k{color:var(--muted)}
+.row .v{margin-left:auto;text-align:right;font:500 12.5px var(--mono);
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.row.bad .v{color:var(--bad)}.row.ok .v{color:var(--ok)}
+.hdr{font:600 10px var(--cond);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);padding:13px 0 3px}
+.empty{font-size:13px;color:var(--muted);font-style:italic;padding:14px 16px;margin:0}
+
+.fbar{display:flex;gap:5px;flex-wrap:wrap;padding:9px 16px;
+  border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.f{font:600 10.5px var(--cond);letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 9px;border-radius:99px;border:1px solid var(--line);
+  background:var(--surface);color:var(--muted);cursor:pointer}
+.f[aria-pressed=true]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.f:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.feed{max-height:380px;overflow-y:auto;overscroll-behavior:contain}
+.ev{display:flex;gap:10px;align-items:baseline;padding:6px 16px;
+  border-bottom:1px solid var(--line-soft);font:400 12px var(--mono)}
+.ev:last-child{border-bottom:0}
+.ev .t{color:var(--faint);font-size:10.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ev .kd{font:600 9.5px var(--cond);letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 6px;border-radius:3px;min-width:78px;text-align:center;white-space:nowrap}
+.ev .m{flex:1;min-width:0;overflow-wrap:anywhere}
+.ev .x{color:var(--faint);font-size:10.5px;white-space:nowrap}
+.ev .s{font:500 9.5px var(--cond);letter-spacing:.05em;text-transform:uppercase;
+  color:var(--faint);white-space:nowrap}
+.kd.paso{background:var(--surface-3);color:var(--muted)}
+.kd.ok{background:var(--ok-soft);color:var(--ok)}
+.kd.error{background:var(--bad-soft);color:var(--bad)}
+.kd.parada,.kd.rechazo{background:var(--warn-soft);color:var(--warn)}
+.kd.orden,.kd.propuesta{background:var(--accent-soft);color:var(--accent)}
+.kd.explorar{background:var(--surface-3);color:var(--ink)}
+
 .mk{display:block;width:100%;text-align:left;background:var(--surface);border:0;
   border-bottom:1px solid var(--line-soft);padding:11px 16px;cursor:pointer;
-  font-family:var(--sans);color:var(--ink);font-size:13px}
+  font:400 13px var(--sans);color:var(--ink)}
 .mk:hover{background:var(--surface-2)}
-.mk[aria-expanded=true]{background:var(--accent-soft)}
+.mk[aria-expanded=true]{background:var(--surface-3)}
 .mk:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.mk-top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-.mk-q{font-weight:500;flex:1 1 260px;min-width:0}
-.mk-nums{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;
+.mk-t{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.mk-q{font-weight:500;flex:1 1 280px;min-width:0}
+.mk-n{font:500 12px var(--mono);color:var(--muted);white-space:nowrap;
   font-variant-numeric:tabular-nums}
-.mk-nums b{color:var(--ink);font-weight:500}
-.barra{display:flex;height:4px;border-radius:2px;overflow:hidden;background:var(--line-soft);
-  margin-top:7px;position:relative}
-.barra i{display:block;height:100%}
-.b-p{background:var(--accent)}
-.b-m{background:var(--muted);opacity:.45}
-.det{padding:0 16px 16px;background:var(--surface-2);
-  border-bottom:1px solid var(--line-soft)}
-.det-g{display:grid;gap:14px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
-  padding-top:12px}
-@media (max-width:640px){.det-g{grid-template-columns:1fr}}
-.graf{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
-.graf-t{font-family:var(--cond);font-size:10.5px;font-weight:600;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;gap:8px;
-  align-items:baseline;flex-wrap:wrap}
-.leg{font-family:var(--mono);font-size:10px;text-transform:none;letter-spacing:0}
-.leg b{font-weight:500}
-.razon{font-size:12.5px;color:var(--muted);margin:10px 0 0;padding:9px 11px;
-  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--warn);
-  border-radius:6px}
-.razon b{color:var(--ink)}
+.mk-n b{color:var(--ink)}
+.bar{display:flex;height:5px;border-radius:3px;overflow:hidden;
+  background:var(--line-soft);margin-top:8px}
+.bar i{display:block;height:100%}
+.det{background:var(--surface-2);border-bottom:1px solid var(--line-soft);padding:0 16px 16px}
+.det-g{display:grid;gap:14px;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);padding-top:13px}
+@media (max-width:700px){.det-g{grid-template-columns:1fr}}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:11px}
+.pane h3{font:600 10px var(--cond);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:7px}
+.chart{width:100%;height:210px}
+.why{margin:11px 0 0;padding:9px 12px;font-size:12.5px;color:var(--muted);
+  background:var(--surface);border:1px solid var(--line);
+  border-left:3px solid var(--warn);border-radius:6px}
+.why b{color:var(--ink)}
 
-/* feed en vivo */
-.vivo{margin-top:18px;background:var(--surface);border:1px solid var(--line);
-  border-radius:10px;overflow:hidden}
-.vivo-h{padding:12px 16px;border-bottom:1px solid var(--line-soft);
-  background:var(--surface-2);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.vivo-h h2{font-size:14px;font-weight:600;margin:0}
-.vivo-h .est{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
-.feed{max-height:340px;overflow-y:auto;font-family:var(--mono);font-size:12px}
-.ev{display:flex;gap:10px;padding:6px 16px;border-bottom:1px solid var(--line-soft);
-  align-items:baseline}
-.ev:last-child{border-bottom:0}
-.ev-t{color:var(--faint);font-size:10.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.ev-k{font-family:var(--cond);font-size:10px;font-weight:600;letter-spacing:.07em;
-  text-transform:uppercase;padding:1px 6px;border-radius:3px;white-space:nowrap;
-  min-width:74px;text-align:center}
-.k-paso{background:var(--surface-2);color:var(--muted)}
-.k-ok{background:var(--ok-soft);color:var(--ok)}
-.k-error{background:var(--bad-soft);color:var(--bad)}
-.k-parada{background:var(--warn-soft);color:var(--warn)}
-.k-rechazo{background:var(--warn-soft);color:var(--warn)}
-.k-orden{background:var(--accent-soft);color:var(--accent)}
-.k-propuesta{background:var(--accent-soft);color:var(--accent)}
-.k-explorar{background:var(--surface-2);color:var(--ink)}
-.ev-m{flex:1;min-width:0;overflow-wrap:anywhere}
-.ev-d{color:var(--faint);font-size:10.5px;white-space:nowrap}
-.ev-src{font-size:10px;color:var(--faint);white-space:nowrap}
-@media (prefers-reduced-motion:no-preference){
-  .ev.nuevo{animation:entra .5s ease-out}
-}
-@keyframes entra{from{background:var(--accent-soft)}to{background:transparent}}
-
-/* diagnostico */
-.diag-g{display:grid;gap:1px;background:var(--line-soft);
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
-.dcol{background:var(--surface);padding:12px 16px 14px}
-.dcol h3{font-family:var(--cond);font-size:10.5px;font-weight:600;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--muted);margin:0 0 8px}
-.dl{display:flex;gap:10px;align-items:baseline;padding:4px 0;font-size:12.5px}
-.dl span:first-child{color:var(--muted);min-width:0;overflow-wrap:anywhere}
-.dl b{margin-left:auto;font-family:var(--mono);font-weight:500;
-  font-variant-numeric:tabular-nums}
-.dl.mal b{color:var(--bad)}
-.dl.bien b{color:var(--ok)}
-footer{margin-top:22px;font-size:12px;color:var(--faint);text-align:center}
-code{font-family:var(--mono);font-size:11.5px}
+.dg{display:grid;gap:1px;background:var(--line-soft);
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.dcell{background:var(--surface);padding:12px 16px 14px;min-width:0}
+.dcell h3{font:600 10px var(--cond);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}
+.dchart{width:100%;height:150px}
+footer{margin-top:24px;font-size:12px;color:var(--faint);text-align:center;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="hd">
-      <div><h1>Torre de Control</h1><span class="h-sub" id="modo">polymarket</span></div>
-      <div class="hd-right">
-        <span class="tick" id="tick"><span class="pulse off"></span>iniciando</span>
-        <button class="btn" id="bRef" type="button">Actualizar</button>
-        <button class="btn" id="bAuto" type="button" aria-pressed="true">Auto 15s</button>
-        <button class="btn btn-danger" id="bKill" type="button">Parar todo</button>
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.25.4/preact.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.25.4/hooks.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/6.1.0/echarts.min.js"></script>
+<script>
+"use strict";
+var AGENTES = window.__AGENTES__ || [];
+var h = preact.h, render = preact.render;
+var useState = preactHooks.useState, useEffect = preactHooks.useEffect,
+    useRef = preactHooks.useRef, useCallback = preactHooks.useCallback,
+    useMemo = preactHooks.useMemo;
+var html = htm.bind(h);
+
+var f = {
+  num: function(v, d){ d = d || 0;
+    return (v == null || v === "" || isNaN(+v)) ? "—"
+      : (+v).toLocaleString("es", {minimumFractionDigits:d, maximumFractionDigits:d}); },
+  usd: function(v){ return (v == null || v === "" || isNaN(+v)) ? "—"
+      : "$" + (+v).toLocaleString("es", {minimumFractionDigits:2, maximumFractionDigits:2}); },
+  pct: function(v){ return (v == null || isNaN(+v)) ? "—" : (+v*100).toFixed(1) + "%"; },
+  dur: function(s){ if (s == null) return "—"; s = Math.floor(s);
+    if (s < 60) return s + "s";
+    if (s < 3600) return Math.floor(s/60) + "m " + (s%60) + "s";
+    return Math.floor(s/3600) + "h " + Math.floor(s%3600/60) + "m"; },
+  hora: function(x){ if (!x) return "—"; var d = new Date(x);
+    return isNaN(d.getTime()) ? "—"
+      : d.toLocaleString("es", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}); },
+  hms: function(x){ var d = new Date(x);
+    return isNaN(d.getTime()) ? "--:--:--" : d.toLocaleTimeString("es", {hour12:false}); }
+};
+
+function css(v, fb){
+  try { return getComputedStyle(document.documentElement).getPropertyValue(v).trim() || fb; }
+  catch(e){ return fb; }
+}
+
+/* ECharts como componente: una instancia por nodo, destruida al
+   desmontar. Sin el dispose cada refresco dejaria un grafico huerfano
+   escuchando resize, y la memoria crece sola toda la noche. */
+function Chart(props){
+  var el = useRef(null), inst = useRef(null);
+  useEffect(function(){
+    if (!el.current || !window.echarts) return;
+    inst.current = echarts.init(el.current, null, {renderer:"svg"});
+    if (props.option) inst.current.setOption(props.option(), true);
+    var ro = new ResizeObserver(function(){ if (inst.current) inst.current.resize(); });
+    ro.observe(el.current);
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var retema = function(){ if (inst.current && props.option) inst.current.setOption(props.option(), true); };
+    if (mq.addEventListener) mq.addEventListener("change", retema);
+    return function(){
+      ro.disconnect();
+      if (mq.removeEventListener) mq.removeEventListener("change", retema);
+      if (inst.current) { inst.current.dispose(); inst.current = null; }
+    };
+  }, []);
+  useEffect(function(){
+    if (inst.current && props.option) inst.current.setOption(props.option(), true);
+  }, [props.dep]);
+  return html`<div ref=${el} class=${props.class || "chart"}></div>`;
+}
+
+function tema(){
+  return { ink: css("--ink","#222"), muted: css("--muted","#777"),
+           line: css("--line","#ddd"), acc: css("--accent","#a85d30"),
+           surf: css("--surface","#fff"), mono: "IBM Plex Mono, monospace" };
+}
+
+/* Escala 0..1 fija porque es una probabilidad: reescalar al min/max
+   haria ver como sismo un mercado que se movio dos centavos. */
+function opcionPrecio(puntos, marca){
+  var c = tema();
+  var datos = puntos.map(function(p){ return [p.t*1000, p.p]; });
+  return {
+    animation:false,
+    grid:{left:42, right:14, top:16, bottom:26},
+    tooltip:{trigger:"axis", backgroundColor:c.surf, borderColor:c.line,
+      textStyle:{color:c.ink, fontFamily:c.mono, fontSize:11},
+      axisPointer:{type:"cross", label:{backgroundColor:c.muted}},
+      valueFormatter:function(v){ return (v*100).toFixed(1) + "%"; }},
+    xAxis:{type:"time", axisLine:{lineStyle:{color:c.line}},
+      axisLabel:{color:c.muted, fontFamily:c.mono, fontSize:10}, splitLine:{show:false}},
+    yAxis:{type:"value", min:0, max:1,
+      axisLabel:{color:c.muted, fontFamily:c.mono, fontSize:10,
+        formatter:function(v){ return v.toFixed(2); }},
+      splitLine:{lineStyle:{color:c.line}}},
+    dataZoom:[{type:"inside"}],
+    series:[{
+      type:"line", data:datos, showSymbol:false,
+      lineStyle:{color:c.ink, width:1.8},
+      areaStyle:{color:c.muted, opacity:0.10},
+      markLine: marca == null ? undefined : {
+        silent:true, symbol:"none",
+        label:{formatter:"agente", color:c.acc, fontFamily:c.mono, fontSize:10,
+          position:"insideStartTop"},
+        lineStyle:{color:c.acc, type:"dashed", width:1.5},
+        data:[{yAxis:marca}]}
+    }]
+  };
+}
+
+function opcionBarras(pares, colorear){
+  var c = tema();
+  return {
+    animation:false,
+    grid:{left:4, right:34, top:6, bottom:4, containLabel:true},
+    tooltip:{trigger:"item", backgroundColor:c.surf, borderColor:c.line,
+      textStyle:{color:c.ink, fontFamily:c.mono, fontSize:11}},
+    xAxis:{type:"value", show:false},
+    yAxis:{type:"category", inverse:true,
+      data:pares.map(function(x){ return x[0]; }),
+      axisLine:{show:false}, axisTick:{show:false},
+      axisLabel:{color:c.muted, fontSize:10.5, fontFamily:"IBM Plex Sans"}},
+    series:[{type:"bar", barWidth:"58%",
+      data:pares.map(function(x){
+        return {value:x[1], itemStyle:{color: colorear ? colorear(x[0]) : c.acc}}; }),
+      itemStyle:{borderRadius:[0,3,3,0]},
+      label:{show:true, position:"right", color:c.muted, fontFamily:c.mono, fontSize:10}}]
+  };
+}
+
+function opcionMini(vals){
+  var c = tema();
+  return {
+    animation:false, grid:{left:0, right:0, top:2, bottom:2},
+    xAxis:{type:"category", show:false, data:vals.map(function(_,i){ return i; })},
+    yAxis:{type:"value", show:false, scale:true},
+    series:[{type:"line", data:vals, showSymbol:false, smooth:true,
+      lineStyle:{color:c.acc, width:1.6}, areaStyle:{color:c.acc, opacity:0.12}}]
+  };
+}
+
+function pedir(url, ruta, token, ms){
+  var ctl = new AbortController();
+  var t = setTimeout(function(){ ctl.abort(); }, ms || 95000);
+  return fetch(url + ruta, {headers: token ? {Authorization:"Bearer "+token} : {},
+      signal:ctl.signal, cache:"no-store"})
+    .then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){
+        if (r.status === 401) return {_err:"token invalido"};
+        if (r.status === 403) return {_err:"solo lectura"};
+        if (!r.ok && r.status !== 503) return {_err:"HTTP " + r.status};
+        return j;
+      });
+    })
+    .catch(function(e){
+      return {_err:(e && e.name === "AbortError") ? "sin respuesta" : "no se pudo conectar"};
+    })
+    .then(function(j){ clearTimeout(t); return j; });
+}
+
+function useAgentes(token){
+  var ini = {};
+  AGENTES.forEach(function(a){ ini[a.id] = {cargando:true, desde:Date.now()}; });
+  var s1 = useState(ini), datos = s1[0], setDatos = s1[1];
+  var s2 = useState({}), hist = s2[0], setHist = s2[1];
+  var s3 = useState(false), ro = s3[0], setRo = s3[1];
+
+  var leer = useCallback(function(){
+    AGENTES.forEach(function(a){
+      setDatos(function(d){
+        var n = Object.assign({}, d);
+        n[a.id] = Object.assign({}, d[a.id], {cargando:true,
+          desde:(d[a.id] && d[a.id].desde) || Date.now()});
+        return n;
+      });
+      Promise.all([
+        pedir(a.url, "/health", null),
+        token ? pedir(a.url, "/report", token) : Promise.resolve(null),
+        token ? pedir(a.url, "/geo", token) : Promise.resolve(null),
+        token ? pedir(a.url, "/activity?n=16", token) : Promise.resolve(null),
+        token ? pedir(a.url, "/diagnostico", token) : Promise.resolve(null),
+        token ? pedir(a.url, "/acceso", token) : Promise.resolve(null)
+      ]).then(function(r){
+        var ok = function(x){ return (x && !x._err) ? x : null; };
+        if (r[5] && r[5].escribe === false) setRo(true);
+        var hh = ok(r[0]);
+        if (hh) setHist(function(H){
+          var n = Object.assign({}, H), cur = (n[a.id] || []).slice(-59);
+          var v = hh.budget ? hh.budget.pct_consumido
+                : (hh.inventario ? Math.abs(hh.inventario.worst_imbalance) : null);
+          if (v != null && !isNaN(+v)) cur.push(+v);
+          n[a.id] = cur; return n;
+        });
+        setDatos(function(d){
+          var n = Object.assign({}, d);
+          n[a.id] = {cargando:false, desde:0,
+            err:(r[0] && r[0]._err) || null, health:hh,
+            report:ok(r[1]), rerr:(r[1] && r[1]._err) || null,
+            geo:ok(r[2]), act:ok(r[3]), diag:ok(r[4])};
+          return n;
+        });
+      });
+    });
+  }, [token]);
+
+  return {datos:datos, hist:hist, ro:ro, leer:leer};
+}
+
+/* SSE por fetch y no EventSource: EventSource no manda cabeceras, asi
+   que el token acabaria en la URL y en los logs del proxy. */
+function useStream(token, onEvento){
+  var s = useState({}), estado = s[0], setEstado = s[1];
+  useEffect(function(){
+    if (!token) { setEstado({}); return; }
+    var vivo = true, ctls = [];
+    AGENTES.forEach(function(a){
+      var espera = 1000;
+      function abrir(){
+        if (!vivo) return;
+        var ctl = new AbortController(); ctls.push(ctl);
+        fetch(a.url + "/stream?n=30", {headers:{Authorization:"Bearer "+token}, signal:ctl.signal})
+        .then(function(r){
+          if (!r.ok || !r.body) throw new Error("HTTP " + r.status);
+          espera = 1000;
+          setEstado(function(e){ var n = Object.assign({}, e); n[a.id] = "ok"; return n; });
+          var rd = r.body.getReader(), dec = new TextDecoder(), buf = "";
+          function leer(){
+            return rd.read().then(function(x){
+              if (x.done) throw new Error("cerrado");
+              buf += dec.decode(x.value, {stream:true});
+              var partes = buf.split("\n\n"); buf = partes.pop();
+              partes.forEach(function(bl){
+                var d = bl.split("\n").filter(function(l){ return l.indexOf("data: ") === 0; });
+                if (!d.length) return;
+                try {
+                  var ev = JSON.parse(d[0].slice(6));
+                  ev._src = a.nombre; ev._aid = a.id;
+                  onEvento(ev);
+                } catch(e){}
+              });
+              return leer();
+            });
+          }
+          return leer();
+        })
+        .catch(function(){
+          if (!vivo) return;
+          setEstado(function(e){ var n = Object.assign({}, e); n[a.id] = "off"; return n; });
+          setTimeout(abrir, espera);
+          espera = Math.min(espera * 2, 30000);
+        });
+      }
+      abrir();
+    });
+    return function(){ vivo = false; ctls.forEach(function(c){ try { c.abort(); } catch(e){} }); };
+  }, [token]);
+  return estado;
+}
+
+function Tile(p){
+  return html`<div class="tile">
+    <span class="lab">${p.lab}</span>
+    <span class=${"val" + (p.cls ? " " + p.cls : "") + (String(p.val).length > 8 ? " sm" : "")}>${p.val}</span>
+    ${p.sub ? html`<span class="sub2">${p.sub}</span>` : null}
+    ${p.mini && p.mini.length > 2
+      ? html`<${Chart} class="mini" dep=${p.mini.length}
+          option=${function(){ return opcionMini(p.mini); }} />` : null}
+  </div>`;
+}
+
+function Row(p){
+  return html`<div class=${"row" + (p.cls ? " " + p.cls : "")}>
+    <span class="k">${p.k}</span><span class="v">${p.v}</span></div>`;
+}
+
+function TarjetaAgente(p){
+  var a = p.a, d = p.d || {}, hh = d.health, r = d.report, sets = a.tipo === "sets";
+  var chips = [];
+  if (d.cargando) {
+    var seg = Math.round((Date.now() - (d.desde || Date.now())) / 1000);
+    chips.push(html`<span class="chip mute">${seg > 6 ? "despertando " + seg + "s" : "leyendo"}</span>`);
+  } else if (d.err) {
+    chips.push(html`<span class="chip bad">${d.err}</span>`);
+  } else if (hh) {
+    chips.push(hh.killed ? html`<span class="chip bad">detenido</span>`
+                         : html`<span class="chip ok">en linea</span>`);
+    chips.push(html`<span class=${"chip " + (hh.mode === "live" ? "warn" : "mute")}>${hh.mode || "?"}</span>`);
+    chips.push(html`<span class="chip mute">${f.dur(hh.uptime_s)}</span>`);
+    if (p.sse === "ok") chips.push(html`<span class="chip acc">stream</span>`);
+  } else {
+    chips.push(html`<span class="chip mute">sin datos</span>`);
+  }
+
+  var tiles, rows = [];
+  if (sets) {
+    var inv = hh && hh.inventario;
+    tiles = html`
+      <${Tile} lab="Pares armados" val=${inv ? f.num(inv.paired_shares,1) : "—"}
+        sub="YES + NO completos" />
+      <${Tile} lab="Edge trabado" val=${inv ? f.usd(inv.locked_edge_usd) : "—"}
+        sub="total, no por share" cls=${inv && inv.locked_edge_usd > 0 ? "ok" : ""} />
+      <${Tile} lab="Desbalance" val=${inv ? f.num(inv.worst_imbalance,1) : "—"}
+        sub="shares de un lado" mini=${p.hist}
+        cls=${inv ? (Math.abs(inv.worst_imbalance) >= 40 ? "bad" : (inv.worst_imbalance ? "warn" : "")) : ""} />
+      <${Tile} lab="Costo del par"
+        val=${inv && inv.avg_combined_cost ? f.num(inv.avg_combined_cost,4) : "—"}
+        sub="bajo 1.00 es ganancia"
+        cls=${inv && inv.avg_combined_cost ? (inv.avg_combined_cost < 1 ? "ok" : "bad") : ""} />`;
+    if (r) rows = [
+      ["Intenciones", f.num(r.n_intents), ""],
+      ["Rechazadas por riesgo", f.num(r.n_rejected), r.n_rejected > 0 ? "bad" : ""],
+      ["Ordenes", f.num(r.n_orders), ""],
+      ["Fills", f.num(r.n_fills), ""],
+      ["Tasa de fill", r.fill_rate == null ? "—" : f.pct(r.fill_rate), ""],
+      ["Slippage medio", r.avg_slippage_bps == null ? "—" : f.num(r.avg_slippage_bps,1) + " bps", ""],
+      ["PnL realizado", f.usd(r.realized_pnl), ""]];
+  } else {
+    var b = hh && hh.budget;
+    tiles = html`
+      <${Tile} lab="Presupuesto" val=${b ? f.num(b.pct_consumido,1) + "%" : "—"}
+        sub=${b ? f.num(b.neurons_usados) + " / " + f.num(b.neurons_disponibles) : "sin datos"}
+        mini=${p.hist}
+        cls=${b ? (b.pct_consumido > 85 ? "bad" : (b.pct_consumido > 60 ? "warn" : "")) : ""} />
+      <${Tile} lab="Gemini" val=${b ? f.num(b.gemini_restantes) : "—"} sub="llamadas libres hoy" />
+      <${Tile} lab="Resueltos" val=${r ? f.num(r.n_resolved) : "—"}
+        sub=${r && r.ready_to_judge ? "listo para juzgar" : "aun no alcanza"}
+        cls=${r && r.n_resolved > 0 ? "ok" : ""} />
+      <${Tile} lab="Calibracion" val=${hh ? (hh.calibration_active ? "activa" : "aprendiendo") : "—"}
+        sub="enciende a los 30 mercados" cls=${hh && hh.calibration_active ? "ok" : ""} />`;
+    if (r) rows = [
+      ["Brier propio", r.n_resolved ? f.num(r.brier,4) : "sin resoluciones", ""],
+      ["Brier del mercado", r.n_resolved ? f.num(r.brier_market,4) : "—", ""],
+      ["Ventaja sobre el precio", r.skill_vs_market == null ? "—" : f.num(r.skill_vs_market,4), ""],
+      ["Le gana al mercado", r.beat_market_rate == null ? "—" : f.pct(r.beat_market_rate), ""],
+      ["PnL", f.usd(r.pnl_usd), ""],
+      ["Ultimo ciclo", hh ? (hh.last_cycle ? f.hora(hh.last_cycle) : "todavia ninguno") : "—", ""]];
+  }
+
+  return html`<article class="card">
+    <div class="card-h">
+      <div class="name">${a.nombre}<small>${a.svc}</small></div>
+      <div class="r">${chips}</div>
+    </div>
+    <div class="tiles">${tiles}</div>
+    <div class="rows">
+      <div class="hdr">${sets ? "Ejecucion" : "Aprendizaje"}</div>
+      ${!p.token ? html`<p class="empty">Pega el token arriba.</p>`
+        : d.rerr ? html`<p class="empty">${d.rerr}</p>`
+        : rows.length ? rows.map(function(x){ return html`<${Row} k=${x[0]} v=${x[1]} cls=${x[2]} />`; })
+        : html`<p class="empty">Sin lectura.</p>`}
+    </div>
+  </article>`;
+}
+
+var TIPOS = ["todo","error","rechazo","orden","propuesta","paso","ok","parada","explorar"];
+
+function Feed(p){
+  var s = useState("todo"), filtro = s[0], setFiltro = s[1];
+  var caja = useRef(null), pegado = useRef(true);
+  var vis = useMemo(function(){
+    var L = filtro === "todo" ? p.eventos
+      : p.eventos.filter(function(e){ return e.kind === filtro; });
+    return L.slice(-160);
+  }, [p.eventos, filtro]);
+
+  useEffect(function(){
+    if (caja.current && pegado.current) caja.current.scrollTop = caja.current.scrollHeight;
+  }, [vis.length]);
+
+  var conectados = AGENTES.filter(function(a){ return p.sse[a.id] === "ok"; }).length;
+
+  return html`<section class="card">
+    <div class="card-h">
+      <h2>En vivo</h2><span class="sub">cada paso, cuando ocurre</span>
+      <div class="r">
+        <span class="live">
+          <span class=${"dot " + (conectados === AGENTES.length && conectados ? "on"
+            : conectados ? "warn" : "")}></span>
+          ${!p.token ? "sin token"
+            : conectados === AGENTES.length ? "conectado"
+            : conectados ? conectados + " de " + AGENTES.length : "reconectando"}</span>
+        <span class="live">${p.eventos.length} eventos</span>
       </div>
     </div>
-  </header>
-
-  <div class="key" id="key">
-    <p><b>Pegá el token del agente</b> para ver el detalle. Queda solo en este navegador.</p>
-    <input id="tok" type="password" placeholder="AGENT_API_TOKEN" autocomplete="off" spellcheck="false">
-    <button class="btn" id="bTok" type="button">Guardar</button>
-  </div>
-
-  <div id="alarmas"></div>
-  <div class="agentes" id="agentes"></div>
-
-  <section class="vivo">
-    <div class="vivo-h"><h2>En vivo</h2>
-      <span style="font-size:12.5px;color:var(--muted)">cada paso, cuando ocurre</span>
-      <span class="est" id="est">sin conectar</span></div>
-    <div class="feed" id="feed"></div>
-  </section>
-
-  <section class="act">
-    <div class="act-h"><h2>Diagnóstico</h2>
-      <span>en qué se va el trabajo y qué se rompe</span></div>
-    <div class="diag-g" id="diag"></div>
-  </section>
-
-  <section class="act">
-    <div class="act-h"><h2>En qué está trabajando</h2>
-      <span>tocá un mercado para ver cómo se mueve</span></div>
-    <div id="acts"></div>
-  </section>
-
-  <section class="act">
-    <div class="act-h"><h2>Jurisdicción</h2>
-      <span>desde dónde ve Polymarket a cada agente</span></div>
-    <div class="tiles" id="geo"></div>
-    <p class="razon"><b>US, DE y SG son close-only:</b> se puede cerrar posición, no abrir.
-      Las cinco regiones de Render caen ahí. Para operar en real hace falta NL, IE, JP, KR
-      o un país sin restricción. En <code>paper</code> no estorba.</p>
-  </section>
-
-  <footer>Render duerme el servicio a los 15 min sin tráfico — la primera lectura puede
-    tardar. Con esta página abierta se mantiene despierto.</footer>
-</div>
-
-<script>
-var AGENTES=window.__AGENTES__||[];
-var FEED=[],CONEX={},NUEVOS={};
-var S={},HIST={},ABIERTO=null,PRECIOS={};
-AGENTES.forEach(function(a){
-  S[a.id]={health:null,report:null,geo:null,act:null,diag:null,err:null,rerr:null,
-           cargando:false,desde:0};
-  HIST[a.id]={};
-});
-var token="",auto=true,restan=15,armado=0,SOLOLEO=false;
-try{token=localStorage.getItem("mcp_token")||""}catch(e){}
-
-function $(i){return document.getElementById(i)}
-function esc(s){return String(s==null?"":s).replace(/[<>&"]/g,function(c){
-  return {"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]})}
-function num(v,d){d=d||0;return (v==null||v===""||isNaN(+v))?"—":
-  (+v).toLocaleString("es",{minimumFractionDigits:d,maximumFractionDigits:d})}
-function usd(v){return (v==null||v===""||isNaN(+v))?"—":
-  "$"+(+v).toLocaleString("es",{minimumFractionDigits:2,maximumFractionDigits:2})}
-function pct(v){return (v==null||isNaN(+v))?"—":(+v*100).toFixed(1)+"%"}
-function dur(s){if(s==null)return "—";s=Math.floor(s);
-  if(s<60)return s+"s";if(s<3600)return Math.floor(s/60)+"m "+(s%60)+"s";
-  return Math.floor(s/3600)+"h "+Math.floor(s%3600/60)+"m"}
-function hora(x){if(!x)return "—";var d=new Date(x);
-  return isNaN(d.getTime())?"—":d.toLocaleString("es",{day:"2-digit",month:"2-digit",
-    hour:"2-digit",minute:"2-digit"})}
-function push(a,k,v){if(v==null||isNaN(+v))return;var h=HIST[a];
-  if(!h[k])h[k]=[];h[k].push(+v);if(h[k].length>50)h[k].shift()}
-
-function spark(vals){
-  if(!vals||vals.length<3)return "";
-  var w=100,h=20,mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals),r=(mx-mn)||1;
-  var pts=vals.map(function(v,i){return [(i/(vals.length-1))*w,h-2-((v-mn)/r)*(h-4)]});
-  var d=pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1)}).join(" ");
-  var l=pts[pts.length-1];
-  return '<svg class="spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true">'+
-    '<polyline points="'+d+'" fill="none" stroke="var(--accent)" stroke-width="1.4" '+
-    'vector-effect="non-scaling-stroke"/><circle cx="'+l[0].toFixed(1)+'" cy="'+
-    l[1].toFixed(1)+'" r="1.8" fill="var(--accent)"/></svg>';
+    <div class="fbar">
+      ${TIPOS.map(function(t){
+        var n = t === "todo" ? p.eventos.length
+          : p.eventos.filter(function(e){ return e.kind === t; }).length;
+        if (t !== "todo" && !n) return null;
+        return html`<button class="f" type="button" key=${t} aria-pressed=${filtro === t}
+          onClick=${function(){ setFiltro(t); }}>${t}${n ? " · " + n : ""}</button>`;
+      })}
+    </div>
+    <div class="feed" ref=${caja}
+      onScroll=${function(e){
+        var el = e.target;
+        pegado.current = el.scrollHeight - el.scrollTop - el.clientHeight < 42;
+      }}>
+      ${!vis.length
+        ? html`<p class="empty">${p.token
+            ? "Conectado. Los eventos aparecen apenas el agente hace algo: el ciclo de pronostico corre cada 4 h, el de sets cada pocos segundos."
+            : "Pega el token para ver el flujo en vivo."}</p>`
+        : vis.map(function(e){
+            var d = e.datos || {}, x = "";
+            if (d.p != null) x = f.pct(d.p) + " vs " + f.pct(d.precio);
+            else if (d.usd != null) x = f.usd(d.usd);
+            else if (d.combinado != null) x = "par " + f.num(d.combinado,4);
+            else if (d.elegidos != null) x = d.elegidos + " de " + d.crudos;
+            else if (d.ms != null) x = d.ms + " ms";
+            return html`<div class="ev" key=${e._aid + ":" + e.id}>
+              <span class="t">${f.hms(e.ts)}</span>
+              <span class=${"kd " + e.kind}>${e.kind}</span>
+              <span class="m">${e.msg}</span>
+              ${x ? html`<span class="x">${x}</span>` : null}
+              <span class="s">${e._src}</span>
+            </div>`;
+          })}
+    </div>
+  </section>`;
 }
 
-/* Grafico de precio: escala 0..1 fija, que es el rango real de una
-   probabilidad. Reescalar al min/max haria ver como sismo un mercado
-   que se movio dos centavos. */
-function grafico(puntos,marca){
-  if(!puntos||puntos.length<2)
-    return '<p class="vacio">Sin historial de precio todavía.</p>';
-  var W=300,H=110,L=26,R=6,T=8,B=16;
-  var iw=W-L-R, ih=H-T-B;
-  var t0=puntos[0].t, t1=puntos[puntos.length-1].t, dt=(t1-t0)||1;
-  var X=function(t){return L+((t-t0)/dt)*iw};
-  var Y=function(p){return T+(1-Math.max(0,Math.min(1,p)))*ih};
-  var d=puntos.map(function(q,i){return (i?"L":"M")+X(q.t).toFixed(1)+" "+Y(q.p).toFixed(1)}).join(" ");
-  var area=d+" L"+X(t1).toFixed(1)+" "+(T+ih)+" L"+X(t0).toFixed(1)+" "+(T+ih)+" Z";
-  var g="";
-  [0,0.25,0.5,0.75,1].forEach(function(v){
-    var y=Y(v).toFixed(1);
-    g+='<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" stroke="var(--line)" stroke-width="1"/>'+
-       '<text x="'+(L-5)+'" y="'+(+y+3)+'" text-anchor="end" font-size="8" '+
-       'fill="var(--faint)" font-family="var(--mono)">'+v.toFixed(2)+'</text>';
-  });
-  var m="";
-  if(marca!=null&&!isNaN(+marca)){
-    var my=Y(+marca).toFixed(1);
-    m='<line x1="'+L+'" y1="'+my+'" x2="'+(W-R)+'" y2="'+my+'" stroke="var(--accent)" '+
-      'stroke-width="1.2" stroke-dasharray="3 3"/>';
-  }
-  var ult=puntos[puntos.length-1];
-  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;max-width:100%" '+
-    'role="img" aria-label="precio del mercado en el tiempo">'+g+
-    '<path d="'+area+'" fill="var(--muted)" opacity="0.12"/>'+
-    '<path d="'+d+'" fill="none" stroke="var(--ink)" stroke-width="1.6" '+
-    'stroke-linejoin="round" vector-effect="non-scaling-stroke"/>'+m+
-    '<circle cx="'+X(ult.t).toFixed(1)+'" cy="'+Y(ult.p).toFixed(1)+'" r="2.6" fill="var(--ink)"/>'+
-    '</svg>';
-}
+function Mercados(p){
+  var s1 = useState(null), abierto = s1[0], setAbierto = s1[1];
+  var s2 = useState({}), precios = s2[0], setPrecios = s2[1];
 
-function pedir(url,ruta,auth,ms){
-  var c=new AbortController(), t=setTimeout(function(){c.abort()},ms||95000);
-  return fetch(url+ruta,{headers:(auth&&token)?{Authorization:"Bearer "+token}:{},
-    signal:c.signal,cache:"no-store"})
-    .then(function(r){return r.json().catch(function(){return{}}).then(function(j){
-      if(r.status===401)return{_err:"token inválido"};
-      if(!r.ok&&r.status!==503)return{_err:"HTTP "+r.status};
-      return j})})
-    .catch(function(e){return{_err:e&&e.name==="AbortError"?"sin respuesta":"no se pudo conectar"}})
-    .then(function(j){clearTimeout(t);return j});
-}
-
-function leer(a){
-  var st=S[a.id]; st.cargando=true; st.desde=Date.now(); pintar();
-  return Promise.all([
-    pedir(a.url,"/health",false),
-    token?pedir(a.url,"/report",true):Promise.resolve(null),
-    token?pedir(a.url,"/geo",true):Promise.resolve(null),
-    token?pedir(a.url,"/activity?n=14",true):Promise.resolve(null),
-    token?pedir(a.url,"/diagnostico",true):Promise.resolve(null),
-    token?pedir(a.url,"/acceso",true):Promise.resolve(null)
-  ]).then(function(r){
-    st.cargando=false;
-    st.err=(r[0]&&r[0]._err)||null;
-    st.health=(r[0]&&!r[0]._err)?r[0]:null;
-    st.report=(r[1]&&!r[1]._err)?r[1]:null;
-    st.rerr=(r[1]&&r[1]._err)||null;
-    st.geo=(r[2]&&!r[2]._err)?r[2]:null;
-    st.act=(r[3]&&!r[3]._err)?r[3]:null;
-    st.diag=(r[4]&&!r[4]._err)?r[4]:null;
-    // Basta con que UN agente diga solo-lectura: el tablero se comporta
-    // como el permiso mas bajo que tiene.
-    if(r[5]&&!r[5]._err&&r[5].escribe===false)SOLOLEO=true;
-    if(st.health){
-      if(st.health.budget)push(a.id,"presupuesto",st.health.budget.pct_consumido);
-      if(st.health.inventario)push(a.id,"desbalance",st.health.inventario.worst_imbalance);
-    }
-    pintar();
-  });
-}
-function refrescar(){return Promise.all(AGENTES.map(leer))}
-
-function tile(l,v,o){o=o||{};
-  return '<div class="tile"><span class="t-lab">'+esc(l)+'</span><span class="t-val'+
-    (o.cls?" "+o.cls:"")+(String(v).length>8?" sm":"")+'">'+esc(v)+'</span>'+
-    (o.sub?'<span class="t-sub">'+esc(o.sub)+'</span>':"")+(o.sk||"")+'</div>'}
-function fila(k,v){return '<div class="fila"><span class="f-k">'+esc(k)+
-  '</span><span class="f-v">'+esc(v)+'</span></div>'}
-
-function panelPron(st,aid){
-  var h=st.health,r=st.report,b=h&&h.budget,t="";
-  t+=tile("Presupuesto",b?num(b.pct_consumido,1)+"%":"—",{
-    sub:b?num(b.neurons_usados)+" / "+num(b.neurons_disponibles):"sin datos",
-    cls:b?(b.pct_consumido>85?"is-bad":(b.pct_consumido>60?"is-warn":"")):"",
-    sk:spark(HIST[aid].presupuesto)});
-  t+=tile("Gemini",b?num(b.gemini_restantes):"—",{sub:"llamadas libres hoy"});
-  t+=tile("Resueltos",r?num(r.n_resolved):"—",{
-    sub:r&&r.ready_to_judge?"listo para juzgar":"aún no alcanza",
-    cls:r&&r.n_resolved>0?"is-ok":""});
-  t+=tile("Calibración",h?(h.calibration_active?"activa":"aprendiendo"):"—",{
-    sub:"enciende a los 30 mercados",cls:h&&h.calibration_active?"is-ok":""});
-  var f='<div class="sec">Aprendizaje</div>';
-  if(!token)f+='<p class="vacio">Pegá el token arriba.</p>';
-  else if(st.rerr)f+='<p class="vacio">'+esc(st.rerr)+'</p>';
-  else if(r){
-    f+=fila("Brier propio",r.n_resolved?num(r.brier,4):"sin resoluciones todavía");
-    f+=fila("Brier del mercado",r.n_resolved?num(r.brier_market,4):"—");
-    f+=fila("Ventaja sobre el precio",r.skill_vs_market==null?"—":num(r.skill_vs_market,4));
-    f+=fila("Le gana al mercado",r.beat_market_rate==null?"—":pct(r.beat_market_rate));
-    f+=fila("PnL",usd(r.pnl_usd));
-  }else f+='<p class="vacio">Sin lectura.</p>';
-  f+='<div class="sec">Ciclo</div>';
-  f+=fila("Último ciclo",h?(h.last_cycle?hora(h.last_cycle):"todavía ninguno"):"—");
-  return{tiles:t,filas:f};
-}
-function panelSets(st,aid){
-  var h=st.health,r=st.report,inv=h&&h.inventario,t="";
-  t+=tile("Pares armados",inv?num(inv.paired_shares,1):"—",{sub:"YES + NO completos"});
-  t+=tile("Edge trabado",inv?usd(inv.locked_edge_usd):"—",{
-    sub:"total, no por share",cls:inv&&inv.locked_edge_usd>0?"is-ok":""});
-  t+=tile("Desbalance",inv?num(inv.worst_imbalance,1):"—",{
-    sub:"shares de un solo lado",
-    cls:inv?(Math.abs(inv.worst_imbalance)>=40?"is-bad":
-      (Math.abs(inv.worst_imbalance)>0?"is-warn":"")):"",
-    sk:spark(HIST[aid].desbalance)});
-  t+=tile("Costo del par",(inv&&inv.avg_combined_cost)?num(inv.avg_combined_cost,4):"—",{
-    sub:"bajo 1.00 es ganancia",
-    cls:inv&&inv.avg_combined_cost>0?(inv.avg_combined_cost<1?"is-ok":"is-bad"):""});
-  var f='<div class="sec">Ejecución</div>';
-  if(!token)f+='<p class="vacio">Pegá el token arriba.</p>';
-  else if(st.rerr)f+='<p class="vacio">'+esc(st.rerr)+'</p>';
-  else if(r){
-    f+=fila("Intenciones",num(r.n_intents));
-    f+=fila("Rechazadas por riesgo",num(r.n_rejected));
-    f+=fila("Órdenes",num(r.n_orders));
-    f+=fila("Fills",num(r.n_fills));
-    f+=fila("Tasa de fill",r.fill_rate==null?"—":pct(r.fill_rate));
-    f+=fila("Slippage medio",r.avg_slippage_bps==null?"—":num(r.avg_slippage_bps,1)+" bps");
-    f+=fila("PnL realizado",usd(r.realized_pnl));
-  }else f+='<p class="vacio">Sin lectura.</p>';
-  f+='<div class="sec">Mercados</div>';
-  f+=fila("En seguimiento",h?num(h.mercados):"—");
-  return{tiles:t,filas:f};
-}
-
-function filaMercado(a,it,i){
-  var clave=a.id+":"+i, abierto=(ABIERTO===clave);
-  var esPron=(it.p_calibrated!=null);
-  var p=esPron?+it.p_calibrated:null, m=esPron?+it.p_market:null;
-  var titulo=esc(it.question||it.slug||"(sin nombre)");
-  var nums=esPron
-    ? '<b>'+pct(p)+'</b> agente · '+pct(m)+' mercado'
-    : '<b>'+num(it.shares_up,0)+'</b> up / '+num(it.shares_down,0)+' down · par '+num(it.combined_cost,3);
-  var estado="";
-  if(it.outcome===true)estado='<span class="chip c-ok">resolvió SÍ</span>';
-  else if(it.outcome===false)estado='<span class="chip c-bad">resolvió NO</span>';
-  else if(it.action&&it.action!=="PASS")estado='<span class="chip c-warn">'+esc(it.action)+'</span>';
-  else if(it.imbalance!=null&&Math.abs(it.imbalance)>0)estado='<span class="chip c-warn">desbalanceado</span>';
-
-  var barra="";
-  if(esPron)barra='<div class="barra"><i class="b-p" style="width:'+(p*100).toFixed(1)+
-    '%"></i><i class="b-m" style="width:'+Math.max(0,(m-p)*100).toFixed(1)+'%"></i></div>';
-
-  var html='<button class="mk" type="button" data-k="'+clave+'" aria-expanded="'+abierto+'">'+
-    '<span class="mk-top"><span class="mk-q">'+titulo+'</span>'+estado+
-    '<span class="mk-nums">'+nums+'</span></span>'+barra+'</button>';
-
-  if(abierto){
-    var tok=it.token_yes||it.token_up;
-    var pr=PRECIOS[tok];
-    var graf=pr===undefined?'<p class="vacio">Cargando precio…</p>':
-      (pr&&pr.error?'<p class="vacio">'+esc(pr.error)+'</p>':grafico(pr&&pr.puntos,p));
-    var lado='';
-    if(esPron){
-      lado+=fila("Categoría",it.category||"—");
-      lado+=fila("Acción",it.action||"—");
-      lado+=fila("Confianza",it.confidence||"—");
-      lado+=fila("Divergencia",(p!=null&&m!=null)?((p-m)>=0?"+":"")+num(p-m,3):"—");
-      lado+=fila("Cierra",it.end_date?hora(it.end_date):"—");
-      lado+=fila("Pronosticado",hora(it.ts));
-      if(it.brier!=null)lado+=fila("Brier",num(it.brier,4));
-    }else{
-      lado+=fila("Shares UP",num(it.shares_up,1)+" @ "+num(it.avg_cost_up,3));
-      lado+=fila("Shares DOWN",num(it.shares_down,1)+" @ "+num(it.avg_cost_down,3));
-      lado+=fila("Pares",num(it.paired,1));
-      lado+=fila("Desbalance",num(it.imbalance,1));
-      lado+=fila("Edge trabado",usd(it.locked_edge));
-    }
-    html+='<div class="det"><div class="det-g"><div class="graf">'+
-      '<div class="graf-t">Precio del mercado'+
-      (esPron?'<span class="leg">— <b style="color:var(--ink)">línea</b> mercado · '+
-        '<b style="color:var(--accent)">punteada</b> el agente</span>':'')+'</div>'+
-      graf+'</div><div>'+lado+'</div></div>'+
-      (it.pass_reason?'<p class="razon"><b>Por qué no operó:</b> '+esc(it.pass_reason)+'</p>':'')+
-      '</div>';
-  }
-  return html;
-}
-
-function pintar(){
-  var alarmas=[];
-  $("agentes").innerHTML=AGENTES.map(function(a){
-    var st=S[a.id],h=st.health,chips="";
-    if(st.cargando){var s=Math.round((Date.now()-st.desde)/1000);
-      chips='<span class="chip c-mute">'+(s>6?"despertando "+s+"s":"leyendo")+'</span>'}
-    else if(st.err)chips='<span class="chip c-bad">'+esc(st.err)+'</span>';
-    else if(h){
-      if(h.killed){chips+='<span class="chip c-bad">detenido</span>';
-        alarmas.push({n:a.nombre,m:h.kill_reason||"kill switch activo"})}
-      else chips+='<span class="chip c-ok">en línea</span>';
-      chips+='<span class="chip '+(h.mode==="live"?"c-warn":"c-mute")+'">'+esc(h.mode||"?")+'</span>';
-      chips+='<span class="chip c-mute">'+dur(h.uptime_s)+'</span>';
-    }else chips='<span class="chip c-mute">sin datos</span>';
-    var p=(a.tipo==="sets")?panelSets(st,a.id):panelPron(st,a.id);
-    return '<article class="panel"><div class="p-top"><div><span class="p-name">'+
-      esc(a.nombre)+'</span><span class="p-svc">'+esc(a.svc)+'</span></div>'+
-      '<div class="p-chips">'+chips+'</div></div><div class="tiles">'+p.tiles+
-      '</div><div class="filas">'+p.filas+'</div></article>';
-  }).join("");
-
-  var acts="";
-  AGENTES.forEach(function(a){
-    var it=S[a.id].act&&S[a.id].act.items;
-    if(!it||!it.length)return;
-    acts+='<div class="sec" style="padding:12px 16px 4px">'+esc(a.nombre)+'</div>';
-    acts+=it.map(function(x,i){return filaMercado(a,x,i)}).join("");
-  });
-  $("acts").innerHTML=acts||'<p class="vacio" style="padding:14px 16px">'+
-    (token?"Todavía no hay actividad registrada.":"Pegá el token para ver en qué está trabajando.")+'</p>';
-
-  $("geo").innerHTML=AGENTES.map(function(a){
-    var g=S[a.id].geo,w=g&&g.web;
-    if(!token)return tile(a.nombre,"—",{sub:"hace falta el token"});
-    if(!w)return tile(a.nombre,"—",{sub:"sin lectura"});
-    return tile(a.nombre,(w.country||"?")+(w.region?" · "+w.region:""),{
-      sub:w.blocked?"no puede abrir posición":"puede operar",
-      cls:w.blocked?"is-bad":"is-ok"});
-  }).join("");
-
-  $("alarmas").innerHTML=alarmas.map(function(x){
-    return '<div class="alarma"><strong>'+esc(x.n)+' detenido</strong><p>'+esc(x.m)+'</p></div>'}).join("");
-
-  var vivo=AGENTES.some(function(a){return S[a.id].health&&!S[a.id].health.killed});
-  var mo=[];AGENTES.forEach(function(a){var m=S[a.id].health&&S[a.id].health.mode;
-    if(m&&mo.indexOf(m)<0)mo.push(m)});
-  $("modo").textContent=(mo.join(" / ")||"—")+" · polymarket";
-  $("tick").innerHTML='<span class="pulse'+((vivo&&auto)?"":" off")+'"></span>'+
-    (auto?("en "+restan+"s"):"pausado");
-  $("key").hidden=!!token;
-  $("bKill").hidden=SOLOLEO;
-  $("modo").textContent+=SOLOLEO?" · solo lectura":"";
-  pintarDiag();
-}
-
-/* El historial de precio lo sirve el agente: el navegador no alcanza al
-   CLOB (sin CORS, y el DNS del operador no resuelve polymarket.com). */
-function cargarPrecio(a,it){
-  var tok=it.token_yes||it.token_up;
-  if(!tok||PRECIOS[tok]!==undefined)return Promise.resolve();
-  PRECIOS[tok]=null;
-  return pedir(a.url,"/precio?rango=1w&token="+encodeURIComponent(tok),true,60000)
-    .then(function(p){PRECIOS[tok]=p&&!p._err?p:{error:p&&p._err||"sin datos"};pintar()});
-}
-
-/* ── streaming ────────────────────────────────────────────────────────
-   fetch con lectura incremental y no EventSource: EventSource no puede
-   mandar cabeceras, asi que el token acabaria en la URL y en los logs
-   del proxy. Reconecta solo, con espera creciente. */
-function conectar(a){
-  if(!token||CONEX[a.id]==="on")return;
-  CONEX[a.id]="on"; pintarEstado();
-  var ctl=new AbortController(); CONEX[a.id+"_ctl"]=ctl;
-  fetch(a.url+"/stream?n=25",{headers:{Authorization:"Bearer "+token},signal:ctl.signal})
-  .then(function(r){
-    if(!r.ok||!r.body)throw new Error("HTTP "+r.status);
-    CONEX[a.id]="ok"; CONEX[a.id+"_espera"]=1000; pintarEstado();
-    var rd=r.body.getReader(), dec=new TextDecoder(), buf="";
-    function leer(){
-      return rd.read().then(function(x){
-        if(x.done)throw new Error("cerrado");
-        buf+=dec.decode(x.value,{stream:true});
-        var partes=buf.split("\n\n"); buf=partes.pop();
-        partes.forEach(function(bloque){
-          var d=bloque.split("\n").filter(function(l){return l.indexOf("data: ")===0});
-          if(!d.length)return;
-          try{
-            var ev=JSON.parse(d[0].slice(6));
-            ev._src=a.nombre; ev._nuevo=true;
-            FEED.push(ev); if(FEED.length>220)FEED.shift();
-            NUEVOS[a.id]=(NUEVOS[a.id]||0)+1;
-          }catch(e){}
+  function abrir(clave, a, it){
+    if (abierto === clave) { setAbierto(null); return; }
+    setAbierto(clave);
+    var tok = it.token_yes || it.token_up;
+    if (!tok || precios[tok] !== undefined) return;
+    setPrecios(function(P){ var n = Object.assign({}, P); n[tok] = null; return n; });
+    pedir(a.url, "/precio?rango=1w&token=" + encodeURIComponent(tok), p.token, 60000)
+      .then(function(r){
+        setPrecios(function(P){
+          var n = Object.assign({}, P);
+          n[tok] = (r && !r._err) ? r : {error:(r && r._err) || "sin datos"};
+          return n;
         });
-        pintarFeed();
-        return leer();
       });
-    }
-    return leer();
-  })
-  .catch(function(){
-    CONEX[a.id]="off"; pintarEstado();
-    var w=CONEX[a.id+"_espera"]||1000;
-    CONEX[a.id+"_espera"]=Math.min(w*2,30000);
-    setTimeout(function(){conectar(a)},w);
-  });
-}
-function desconectar(){
-  AGENTES.forEach(function(a){
-    var c=CONEX[a.id+"_ctl"]; if(c)try{c.abort()}catch(e){}
-    CONEX[a.id]=null;
-  });
-}
-function pintarEstado(){
-  var n=AGENTES.filter(function(a){return CONEX[a.id]==="ok"}).length;
-  $("est").textContent = !token ? "sin token"
-    : n===AGENTES.length ? "conectado · "+FEED.length+" eventos"
-    : n>0 ? n+" de "+AGENTES.length+" conectados"
-    : "reconectando…";
-}
-function pintarFeed(){
-  var f=$("feed");
-  if(!FEED.length){
-    f.innerHTML='<p class="vacio" style="padding:14px 16px">'+
-      (token?"Conectado. Los eventos aparecen apenas el agente hace algo — el ciclo corre cada 4 h y el de sets cada pocos segundos."
-            :"Pegá el token para ver el flujo en vivo.")+'</p>';
-    pintarEstado(); return;
   }
-  var abajo = f.scrollHeight-f.scrollTop-f.clientHeight < 40;
-  f.innerHTML=FEED.slice(-120).map(function(e){
-    var h=new Date(e.ts);
-    var hh=isNaN(h.getTime())?"--:--:--":h.toLocaleTimeString("es",{hour12:false});
-    var d=e.datos||{}, extra="";
-    if(d.p!=null)extra=pct(d.p)+" vs "+pct(d.precio);
-    else if(d.usd!=null)extra=usd(d.usd);
-    else if(d.combinado!=null)extra="par "+num(d.combinado,4);
-    else if(d.elegidos!=null)extra=d.elegidos+" de "+d.crudos;
-    else if(d.ms!=null)extra=d.ms+" ms";
-    var cls=e._nuevo?" nuevo":"";
-    e._nuevo=false;
-    return '<div class="ev'+cls+'"><span class="ev-t">'+hh+'</span>'+
-      '<span class="ev-k k-'+esc(e.kind)+'">'+esc(e.kind)+'</span>'+
-      '<span class="ev-m">'+esc(e.msg)+'</span>'+
-      (extra?'<span class="ev-d">'+esc(extra)+'</span>':'')+
-      '<span class="ev-src">'+esc(e._src||"")+'</span></div>';
-  }).join("");
-  if(abajo)f.scrollTop=f.scrollHeight;
-  pintarEstado();
+
+  var filas = [];
+  AGENTES.forEach(function(a){
+    var d = p.datos[a.id], items = d && d.act && d.act.items;
+    if (!items || !items.length) return;
+    filas.push(html`<div class="hdr" style="padding:12px 16px 3px" key=${a.id + ":h"}>${a.nombre}</div>`);
+    items.forEach(function(it, i){
+      var clave = a.id + ":" + i, esta = abierto === clave;
+      var pron = it.p_calibrated != null;
+      var pp = pron ? +it.p_calibrated : null, mm = pron ? +it.p_market : null;
+      var estado = it.outcome === true ? html`<span class="chip ok">resolvio SI</span>`
+        : it.outcome === false ? html`<span class="chip bad">resolvio NO</span>`
+        : (it.action && it.action !== "PASS") ? html`<span class="chip warn">${it.action}</span>`
+        : (it.imbalance && Math.abs(it.imbalance) > 0) ? html`<span class="chip warn">desbalanceado</span>`
+        : null;
+      var tok = it.token_yes || it.token_up, pd = precios[tok];
+
+      filas.push(html`<button class="mk" type="button" key=${clave} aria-expanded=${esta}
+          onClick=${function(){ abrir(clave, a, it); }}>
+        <span class="mk-t">
+          <span class="mk-q">${it.question || it.slug || "(sin nombre)"}</span>
+          ${estado}
+          <span class="mk-n">${pron
+            ? html`<b>${f.pct(pp)}</b> agente · ${f.pct(mm)} mercado`
+            : html`<b>${f.num(it.shares_up,0)}</b> up / ${f.num(it.shares_down,0)} down`}</span>
+        </span>
+        ${pron ? html`<span class="bar">
+          <i style=${"width:" + (pp*100).toFixed(1) + "%;background:var(--accent)"}></i>
+          <i style=${"width:" + Math.max(0,(mm-pp)*100).toFixed(1) + "%;background:var(--muted);opacity:.4"}></i>
+        </span>` : null}
+      </button>`);
+
+      if (!esta) return;
+      var det = pron
+        ? [["Categoria", it.category || "—"], ["Accion", it.action || "—"],
+           ["Confianza", it.confidence || "—"],
+           ["Divergencia", (pp != null && mm != null) ? ((pp-mm >= 0 ? "+" : "") + f.num(pp-mm,3)) : "—"],
+           ["Cierra", it.end_date ? f.hora(it.end_date) : "—"],
+           ["Pronosticado", f.hora(it.ts)]]
+        : [["Shares UP", f.num(it.shares_up,1) + " @ " + f.num(it.avg_cost_up,3)],
+           ["Shares DOWN", f.num(it.shares_down,1) + " @ " + f.num(it.avg_cost_down,3)],
+           ["Pares", f.num(it.paired,1)], ["Desbalance", f.num(it.imbalance,1)],
+           ["Edge trabado", f.usd(it.locked_edge)]];
+
+      filas.push(html`<div class="det" key=${clave + ":d"}><div class="det-g">
+        <div class="pane">
+          <h3>Precio del mercado · ultima semana</h3>
+          ${pd === undefined || pd === null ? html`<p class="empty">Cargando precio...</p>`
+            : pd.error ? html`<p class="empty">${pd.error}</p>`
+            : (!pd.puntos || pd.puntos.length < 2) ? html`<p class="empty">Sin historial todavia.</p>`
+            : html`<${Chart} dep=${tok + ":" + pd.puntos.length}
+                option=${function(){ return opcionPrecio(pd.puntos, pp); }} />`}
+        </div>
+        <div>
+          ${det.map(function(x){ return html`<${Row} k=${x[0]} v=${x[1]} />`; })}
+          ${it.pass_reason
+            ? html`<p class="why"><b>Por que no opero:</b> ${it.pass_reason}</p>` : null}
+        </div>
+      </div></div>`);
+    });
+  });
+
+  return html`<section class="card">
+    <div class="card-h"><h2>En que esta trabajando</h2>
+      <span class="sub">toca un mercado para ver como se mueve</span></div>
+    ${filas.length ? filas
+      : html`<p class="empty">${p.token ? "Todavia no hay actividad registrada."
+        : "Pega el token para ver los mercados."}</p>`}
+  </section>`;
 }
 
-function dl(k,v,cls){return '<div class="dl'+(cls?" "+cls:"")+'"><span>'+esc(k)+
-  '</span><b>'+esc(v)+'</b></div>'}
-
-function pintarDiag(){
-  var html="";
+function Diagnostico(p){
+  var cel = [];
   AGENTES.forEach(function(a){
-    var d=S[a.id].diag; if(!d)return;
-    if(d.pass){
-      var c='<div class="dcol"><h3>'+esc(a.nombre)+' · por qué no operó</h3>';
-      d.pass.forEach(function(x){
-        var malo=(x.motivo==="se rompió"||x.motivo==="sin modelo");
-        c+=dl(x.motivo,num(x.n),malo?"mal":(x.motivo==="decisión limpia"?"bien":""));
-      });
-      html+=c+'</div>';
-      var e='<div class="dcol"><h3>'+esc(a.nombre)+' · cuántos modelos votaron</h3>';
-      (d.ensemble||[]).forEach(function(x){
-        e+=dl((x.n_models==null?"—":x.n_models)+" modelo(s)",num(x.n),
-              x.n_models===1?"mal":(x.n_models>1?"bien":""));
-      });
-      (d.modelos||[]).forEach(function(x){e+=dl(x.modelo,num(x.n))});
-      html+=e+'</div>';
-      var r=d.resumen||{};
-      var g='<div class="dcol"><h3>'+esc(a.nombre)+' · contra el precio</h3>';
-      g+=dl("Sesgo medio",r.sesgo==null?"—":(r.sesgo>=0?"+":"")+num(r.sesgo,3),
-            (r.sesgo!=null&&Math.abs(r.sesgo)>0.05)?"mal":"bien");
-      g+=dl("Por debajo del precio",num(r.debajo)+" de "+num(r.n));
-      g+=dl("Divergencia > 30 pts",num(r.lejos),r.lejos>0?"mal":"bien");
-      g+=dl("Pronósticos por mercado",num(r.por_mercado,2),
-            r.por_mercado>3?"mal":"bien");
-      g+=dl("Mercados distintos",num(r.mercados));
-      html+=g+'</div>';
-      var k='<div class="dcol"><h3>'+esc(a.nombre)+' · reparto por categoría</h3>';
-      (d.categorias||[]).slice(0,9).forEach(function(x){
-        k+=dl(x.category||"(sin)",num(x.n)+" · "+num(x.mercados)+" merc.");
-      });
-      html+=k+'</div>';
-    }else if(d.inventario){
-      var i='<div class="dcol"><h3>'+esc(a.nombre)+' · riesgo</h3>';
-      var rk=d.riesgo||{};
-      Object.keys(rk).slice(0,8).forEach(function(x){
-        var v=rk[x]; if(v&&typeof v==="object")return;
-        i+=dl(x.replace(/_/g," "),typeof v==="number"?num(v,2):String(v));
-      });
-      i+=dl("eventos emitidos",num(d.eventos));
-      i+=dl("último libro",d.ultimo_dato?hora(d.ultimo_dato):"—");
-      html+=i+'</div>';
+    var d = p.datos[a.id] && p.datos[a.id].diag;
+    if (!d) return;
+    if (d.pass) {
+      var pass = d.pass.map(function(x){ return [x.motivo, x.n]; });
+      cel.push(html`<div class="dcell" key=${a.id + ":p"}>
+        <h3>${a.nombre} · por que no opero</h3>
+        <${Chart} class="dchart" dep=${JSON.stringify(pass)}
+          option=${function(){ return opcionBarras(pass, function(m){
+            return (m === "se rompio" || m.indexOf("rompi") >= 0 || m === "sin modelo")
+              ? css("--bad","#933")
+              : (m.indexOf("limpia") >= 0 ? css("--ok","#396") : css("--warn","#a81")); }); }} />
+      </div>`);
+      var ens = (d.ensemble || []).map(function(x){
+        return [(x.n_models == null ? "?" : x.n_models) + " modelo(s)", x.n]; });
+      cel.push(html`<div class="dcell" key=${a.id + ":e"}>
+        <h3>${a.nombre} · cuantos modelos votaron</h3>
+        <${Chart} class="dchart" dep=${JSON.stringify(ens)}
+          option=${function(){ return opcionBarras(ens, function(m){
+            return m.indexOf("1 ") === 0 ? css("--bad","#933") : css("--ok","#396"); }); }} />
+      </div>`);
+      var cats = (d.categorias || []).slice(0,9).map(function(x){
+        return [x.category || "(sin)", x.n]; });
+      cel.push(html`<div class="dcell" key=${a.id + ":c"}>
+        <h3>${a.nombre} · reparto por categoria</h3>
+        <${Chart} class="dchart" dep=${JSON.stringify(cats)}
+          option=${function(){ return opcionBarras(cats); }} />
+      </div>`);
+      var r = d.resumen || {};
+      cel.push(html`<div class="dcell" key=${a.id + ":r"}>
+        <h3>${a.nombre} · contra el precio</h3>
+        <${Row} k="Sesgo medio" cls=${r.sesgo != null && Math.abs(r.sesgo) > 0.05 ? "bad" : "ok"}
+          v=${r.sesgo == null ? "—" : (r.sesgo >= 0 ? "+" : "") + f.num(r.sesgo,3)} />
+        <${Row} k="Por debajo del precio" v=${f.num(r.debajo) + " de " + f.num(r.n)} />
+        <${Row} k="Divergencia > 30 pts" cls=${r.lejos > 0 ? "bad" : "ok"} v=${f.num(r.lejos)} />
+        <${Row} k="Pronosticos por mercado" cls=${r.por_mercado > 3 ? "bad" : "ok"}
+          v=${f.num(r.por_mercado,2)} />
+        <${Row} k="Mercados distintos" v=${f.num(r.mercados)} />
+      </div>`);
+    } else if (d.inventario) {
+      var rk = d.riesgo || {};
+      cel.push(html`<div class="dcell" key=${a.id + ":k"}>
+        <h3>${a.nombre} · riesgo y datos</h3>
+        ${Object.keys(rk).filter(function(k){ return rk[k] === null || typeof rk[k] !== "object"; })
+          .slice(0,8).map(function(k){
+            return html`<${Row} key=${k} k=${k.replace(/_/g," ")}
+              v=${typeof rk[k] === "number" ? f.num(rk[k],2) : String(rk[k])} />`; })}
+        <${Row} k="eventos emitidos" v=${f.num(d.eventos)} />
+        <${Row} k="ultimo libro" v=${d.ultimo_dato ? f.hora(d.ultimo_dato) : "—"} />
+      </div>`);
     }
   });
-  $("diag").innerHTML=html||'<div class="dcol"><p class="vacio">'+
-    (token?"Sin diagnóstico todavía.":"Pegá el token para ver el diagnóstico.")+'</p></div>';
+  return html`<section class="card">
+    <div class="card-h"><h2>Diagnostico</h2>
+      <span class="sub">en que se va el trabajo y que se rompe</span></div>
+    ${cel.length ? html`<div class="dg">${cel}</div>`
+      : html`<p class="empty">${p.token ? "Sin diagnostico todavia."
+        : "Pega el token para ver el diagnostico."}</p>`}
+  </section>`;
 }
 
-$("acts").addEventListener("click",function(e){
-  var b=e.target.closest(".mk"); if(!b)return;
-  var k=b.getAttribute("data-k");
-  ABIERTO=(ABIERTO===k)?null:k;
-  pintar();
-  if(!ABIERTO)return;
-  var partes=k.split(":"), a=AGENTES.filter(function(x){return x.id===partes[0]})[0];
-  var it=S[partes[0]].act.items[+partes[1]];
-  if(a&&it)cargarPrecio(a,it);
-});
+function Geo(p){
+  var tiles = AGENTES.map(function(a){
+    var g = p.datos[a.id] && p.datos[a.id].geo, w = g && g.web;
+    if (!p.token) return html`<${Tile} key=${a.id} lab=${a.nombre} val="—" sub="hace falta el token" />`;
+    if (!w) return html`<${Tile} key=${a.id} lab=${a.nombre} val="—" sub="sin lectura" />`;
+    return html`<${Tile} key=${a.id} lab=${a.nombre}
+      val=${(w.country || "?") + (w.region ? " · " + w.region : "")}
+      sub=${w.blocked ? "no puede abrir posicion" : "puede operar"}
+      cls=${w.blocked ? "bad" : "ok"} />`;
+  });
+  return html`<section class="card">
+    <div class="card-h"><h2>Jurisdiccion</h2>
+      <span class="sub">desde donde ve Polymarket a cada agente</span></div>
+    <div class="tiles">${tiles}</div>
+    <p class="why" style="margin:12px 16px 14px"><b>US, DE y SG son close-only:</b>
+      se puede cerrar posicion, no abrir. Las cinco regiones de Render caen ahi. Para
+      operar en real hace falta NL, IE, JP, KR o un pais sin restriccion.</p>
+  </section>`;
+}
 
-$("bTok").onclick=function(){
-  token=$("tok").value.trim();
-  try{token?localStorage.setItem("mcp_token",token):localStorage.removeItem("mcp_token")}catch(e){}
-  pintar();refrescar();
-  if(token)AGENTES.forEach(conectar); else desconectar();
-  pintarFeed()};
-$("tok").onkeydown=function(e){if(e.key==="Enter")$("bTok").click()};
-$("bRef").onclick=function(){restan=15;refrescar()};
-$("bAuto").onclick=function(){auto=!auto;
-  $("bAuto").setAttribute("aria-pressed",String(auto));
-  $("bAuto").textContent=auto?"Auto 15s":"Auto apagado";restan=15;pintar()};
-$("bKill").onclick=function(){
-  var b=$("bKill");
-  if(!token){alert("Hace falta el token.");return}
-  if(Date.now()-armado>4000){armado=Date.now();b.textContent="¿Seguro? tocá otra vez";
-    setTimeout(function(){if(Date.now()-armado>=4000)b.textContent="Parar todo"},4200);return}
-  armado=0;b.textContent="parando…";b.disabled=true;
-  Promise.all(AGENTES.map(function(a){return fetch(a.url+"/kill",{method:"POST",
-    headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
-    body:JSON.stringify({reason:"parada manual desde la torre de control"})}).catch(function(){})}))
-    .then(function(){b.disabled=false;b.textContent="Parar todo";refrescar()})};
+function App(){
+  var ini = ""; try { ini = localStorage.getItem("mcp_token") || ""; } catch(e){}
+  var s1 = useState(ini), token = s1[0], setToken = s1[1];
+  var s2 = useState(ini), borr = s2[0], setBorr = s2[1];
+  var s3 = useState(true), auto = s3[0], setAuto = s3[1];
+  var s4 = useState(15), cuenta = s4[0], setCuenta = s4[1];
+  var s5 = useState([]), eventos = s5[0], setEventos = s5[1];
+  var s6 = useState(0), armado = s6[0], setArmado = s6[1];
 
-setInterval(function(){if(!auto)return;restan-=1;
-  if(restan<=0){restan=15;refrescar()}else pintar()},1000);
+  var A = useAgentes(token);
+  var leer = A.leer;
+  var sse = useStream(token, useCallback(function(ev){
+    setEventos(function(L){ var n = L.concat([ev]); return n.length > 400 ? n.slice(-400) : n; });
+  }, []));
 
-if(token)$("tok").value=token;
-pintar();pintarFeed();refrescar();
-if(token)AGENTES.forEach(conectar);
+  useEffect(function(){ leer(); }, [leer]);
+  useEffect(function(){
+    var t = setInterval(function(){
+      if (!auto) return;
+      setCuenta(function(c){ if (c <= 1) { leer(); return 15; } return c - 1; });
+    }, 1000);
+    return function(){ clearInterval(t); };
+  }, [auto, leer]);
+
+  function guardar(){
+    var t = borr.trim();
+    try { t ? localStorage.setItem("mcp_token", t) : localStorage.removeItem("mcp_token"); } catch(e){}
+    setToken(t);
+  }
+  function parar(){
+    if (Date.now() - armado > 4000) { setArmado(Date.now()); return; }
+    setArmado(0);
+    Promise.all(AGENTES.map(function(a){
+      return fetch(a.url + "/kill", {method:"POST",
+        headers:{Authorization:"Bearer " + token, "Content-Type":"application/json"},
+        body:JSON.stringify({reason:"parada manual desde la torre de control"})})
+        .catch(function(){});
+    })).then(function(){ leer(); });
+  }
+
+  var alarmas = [], modos = [], vivo = false;
+  AGENTES.forEach(function(a){
+    var hh = A.datos[a.id] && A.datos[a.id].health;
+    if (!hh) return;
+    if (hh.killed) alarmas.push({n:a.nombre, m:hh.kill_reason || "kill switch activo"});
+    else vivo = true;
+    if (hh.mode && modos.indexOf(hh.mode) < 0) modos.push(hh.mode);
+  });
+
+  return html`<div class="wrap">
+    <header>
+      <div class="hd">
+        <div class="brand"><h1>Torre de Control</h1>
+          <span>${(modos.join(" / ") || "—")} · polymarket${A.ro ? " · solo lectura" : ""}</span>
+        </div>
+        <div class="hd-r">
+          <span class="live"><span class=${"dot " + (vivo && auto ? "on" : "")}></span>
+            ${auto ? "en " + cuenta + "s" : "pausado"}</span>
+          <button class="btn" type="button"
+            onClick=${function(){ setCuenta(15); leer(); }}>Actualizar</button>
+          <button class="btn" type="button" aria-pressed=${auto}
+            onClick=${function(){ setAuto(!auto); setCuenta(15); }}>
+            ${auto ? "Auto 15s" : "Auto apagado"}</button>
+          ${(!A.ro && token)
+            ? html`<button class="btn danger" type="button" onClick=${parar}>
+                ${Date.now() - armado < 4000 ? "¿Seguro? toca otra vez" : "Parar todo"}</button>`
+            : null}
+        </div>
+      </div>
+    </header>
+
+    ${!token ? html`<div class="key">
+      <p><b>Pega el token del agente</b> para ver el detalle. Queda solo en este navegador.</p>
+      <input type="password" placeholder="AGENT_API_TOKEN" autocomplete="off" spellcheck="false"
+        value=${borr} onInput=${function(e){ setBorr(e.target.value); }}
+        onKeyDown=${function(e){ if (e.key === "Enter") guardar(); }} />
+      <button class="btn" type="button" onClick=${guardar}>Guardar</button>
+    </div>` : null}
+
+    ${alarmas.map(function(x){
+      return html`<div class="alarma" key=${x.n}><strong>${x.n} detenido</strong>
+        <p>${x.m}</p></div>`; })}
+
+    <div class="grid g2">
+      ${AGENTES.map(function(a){
+        return html`<${TarjetaAgente} key=${a.id} a=${a} d=${A.datos[a.id]}
+          hist=${A.hist[a.id] || []} token=${token} sse=${sse[a.id]} />`; })}
+    </div>
+
+    <div class="grid">
+      <${Feed} eventos=${eventos} token=${token} sse=${sse} />
+      <${Diagnostico} datos=${A.datos} token=${token} />
+      <${Mercados} datos=${A.datos} token=${token} />
+      <${Geo} datos=${A.datos} token=${token} />
+    </div>
+
+    <footer>Render duerme el servicio a los 15 min sin trafico: la primera lectura
+      puede tardar. Con esta pagina abierta se mantiene despierto.</footer>
+  </div>`;
+}
+
+render(html`<${App} />`, document.getElementById("app"));
 </script>
 </body>
 </html>

@@ -445,9 +445,11 @@ def _tablero() -> str:
             {"id": "b", "nombre": "Complete Sets", "svc": "trade-sets", "tipo": "sets",
              "url": os.getenv("UI_URL_B", "https://mcp-trade-sets.onrender.com")},
         ])
-    return html.replace(
-        "window.__AGENTES__||[]", f"window.__AGENTES__||{crudo}", 1
-    )
+    # Se inyecta ANTES del primer <script>, en vez de sustituir un texto
+    # dentro del codigo: un espacio de mas en el HTML rompia la
+    # sustitucion y la pagina quedaba sin agentes, sin avisar.
+    inyectado = "<script>window.__AGENTES__=" + crudo + ";</script>" + chr(10)
+    return html.replace("<script ", inyectado + "<script ", 1)
 
 
 async def _precio(token_id: str, rango: str = "1d") -> dict:
