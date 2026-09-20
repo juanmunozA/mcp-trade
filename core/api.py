@@ -40,6 +40,9 @@ ENDPOINTS
     GET  /health      estado, presupuesto, kill switch  (también UptimeRobot)
     GET  /report      tablero de aprendizaje: ¿hay edge?
     GET  /candidates  mercados elegidos por el explorador  [?n=8]
+    GET  /ui          el tablero. Lo sirve el agente y no un artifact
+                      porque una página externa no puede leer esta API:
+                      la CSP de claude.ai bloquea fetch a otro host.
     GET  /geo         desde qué país ve Polymarket al bot
     GET  /activity    lo último que hizo, mercado por mercado  [?n=25]
     GET  /precio      historial de precio de un outcome  [?token=&rango=]
@@ -67,6 +70,7 @@ import contextlib
 import json
 import logging
 import os
+import pathlib
 import time
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
@@ -203,6 +207,9 @@ class AgentAPI:
         if method == "OPTIONS":
             return 204, {}
 
+        if path == "/ui" and method == "GET":
+            return 200, {"_html": _tablero()}
+
         if path in ("/", "/health", "/healthz"):
             status = self._safe_status()
             return (503 if status.get("killed") else 200), status
@@ -278,7 +285,7 @@ class AgentAPI:
             return 200, {"killed": True, "reason": motivo[:300], "at": _now()}
 
         return 404, {"error": "no existe", "rutas": [
-            "GET /health", "GET /report", "GET /candidates", "GET /geo",
+            "GET /ui", "GET /health", "GET /report", "GET /candidates", "GET /geo",
             "GET /activity", "GET /precio?token=...",
             "POST /forecast", "POST /trade", "POST /market",
             "POST /cycle", "POST /resolve", "POST /kill",
@@ -297,10 +304,17 @@ class AgentAPI:
 
     @staticmethod
     async def _respond(writer, code: int, payload: dict) -> None:
-        body = json.dumps(payload, indent=2, default=str, ensure_ascii=False).encode()
+        html = payload.get("_html") if isinstance(payload, dict) else None
+        if html is not None:
+            body = html.encode("utf-8")
+            tipo = "text/html; charset=utf-8"
+        else:
+            body = json.dumps(payload, indent=2, default=str,
+                              ensure_ascii=False).encode()
+            tipo = "application/json; charset=utf-8"
         head = (
             f"HTTP/1.1 {code} {_STATUS.get(code, 'OK')}\r\n"
-            "Content-Type: application/json; charset=utf-8\r\n"
+            f"Content-Type: {tipo}\r\n"
             f"Content-Length: {len(body)}\r\n"
             "Cache-Control: no-store\r\n"
             # El tablero es una pagina en otro origen y el navegador
@@ -315,6 +329,34 @@ class AgentAPI:
         ).encode()
         writer.write(head + body)
         await writer.drain()
+
+
+_UI = pathlib.Path(__file__).with_name("ui.html")
+
+
+def _tablero() -> str:
+    """
+    El tablero, con las URLs de los agentes inyectadas.
+
+    Va sin token: es HTML, no datos. La página lo pide aparte y lo guarda
+    en el navegador de quien mira, asi que servirla no expone nada.
+    """
+    try:
+        html = _UI.read_text(encoding="utf-8")
+    except OSError as exc:
+        return f"<!doctype html><p>no se pudo leer el tablero: {exc}"
+
+    crudo = os.getenv("UI_AGENTS", "").strip()
+    if not crudo:
+        crudo = json.dumps([
+            {"id": "a", "nombre": "Pronóstico", "svc": "pilot_a", "tipo": "pronostico",
+             "url": os.getenv("UI_URL_A", "https://mcp-trade-collector.onrender.com")},
+            {"id": "b", "nombre": "Complete Sets", "svc": "trade-sets", "tipo": "sets",
+             "url": os.getenv("UI_URL_B", "https://mcp-trade-sets.onrender.com")},
+        ])
+    return html.replace(
+        "window.__AGENTES__||[]", f"window.__AGENTES__||{crudo}", 1
+    )
 
 
 async def _precio(token_id: str, rango: str = "1d") -> dict:

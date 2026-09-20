@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre de Control</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+:root{
+  --ground:#F4F2EE;--surface:#fff;--surface-2:#FAF8F5;
+  --ink:#15181D;--muted:#6A6F78;--faint:#9A9EA6;
+  --line:#E2DED7;--line-soft:#EDE9E3;
+  --accent:#A85D30;--accent-soft:#F2E4D9;
+  --ok:#3D7A5D;--ok-soft:#E3EFE8;
+  --warn:#8A6A18;--warn-soft:#F5EBD3;
+  --bad:#9A3A33;--bad-soft:#F6E2DF;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ground:#131519;--surface:#1A1D23;--surface-2:#1F232A;
+  --ink:#E7E4DE;--muted:#8D9198;--faint:#6A6E75;
+  --line:#282C34;--line-soft:#22262D;
+  --accent:#D9895A;--accent-soft:#33241B;
+  --ok:#5FA57F;--ok-soft:#1B2A22;
+  --warn:#C9A244;--warn-soft:#2C2517;
+  --bad:#D46A5F;--bad-soft:#2E1C1A;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.5;padding-inline:20px;padding-block:0 56px;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto}
+header{position:sticky;top:0;z-index:20;background:var(--ground);
+  border-bottom:1px solid var(--line);margin-inline:-20px;padding:14px 20px 12px}
+.hd{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.015em}
+.h-sub{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{font-family:var(--sans);font-size:12.5px;font-weight:500;background:var(--surface);
+  color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 11px;
+  cursor:pointer;line-height:1.3}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.btn-danger{color:var(--bad);border-color:var(--bad)}
+.tick{font-family:var(--mono);font-size:11.5px;color:var(--muted);min-width:104px;
+  text-align:right;font-variant-numeric:tabular-nums}
+.pulse{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);
+  margin-right:6px;vertical-align:1px}
+.pulse.off{background:var(--faint)}
+@media (prefers-reduced-motion:no-preference){.pulse:not(.off){animation:lat 2.4s ease-in-out infinite}}
+@keyframes lat{0%,100%{opacity:1}50%{opacity:.25}}
+.key{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;
+  padding:11px 13px;background:var(--warn-soft);border:1px solid var(--line);
+  border-left:3px solid var(--warn);border-radius:7px}
+.key p{margin:0;font-size:13px;flex:1 1 260px}
+.key input{font-family:var(--mono);font-size:12.5px;background:var(--surface);
+  color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 9px;
+  width:230px;max-width:100%}
+.alarma{margin-top:14px;padding:13px 15px;border-radius:7px;background:var(--bad-soft);
+  border:1px solid var(--bad)}
+.alarma strong{font-family:var(--cond);letter-spacing:.06em;text-transform:uppercase;
+  font-size:12.5px;color:var(--bad)}
+.alarma p{margin:3px 0 0;font-size:13.5px}
+.agentes{display:grid;gap:18px;margin-top:18px;
+  grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;display:flex;flex-direction:column}
+.p-top{display:flex;align-items:center;gap:10px;padding:13px 16px;
+  border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.p-name{font-size:15.5px;font-weight:600}
+.p-svc{font-family:var(--mono);font-size:11px;color:var(--faint);display:block;margin-top:1px}
+.p-chips{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.chip{font-family:var(--cond);font-size:11px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;padding:3px 8px;border-radius:4px;white-space:nowrap;
+  border:1px solid transparent}
+.c-ok{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.c-warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.c-bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.c-mute{background:var(--surface);color:var(--muted);border-color:var(--line)}
+.tiles{display:grid;gap:1px;background:var(--line-soft);
+  grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+  border-bottom:1px solid var(--line-soft)}
+.tile{background:var(--surface);padding:12px 14px 13px;min-width:0}
+.t-lab{font-family:var(--cond);font-size:10.5px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
+.t-val{font-family:var(--mono);font-size:19px;font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;display:block;overflow-wrap:anywhere}
+.t-val.sm{font-size:15px}
+.t-sub{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-top:2px}
+.t-val.is-bad{color:var(--bad)}.t-val.is-ok{color:var(--ok)}.t-val.is-warn{color:var(--warn)}
+.spark{display:block;margin-top:6px;width:100%;height:20px}
+.filas{padding:6px 16px 14px}
+.fila{display:flex;gap:12px;align-items:baseline;padding:7px 0;
+  border-bottom:1px solid var(--line-soft);font-size:13px}
+.fila:last-child{border-bottom:0}
+.f-k{color:var(--muted)}
+.f-v{font-family:var(--mono);font-size:12.5px;margin-left:auto;text-align:right;
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.sec{font-family:var(--cond);font-size:10.5px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);padding:12px 0 2px}
+.vacio{font-size:13px;color:var(--muted);font-style:italic;padding:8px 0;margin:0}
+
+/* actividad */
+.act{margin-top:18px;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;overflow:hidden}
+.act-h{padding:12px 16px;border-bottom:1px solid var(--line-soft);background:var(--surface-2);
+  display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.act-h h2{font-size:14px;font-weight:600;margin:0}
+.act-h span{font-size:12.5px;color:var(--muted)}
+.mk{display:block;width:100%;text-align:left;background:var(--surface);border:0;
+  border-bottom:1px solid var(--line-soft);padding:11px 16px;cursor:pointer;
+  font-family:var(--sans);color:var(--ink);font-size:13px}
+.mk:hover{background:var(--surface-2)}
+.mk[aria-expanded=true]{background:var(--accent-soft)}
+.mk:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.mk-top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.mk-q{font-weight:500;flex:1 1 260px;min-width:0}
+.mk-nums{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.mk-nums b{color:var(--ink);font-weight:500}
+.barra{display:flex;height:4px;border-radius:2px;overflow:hidden;background:var(--line-soft);
+  margin-top:7px;position:relative}
+.barra i{display:block;height:100%}
+.b-p{background:var(--accent)}
+.b-m{background:var(--muted);opacity:.45}
+.det{padding:0 16px 16px;background:var(--surface-2);
+  border-bottom:1px solid var(--line-soft)}
+.det-g{display:grid;gap:14px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+  padding-top:12px}
+@media (max-width:640px){.det-g{grid-template-columns:1fr}}
+.graf{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px}
+.graf-t{font-family:var(--cond);font-size:10.5px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;gap:8px;
+  align-items:baseline;flex-wrap:wrap}
+.leg{font-family:var(--mono);font-size:10px;text-transform:none;letter-spacing:0}
+.leg b{font-weight:500}
+.razon{font-size:12.5px;color:var(--muted);margin:10px 0 0;padding:9px 11px;
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--warn);
+  border-radius:6px}
+.razon b{color:var(--ink)}
+footer{margin-top:22px;font-size:12px;color:var(--faint);text-align:center}
+code{font-family:var(--mono);font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hd">
+      <div><h1>Torre de Control</h1><span class="h-sub" id="modo">polymarket</span></div>
+      <div class="hd-right">
+        <span class="tick" id="tick"><span class="pulse off"></span>iniciando</span>
+        <button class="btn" id="bRef" type="button">Actualizar</button>
+        <button class="btn" id="bAuto" type="button" aria-pressed="true">Auto 15s</button>
+        <button class="btn btn-danger" id="bKill" type="button">Parar todo</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="key" id="key">
+    <p><b>Pegá el token del agente</b> para ver el detalle. Queda solo en este navegador.</p>
+    <input id="tok" type="password" placeholder="AGENT_API_TOKEN" autocomplete="off" spellcheck="false">
+    <button class="btn" id="bTok" type="button">Guardar</button>
+  </div>
+
+  <div id="alarmas"></div>
+  <div class="agentes" id="agentes"></div>
+
+  <section class="act">
+    <div class="act-h"><h2>En qué está trabajando</h2>
+      <span>tocá un mercado para ver cómo se mueve</span></div>
+    <div id="acts"></div>
+  </section>
+
+  <section class="act">
+    <div class="act-h"><h2>Jurisdicción</h2>
+      <span>desde dónde ve Polymarket a cada agente</span></div>
+    <div class="tiles" id="geo"></div>
+    <p class="razon"><b>US, DE y SG son close-only:</b> se puede cerrar posición, no abrir.
+      Las cinco regiones de Render caen ahí. Para operar en real hace falta NL, IE, JP, KR
+      o un país sin restricción. En <code>paper</code> no estorba.</p>
+  </section>
+
+  <footer>Render duerme el servicio a los 15 min sin tráfico — la primera lectura puede
+    tardar. Con esta página abierta se mantiene despierto.</footer>
+</div>
+
+<script>
+var AGENTES=window.__AGENTES__||[];
+var S={},HIST={},ABIERTO=null,PRECIOS={};
+AGENTES.forEach(function(a){
+  S[a.id]={health:null,report:null,geo:null,act:null,err:null,rerr:null,cargando:false,desde:0};
+  HIST[a.id]={};
+});
+var token="",auto=true,restan=15,armado=0;
+try{token=localStorage.getItem("mcp_token")||""}catch(e){}
+
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?"":s).replace(/[<>&"]/g,function(c){
+  return {"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]})}
+function num(v,d){d=d||0;return (v==null||v===""||isNaN(+v))?"—":
+  (+v).toLocaleString("es",{minimumFractionDigits:d,maximumFractionDigits:d})}
+function usd(v){return (v==null||v===""||isNaN(+v))?"—":
+  "$"+(+v).toLocaleString("es",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(v){return (v==null||isNaN(+v))?"—":(+v*100).toFixed(1)+"%"}
+function dur(s){if(s==null)return "—";s=Math.floor(s);
+  if(s<60)return s+"s";if(s<3600)return Math.floor(s/60)+"m "+(s%60)+"s";
+  return Math.floor(s/3600)+"h "+Math.floor(s%3600/60)+"m"}
+function hora(x){if(!x)return "—";var d=new Date(x);
+  return isNaN(d.getTime())?"—":d.toLocaleString("es",{day:"2-digit",month:"2-digit",
+    hour:"2-digit",minute:"2-digit"})}
+function push(a,k,v){if(v==null||isNaN(+v))return;var h=HIST[a];
+  if(!h[k])h[k]=[];h[k].push(+v);if(h[k].length>50)h[k].shift()}
+
+function spark(vals){
+  if(!vals||vals.length<3)return "";
+  var w=100,h=20,mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals),r=(mx-mn)||1;
+  var pts=vals.map(function(v,i){return [(i/(vals.length-1))*w,h-2-((v-mn)/r)*(h-4)]});
+  var d=pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1)}).join(" ");
+  var l=pts[pts.length-1];
+  return '<svg class="spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true">'+
+    '<polyline points="'+d+'" fill="none" stroke="var(--accent)" stroke-width="1.4" '+
+    'vector-effect="non-scaling-stroke"/><circle cx="'+l[0].toFixed(1)+'" cy="'+
+    l[1].toFixed(1)+'" r="1.8" fill="var(--accent)"/></svg>';
+}
+
+/* Grafico de precio: escala 0..1 fija, que es el rango real de una
+   probabilidad. Reescalar al min/max haria ver como sismo un mercado
+   que se movio dos centavos. */
+function grafico(puntos,marca){
+  if(!puntos||puntos.length<2)
+    return '<p class="vacio">Sin historial de precio todavía.</p>';
+  var W=300,H=110,L=26,R=6,T=8,B=16;
+  var iw=W-L-R, ih=H-T-B;
+  var t0=puntos[0].t, t1=puntos[puntos.length-1].t, dt=(t1-t0)||1;
+  var X=function(t){return L+((t-t0)/dt)*iw};
+  var Y=function(p){return T+(1-Math.max(0,Math.min(1,p)))*ih};
+  var d=puntos.map(function(q,i){return (i?"L":"M")+X(q.t).toFixed(1)+" "+Y(q.p).toFixed(1)}).join(" ");
+  var area=d+" L"+X(t1).toFixed(1)+" "+(T+ih)+" L"+X(t0).toFixed(1)+" "+(T+ih)+" Z";
+  var g="";
+  [0,0.25,0.5,0.75,1].forEach(function(v){
+    var y=Y(v).toFixed(1);
+    g+='<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" stroke="var(--line)" stroke-width="1"/>'+
+       '<text x="'+(L-5)+'" y="'+(+y+3)+'" text-anchor="end" font-size="8" '+
+       'fill="var(--faint)" font-family="var(--mono)">'+v.toFixed(2)+'</text>';
+  });
+  var m="";
+  if(marca!=null&&!isNaN(+marca)){
+    var my=Y(+marca).toFixed(1);
+    m='<line x1="'+L+'" y1="'+my+'" x2="'+(W-R)+'" y2="'+my+'" stroke="var(--accent)" '+
+      'stroke-width="1.2" stroke-dasharray="3 3"/>';
+  }
+  var ult=puntos[puntos.length-1];
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;max-width:100%" '+
+    'role="img" aria-label="precio del mercado en el tiempo">'+g+
+    '<path d="'+area+'" fill="var(--muted)" opacity="0.12"/>'+
+    '<path d="'+d+'" fill="none" stroke="var(--ink)" stroke-width="1.6" '+
+    'stroke-linejoin="round" vector-effect="non-scaling-stroke"/>'+m+
+    '<circle cx="'+X(ult.t).toFixed(1)+'" cy="'+Y(ult.p).toFixed(1)+'" r="2.6" fill="var(--ink)"/>'+
+    '</svg>';
+}
+
+function pedir(url,ruta,auth,ms){
+  var c=new AbortController(), t=setTimeout(function(){c.abort()},ms||95000);
+  return fetch(url+ruta,{headers:(auth&&token)?{Authorization:"Bearer "+token}:{},
+    signal:c.signal,cache:"no-store"})
+    .then(function(r){return r.json().catch(function(){return{}}).then(function(j){
+      if(r.status===401)return{_err:"token inválido"};
+      if(!r.ok&&r.status!==503)return{_err:"HTTP "+r.status};
+      return j})})
+    .catch(function(e){return{_err:e&&e.name==="AbortError"?"sin respuesta":"no se pudo conectar"}})
+    .then(function(j){clearTimeout(t);return j});
+}
+
+function leer(a){
+  var st=S[a.id]; st.cargando=true; st.desde=Date.now(); pintar();
+  return Promise.all([
+    pedir(a.url,"/health",false),
+    token?pedir(a.url,"/report",true):Promise.resolve(null),
+    token?pedir(a.url,"/geo",true):Promise.resolve(null),
+    token?pedir(a.url,"/activity?n=14",true):Promise.resolve(null)
+  ]).then(function(r){
+    st.cargando=false;
+    st.err=(r[0]&&r[0]._err)||null;
+    st.health=(r[0]&&!r[0]._err)?r[0]:null;
+    st.report=(r[1]&&!r[1]._err)?r[1]:null;
+    st.rerr=(r[1]&&r[1]._err)||null;
+    st.geo=(r[2]&&!r[2]._err)?r[2]:null;
+    st.act=(r[3]&&!r[3]._err)?r[3]:null;
+    if(st.health){
+      if(st.health.budget)push(a.id,"presupuesto",st.health.budget.pct_consumido);
+      if(st.health.inventario)push(a.id,"desbalance",st.health.inventario.worst_imbalance);
+    }
+    pintar();
+  });
+}
+function refrescar(){return Promise.all(AGENTES.map(leer))}
+
+function tile(l,v,o){o=o||{};
+  return '<div class="tile"><span class="t-lab">'+esc(l)+'</span><span class="t-val'+
+    (o.cls?" "+o.cls:"")+(String(v).length>8?" sm":"")+'">'+esc(v)+'</span>'+
+    (o.sub?'<span class="t-sub">'+esc(o.sub)+'</span>':"")+(o.sk||"")+'</div>'}
+function fila(k,v){return '<div class="fila"><span class="f-k">'+esc(k)+
+  '</span><span class="f-v">'+esc(v)+'</span></div>'}
+
+function panelPron(st,aid){
+  var h=st.health,r=st.report,b=h&&h.budget,t="";
+  t+=tile("Presupuesto",b?num(b.pct_consumido,1)+"%":"—",{
+    sub:b?num(b.neurons_usados)+" / "+num(b.neurons_disponibles):"sin datos",
+    cls:b?(b.pct_consumido>85?"is-bad":(b.pct_consumido>60?"is-warn":"")):"",
+    sk:spark(HIST[aid].presupuesto)});
+  t+=tile("Gemini",b?num(b.gemini_restantes):"—",{sub:"llamadas libres hoy"});
+  t+=tile("Resueltos",r?num(r.n_resolved):"—",{
+    sub:r&&r.ready_to_judge?"listo para juzgar":"aún no alcanza",
+    cls:r&&r.n_resolved>0?"is-ok":""});
+  t+=tile("Calibración",h?(h.calibration_active?"activa":"aprendiendo"):"—",{
+    sub:"enciende a los 30 mercados",cls:h&&h.calibration_active?"is-ok":""});
+  var f='<div class="sec">Aprendizaje</div>';
+  if(!token)f+='<p class="vacio">Pegá el token arriba.</p>';
+  else if(st.rerr)f+='<p class="vacio">'+esc(st.rerr)+'</p>';
+  else if(r){
+    f+=fila("Brier propio",r.n_resolved?num(r.brier,4):"sin resoluciones todavía");
+    f+=fila("Brier del mercado",r.n_resolved?num(r.brier_market,4):"—");
+    f+=fila("Ventaja sobre el precio",r.skill_vs_market==null?"—":num(r.skill_vs_market,4));
+    f+=fila("Le gana al mercado",r.beat_market_rate==null?"—":pct(r.beat_market_rate));
+    f+=fila("PnL",usd(r.pnl_usd));
+  }else f+='<p class="vacio">Sin lectura.</p>';
+  f+='<div class="sec">Ciclo</div>';
+  f+=fila("Último ciclo",h?(h.last_cycle?hora(h.last_cycle):"todavía ninguno"):"—");
+  return{tiles:t,filas:f};
+}
+function panelSets(st,aid){
+  var h=st.health,r=st.report,inv=h&&h.inventario,t="";
+  t+=tile("Pares armados",inv?num(inv.paired_shares,1):"—",{sub:"YES + NO completos"});
+  t+=tile("Edge trabado",inv?usd(inv.locked_edge_usd):"—",{
+    sub:"total, no por share",cls:inv&&inv.locked_edge_usd>0?"is-ok":""});
+  t+=tile("Desbalance",inv?num(inv.worst_imbalance,1):"—",{
+    sub:"shares de un solo lado",
+    cls:inv?(Math.abs(inv.worst_imbalance)>=40?"is-bad":
+      (Math.abs(inv.worst_imbalance)>0?"is-warn":"")):"",
+    sk:spark(HIST[aid].desbalance)});
+  t+=tile("Costo del par",(inv&&inv.avg_combined_cost)?num(inv.avg_combined_cost,4):"—",{
+    sub:"bajo 1.00 es ganancia",
+    cls:inv&&inv.avg_combined_cost>0?(inv.avg_combined_cost<1?"is-ok":"is-bad"):""});
+  var f='<div class="sec">Ejecución</div>';
+  if(!token)f+='<p class="vacio">Pegá el token arriba.</p>';
+  else if(st.rerr)f+='<p class="vacio">'+esc(st.rerr)+'</p>';
+  else if(r){
+    f+=fila("Intenciones",num(r.n_intents));
+    f+=fila("Rechazadas por riesgo",num(r.n_rejected));
+    f+=fila("Órdenes",num(r.n_orders));
+    f+=fila("Fills",num(r.n_fills));
+    f+=fila("Tasa de fill",r.fill_rate==null?"—":pct(r.fill_rate));
+    f+=fila("Slippage medio",r.avg_slippage_bps==null?"—":num(r.avg_slippage_bps,1)+" bps");
+    f+=fila("PnL realizado",usd(r.realized_pnl));
+  }else f+='<p class="vacio">Sin lectura.</p>';
+  f+='<div class="sec">Mercados</div>';
+  f+=fila("En seguimiento",h?num(h.mercados):"—");
+  return{tiles:t,filas:f};
+}
+
+function filaMercado(a,it,i){
+  var clave=a.id+":"+i, abierto=(ABIERTO===clave);
+  var esPron=(it.p_calibrated!=null);
+  var p=esPron?+it.p_calibrated:null, m=esPron?+it.p_market:null;
+  var titulo=esc(it.question||it.slug||"(sin nombre)");
+  var nums=esPron
+    ? '<b>'+pct(p)+'</b> agente · '+pct(m)+' mercado'
+    : '<b>'+num(it.shares_up,0)+'</b> up / '+num(it.shares_down,0)+' down · par '+num(it.combined_cost,3);
+  var estado="";
+  if(it.outcome===true)estado='<span class="chip c-ok">resolvió SÍ</span>';
+  else if(it.outcome===false)estado='<span class="chip c-bad">resolvió NO</span>';
+  else if(it.action&&it.action!=="PASS")estado='<span class="chip c-warn">'+esc(it.action)+'</span>';
+  else if(it.imbalance!=null&&Math.abs(it.imbalance)>0)estado='<span class="chip c-warn">desbalanceado</span>';
+
+  var barra="";
+  if(esPron)barra='<div class="barra"><i class="b-p" style="width:'+(p*100).toFixed(1)+
+    '%"></i><i class="b-m" style="width:'+Math.max(0,(m-p)*100).toFixed(1)+'%"></i></div>';
+
+  var html='<button class="mk" type="button" data-k="'+clave+'" aria-expanded="'+abierto+'">'+
+    '<span class="mk-top"><span class="mk-q">'+titulo+'</span>'+estado+
+    '<span class="mk-nums">'+nums+'</span></span>'+barra+'</button>';
+
+  if(abierto){
+    var tok=it.token_yes||it.token_up;
+    var pr=PRECIOS[tok];
+    var graf=pr===undefined?'<p class="vacio">Cargando precio…</p>':
+      (pr&&pr.error?'<p class="vacio">'+esc(pr.error)+'</p>':grafico(pr&&pr.puntos,p));
+    var lado='';
+    if(esPron){
+      lado+=fila("Categoría",it.category||"—");
+      lado+=fila("Acción",it.action||"—");
+      lado+=fila("Confianza",it.confidence||"—");
+      lado+=fila("Divergencia",(p!=null&&m!=null)?((p-m)>=0?"+":"")+num(p-m,3):"—");
+      lado+=fila("Cierra",it.end_date?hora(it.end_date):"—");
+      lado+=fila("Pronosticado",hora(it.ts));
+      if(it.brier!=null)lado+=fila("Brier",num(it.brier,4));
+    }else{
+      lado+=fila("Shares UP",num(it.shares_up,1)+" @ "+num(it.avg_cost_up,3));
+      lado+=fila("Shares DOWN",num(it.shares_down,1)+" @ "+num(it.avg_cost_down,3));
+      lado+=fila("Pares",num(it.paired,1));
+      lado+=fila("Desbalance",num(it.imbalance,1));
+      lado+=fila("Edge trabado",usd(it.locked_edge));
+    }
+    html+='<div class="det"><div class="det-g"><div class="graf">'+
+      '<div class="graf-t">Precio del mercado'+
+      (esPron?'<span class="leg">— <b style="color:var(--ink)">línea</b> mercado · '+
+        '<b style="color:var(--accent)">punteada</b> el agente</span>':'')+'</div>'+
+      graf+'</div><div>'+lado+'</div></div>'+
+      (it.pass_reason?'<p class="razon"><b>Por qué no operó:</b> '+esc(it.pass_reason)+'</p>':'')+
+      '</div>';
+  }
+  return html;
+}
+
+function pintar(){
+  var alarmas=[];
+  $("agentes").innerHTML=AGENTES.map(function(a){
+    var st=S[a.id],h=st.health,chips="";
+    if(st.cargando){var s=Math.round((Date.now()-st.desde)/1000);
+      chips='<span class="chip c-mute">'+(s>6?"despertando "+s+"s":"leyendo")+'</span>'}
+    else if(st.err)chips='<span class="chip c-bad">'+esc(st.err)+'</span>';
+    else if(h){
+      if(h.killed){chips+='<span class="chip c-bad">detenido</span>';
+        alarmas.push({n:a.nombre,m:h.kill_reason||"kill switch activo"})}
+      else chips+='<span class="chip c-ok">en línea</span>';
+      chips+='<span class="chip '+(h.mode==="live"?"c-warn":"c-mute")+'">'+esc(h.mode||"?")+'</span>';
+      chips+='<span class="chip c-mute">'+dur(h.uptime_s)+'</span>';
+    }else chips='<span class="chip c-mute">sin datos</span>';
+    var p=(a.tipo==="sets")?panelSets(st,a.id):panelPron(st,a.id);
+    return '<article class="panel"><div class="p-top"><div><span class="p-name">'+
+      esc(a.nombre)+'</span><span class="p-svc">'+esc(a.svc)+'</span></div>'+
+      '<div class="p-chips">'+chips+'</div></div><div class="tiles">'+p.tiles+
+      '</div><div class="filas">'+p.filas+'</div></article>';
+  }).join("");
+
+  var acts="";
+  AGENTES.forEach(function(a){
+    var it=S[a.id].act&&S[a.id].act.items;
+    if(!it||!it.length)return;
+    acts+='<div class="sec" style="padding:12px 16px 4px">'+esc(a.nombre)+'</div>';
+    acts+=it.map(function(x,i){return filaMercado(a,x,i)}).join("");
+  });
+  $("acts").innerHTML=acts||'<p class="vacio" style="padding:14px 16px">'+
+    (token?"Todavía no hay actividad registrada.":"Pegá el token para ver en qué está trabajando.")+'</p>';
+
+  $("geo").innerHTML=AGENTES.map(function(a){
+    var g=S[a.id].geo,w=g&&g.web;
+    if(!token)return tile(a.nombre,"—",{sub:"hace falta el token"});
+    if(!w)return tile(a.nombre,"—",{sub:"sin lectura"});
+    return tile(a.nombre,(w.country||"?")+(w.region?" · "+w.region:""),{
+      sub:w.blocked?"no puede abrir posición":"puede operar",
+      cls:w.blocked?"is-bad":"is-ok"});
+  }).join("");
+
+  $("alarmas").innerHTML=alarmas.map(function(x){
+    return '<div class="alarma"><strong>'+esc(x.n)+' detenido</strong><p>'+esc(x.m)+'</p></div>'}).join("");
+
+  var vivo=AGENTES.some(function(a){return S[a.id].health&&!S[a.id].health.killed});
+  var mo=[];AGENTES.forEach(function(a){var m=S[a.id].health&&S[a.id].health.mode;
+    if(m&&mo.indexOf(m)<0)mo.push(m)});
+  $("modo").textContent=(mo.join(" / ")||"—")+" · polymarket";
+  $("tick").innerHTML='<span class="pulse'+((vivo&&auto)?"":" off")+'"></span>'+
+    (auto?("en "+restan+"s"):"pausado");
+  $("key").hidden=!!token;
+}
+
+/* El historial de precio lo sirve el agente: el navegador no alcanza al
+   CLOB (sin CORS, y el DNS del operador no resuelve polymarket.com). */
+function cargarPrecio(a,it){
+  var tok=it.token_yes||it.token_up;
+  if(!tok||PRECIOS[tok]!==undefined)return Promise.resolve();
+  PRECIOS[tok]=null;
+  return pedir(a.url,"/precio?rango=1w&token="+encodeURIComponent(tok),true,60000)
+    .then(function(p){PRECIOS[tok]=p&&!p._err?p:{error:p&&p._err||"sin datos"};pintar()});
+}
+
+$("acts").addEventListener("click",function(e){
+  var b=e.target.closest(".mk"); if(!b)return;
+  var k=b.getAttribute("data-k");
+  ABIERTO=(ABIERTO===k)?null:k;
+  pintar();
+  if(!ABIERTO)return;
+  var partes=k.split(":"), a=AGENTES.filter(function(x){return x.id===partes[0]})[0];
+  var it=S[partes[0]].act.items[+partes[1]];
+  if(a&&it)cargarPrecio(a,it);
+});
+
+$("bTok").onclick=function(){
+  token=$("tok").value.trim();
+  try{token?localStorage.setItem("mcp_token",token):localStorage.removeItem("mcp_token")}catch(e){}
+  pintar();refrescar()};
+$("tok").onkeydown=function(e){if(e.key==="Enter")$("bTok").click()};
+$("bRef").onclick=function(){restan=15;refrescar()};
+$("bAuto").onclick=function(){auto=!auto;
+  $("bAuto").setAttribute("aria-pressed",String(auto));
+  $("bAuto").textContent=auto?"Auto 15s":"Auto apagado";restan=15;pintar()};
+$("bKill").onclick=function(){
+  var b=$("bKill");
+  if(!token){alert("Hace falta el token.");return}
+  if(Date.now()-armado>4000){armado=Date.now();b.textContent="¿Seguro? tocá otra vez";
+    setTimeout(function(){if(Date.now()-armado>=4000)b.textContent="Parar todo"},4200);return}
+  armado=0;b.textContent="parando…";b.disabled=true;
+  Promise.all(AGENTES.map(function(a){return fetch(a.url+"/kill",{method:"POST",
+    headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},
+    body:JSON.stringify({reason:"parada manual desde la torre de control"})}).catch(function(){})}))
+    .then(function(){b.disabled=false;b.textContent="Parar todo";refrescar()})};
+
+setInterval(function(){if(!auto)return;restan-=1;
+  if(restan<=0){restan=15;refrescar()}else pintar()},1000);
+
+if(token)$("tok").value=token;
+pintar();refrescar();
+</script>
+</body>
+</html>
