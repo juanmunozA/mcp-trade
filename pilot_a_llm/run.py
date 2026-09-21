@@ -77,7 +77,7 @@ Cuánto vale un pronóstico antes de operarlo. El precio se recotiza siempre,
 así que lo que caduca es la evidencia, no el book.
 """
 MARKETS_PER_CYCLE = int(os.getenv("MARKETS_PER_CYCLE", "15"))
-MARKET_PAGES = int(os.getenv("MARKET_PAGES", "8"))       # 100 por página
+MARKET_PAGES = int(os.getenv("MARKET_PAGES", "30"))      # tope, 100 por pagina
 CONCURRENCY = int(os.getenv("FORECAST_CONCURRENCY", "4"))
 """
 Cuántos mercados se investigan a la vez. DeepSeek tarda ~30 s por
@@ -571,6 +571,7 @@ class PilotA:
             min_liquidity_usd=float(os.getenv("MARKET_MIN_LIQUIDITY", "15000")),
             slots_rapidos=slots_rapidos,
             dias_rapido=int(os.getenv("MARKET_DIAS_RAPIDO", "3")),
+            max_horas=float(os.getenv("MARKET_MAX_HORAS", "0")),
             **extra,
         )
 
@@ -628,6 +629,17 @@ class PilotA:
             log.warning("no se pudo escribir la nota del vault: %s", exc)
 
     async def _fetch_markets(self) -> list[dict]:
+        """
+        Todo lo abierto, no las primeras N paginas.
+
+        MARKET_PAGES estaba en 8, o sea 800 mercados de los 2100 que hay
+        abiertos. Ordenado por volumen, las paginas de atras son las de
+        menor volumen -- que es justo donde vive lo que nadie mira y el
+        precio puede estar mal puesto.
+
+        Se corta al agotarse, y MARKET_PAGES queda como tope de seguridad
+        para que un cambio en la API no lo deje paginando sin fin.
+        """
         rows: list[dict] = []
         async with httpx.AsyncClient(timeout=45) as http:
             for offset in range(0, MARKET_PAGES * 100, 100):

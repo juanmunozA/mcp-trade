@@ -118,6 +118,22 @@ class MarketFilter:
     allowed_categories: frozenset[str] = frozenset(CATEGORY_PATTERNS) | {"otros"}
     sports_narrative_only: bool = False
 
+    max_horas: float = 0.0
+    """
+    Modo sondeo: solo mercados que cierran dentro de N horas.
+
+    Con esto puesto manda sobre `min_days` y `max_days`, porque medir en
+    dias no distingue "cierra en 40 minutos" de "cierra en 20 horas" y
+    para un sondeo rapido esa es toda la diferencia.
+
+    Medido: de 2100 mercados abiertos, 25 cierran dentro de 8 horas y
+    solo 4 estan en banda de precio. Los otros 21 ya estan decididos
+    -- partidos de esports en curso, umbrales de Bitcoin lejos del
+    precio -- y el filtro de banda los descarta solo.
+
+    0 lo desactiva, que es el modo normal.
+    """
+
     slots_rapidos: int = 0
     dias_rapido: int = 3
     """
@@ -300,13 +316,20 @@ def passes(market: dict, f: MarketFilter, now: datetime) -> Candidate | None:
     except (ValueError, AttributeError):
         return None
     days = (end - now).days
-    # El piso baja a 0 cuando se reservan lugares para mercados rapidos:
-    # "no alcanzas a investigar" vale para buscar edge, no para calibrar.
-    # Un pronostico sobre algo que resuelve manana mide igual de bien si
-    # el agente esta sobreconfiado.
-    piso = 0 if f.slots_rapidos > 0 else f.min_days
-    if not piso <= days <= f.max_days:
-        return None
+    if f.max_horas > 0:
+        # En modo sondeo manda la hora, no el dia. Se excluye lo ya
+        # vencido: un mercado con fecha pasada no es rapido, es viejo.
+        restan = (end - now).total_seconds() / 3600
+        if not 0 < restan <= f.max_horas:
+            return None
+    else:
+        # El piso baja a 0 cuando se reservan lugares para mercados
+        # rapidos: "no alcanzas a investigar" vale para buscar edge, no
+        # para calibrar. Un pronostico sobre algo que resuelve manana
+        # mide igual de bien si el agente esta sobreconfiado.
+        piso = 0 if f.slots_rapidos > 0 else f.min_days
+        if not piso <= days <= f.max_days:
+            return None
 
     slug = market.get("slug", "")
     question = market.get("question", "")
