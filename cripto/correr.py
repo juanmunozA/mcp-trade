@@ -186,35 +186,18 @@ async def tablero(pool: asyncpg.Pool) -> dict:
 
 async def _servidor(pool: asyncpg.Pool) -> None:
     """
-    Puerto abierto y auto-ping.
+    Tablero y auto-ping.
 
-    Render mata lo que no escucha un puerto, y duerme lo que no recibe
+    Render mata lo que no escucha un puerto y duerme lo que no recibe
     trafico durante 15 minutos. Pegarse a la propia URL publica cuenta
-    como trafico entrante, asi que el experimento se mantiene despierto
-    solo -- sin depender de un servicio externo ni del PC de nadie.
+    como trafico entrante: se mantiene despierto solo, sin servicio
+    externo ni PC encendido.
     """
     import contextlib
-    import json as _json
 
-    async def atender(reader, writer):
-        with contextlib.suppress(Exception):
-            while True:
-                linea = await asyncio.wait_for(reader.readline(), timeout=5)
-                if not linea.strip():
-                    break
-            cuerpo = _json.dumps(await tablero(pool), default=str).encode()
-            cab = (
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: application/json; charset=utf-8\r\n"
-                f"Content-Length: {len(cuerpo)}\r\n"
-                "Connection: close\r\n\r\n"
-            ).encode()
-            writer.write(cab + cuerpo)
-            await writer.drain()
-        with contextlib.suppress(Exception):
-            writer.close()
+    from cripto.api import servir
 
-    await asyncio.start_server(atender, "0.0.0.0", int(os.getenv("PORT", "10000")))
+    await servir(pool, int(os.getenv("PORT", "10000")))
 
     url = os.getenv("RENDER_EXTERNAL_URL", "")
     if not url:
@@ -226,7 +209,7 @@ async def _servidor(pool: asyncpg.Pool) -> None:
             await asyncio.sleep(600)
             with contextlib.suppress(Exception):
                 async with _httpx.AsyncClient(timeout=30) as c:
-                    await c.get(url)
+                    await c.get(url + "/salud")
 
     asyncio.create_task(despertarse())
 

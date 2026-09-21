@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Banco de Pruebas</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+:root{
+  --fondo:#0E1116; --carta:#161A21; --carta2:#1D222B; --carta3:#242A35;
+  --tinta:#E6E9EE; --suave:#8B94A3; --tenue:#5D6675;
+  --linea:#242A35; --linea2:#2E3540;
+  --acento:#4C9EEB; --acento2:#7CC0F5;
+  --sube:#3FB37F; --sube-luz:#14281F;
+  --baja:#E0605A; --baja-luz:#2A1A19;
+  --neutro:#8B94A3;
+  --sans:"IBM Plex Sans",system-ui,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:light){:root:not([data-t="dark"]){
+  --fondo:#F5F6F8; --carta:#FFFFFF; --carta2:#F0F2F5; --carta3:#E7EAEF;
+  --tinta:#141820; --suave:#5A6472; --tenue:#8892A2;
+  --linea:#E2E6EC; --linea2:#D5DAE2;
+  --acento:#1F6FBF; --acento2:#4C9EEB;
+  --sube:#1E7A52; --sube-luz:#DFF2E8;
+  --baja:#C23B34; --baja-luz:#FBE3E1;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--fondo);color:var(--tinta);font-family:var(--sans);
+  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  padding:0 16px calc(40px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.sube{color:var(--sube)} .baja{color:var(--baja)} .neu{color:var(--neutro)}
+
+header{position:sticky;top:0;z-index:30;background:var(--fondo);
+  border-bottom:1px solid var(--linea);margin:0 -16px;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 16px 11px}
+.hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hd h1{font-size:17px;font-weight:700;letter-spacing:-.02em}
+.hd h1 small{display:block;font:600 10px var(--cond);letter-spacing:.09em;
+  text-transform:uppercase;color:var(--tenue);margin-top:2px}
+.hd .r{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vivo{display:flex;align-items:center;gap:6px;font:400 11px var(--mono);color:var(--suave)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--sube)}
+@media (prefers-reduced-motion:no-preference){.dot{animation:lat 2s ease-in-out infinite}}
+@keyframes lat{0%,100%{opacity:1}50%{opacity:.25}}
+.btn{font:500 12px var(--sans);background:var(--carta);color:var(--tinta);
+  border:1px solid var(--linea2);border-radius:7px;padding:6px 11px;cursor:pointer}
+.btn:hover{border-color:var(--acento);color:var(--acento)}
+.btn[aria-pressed=true]{background:var(--acento);border-color:var(--acento);color:#fff}
+
+.kpis{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  border-radius:12px;overflow:hidden;margin-top:14px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.kpi{background:var(--carta);padding:13px 15px 14px;min-width:0}
+.kpi .l{display:block;font:600 9.5px var(--cond);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--tenue);margin-bottom:6px}
+.kpi .v{display:block;font:500 23px/1.1 var(--mono);letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi .v.sm{font-size:16px}
+.kpi .s{display:block;font:400 10.5px var(--mono);color:var(--tenue);margin-top:4px}
+
+.grid2{display:grid;gap:14px;margin-top:14px;
+  grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--carta);border:1px solid var(--linea);border-radius:12px;
+  overflow:hidden;min-width:0}
+.card-h{display:flex;align-items:center;gap:10px;padding:11px 15px;
+  border-bottom:1px solid var(--linea);background:var(--carta2);flex-wrap:wrap}
+.card-h h2{font-size:13px;font-weight:600}
+.card-h .sub{font-size:11.5px;color:var(--tenue)}
+.card-h .r{margin-left:auto;display:flex;gap:6px;align-items:center}
+.chart{width:100%;height:230px}
+.chart.sm{height:180px}
+.pad{padding:13px 15px}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font:600 9.5px var(--cond);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--tenue);text-align:right;padding:8px 10px;border-bottom:1px solid var(--linea);
+  position:sticky;top:0;background:var(--carta2);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:8px 10px;border-bottom:1px solid var(--linea);text-align:right;
+  font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--carta2)}
+tbody tr.abierta{background:var(--carta2)}
+.sim{font-family:var(--sans);font-weight:600}
+.tabla-caja{max-height:520px;overflow-y:auto}
+
+.pastilla{display:inline-block;font:600 9.5px var(--cond);letter-spacing:.07em;
+  text-transform:uppercase;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.p-largo{background:var(--sube-luz);color:var(--sube)}
+.p-corto{background:var(--baja-luz);color:var(--baja)}
+.p-quieto{background:var(--carta3);color:var(--tenue)}
+.p-vuelo{background:var(--carta3);color:var(--acento)}
+
+.det{background:var(--carta2);border-bottom:1px solid var(--linea)}
+.det-in{padding:14px 15px;display:grid;gap:14px;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+@media (max-width:760px){.det-in{grid-template-columns:1fr}}
+.razon{background:var(--carta);border:1px solid var(--linea2);border-left:3px solid var(--acento);
+  border-radius:8px;padding:11px 13px;font-size:12.5px;line-height:1.5}
+.razon b{display:block;font:600 9.5px var(--cond);letter-spacing:.1em;
+  text-transform:uppercase;color:var(--tenue);margin-bottom:5px}
+.ctx{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;
+  background:var(--linea);border:1px solid var(--linea);border-radius:8px;overflow:hidden}
+.ctx div{background:var(--carta);padding:8px 10px}
+.ctx span{display:block;font:600 9px var(--cond);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--tenue)}
+.ctx b{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
+.barra{display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--carta3);
+  margin-top:8px;position:relative;font:500 10px var(--mono)}
+.barra i{display:flex;align-items:center;justify-content:center;height:100%;color:#fff}
+.vacio{padding:40px 16px;text-align:center;color:var(--tenue);font-size:13px}
+footer{margin-top:18px;font-size:11px;color:var(--tenue);text-align:center}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.25.4/preact.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.25.4/hooks.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/6.1.0/echarts.min.js"></script>
+<script>
+"use strict";
+var h=preact.h, render=preact.render;
+var useState=preactHooks.useState, useEffect=preactHooks.useEffect,
+    useRef=preactHooks.useRef, useCallback=preactHooks.useCallback;
+var html=htm.bind(h);
+
+function css(v,f){try{return getComputedStyle(document.documentElement)
+  .getPropertyValue(v).trim()||f}catch(e){return f}}
+function pct(v,d){return v==null||isNaN(+v)?"—":(+v>=0?"+":"")+(+v).toFixed(d==null?3:d)+"%"}
+function n4(v,d){return v==null||isNaN(+v)?"—":(+v).toFixed(d==null?4:d)}
+function usd(v){return v==null||isNaN(+v)?"—":(+v>=0?"+$":"−$")+Math.abs(+v).toFixed(4)}
+function hora(s){var d=new Date(s);return isNaN(d.getTime())?"—":
+  d.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}
+function fecha(s){var d=new Date(s);return isNaN(d.getTime())?"—":
+  d.toLocaleString("es",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}
+function clase(v){return v==null?"neu":(+v>0?"sube":(+v<0?"baja":"neu"))}
+
+function api(r){return fetch("/api"+r,{cache:"no-store"})
+  .then(function(x){return x.json()})}
+
+function Chart(p){
+  var el=useRef(null), inst=useRef(null);
+  useEffect(function(){
+    if(!el.current||!window.echarts)return;
+    inst.current=echarts.init(el.current,null,{renderer:"svg"});
+    var ro=new ResizeObserver(function(){inst.current&&inst.current.resize()});
+    ro.observe(el.current);
+    return function(){ro.disconnect();inst.current&&inst.current.dispose()};
+  },[]);
+  useEffect(function(){
+    if(inst.current&&p.opcion)inst.current.setOption(p.opcion(),true);
+  },[p.dep]);
+  return html`<div ref=${el} class=${p.clase||"chart"}></div>`;
+}
+
+function tema(){return{
+  tinta:css("--tinta","#e6e9ee"), suave:css("--suave","#8b94a3"),
+  linea:css("--linea","#242a35"), carta:css("--carta","#161a21"),
+  sube:css("--sube","#3fb37f"), baja:css("--baja","#e0605a"),
+  acento:css("--acento","#4c9eeb"), mono:"IBM Plex Mono, monospace"};}
+
+/* ── curva de PnL: la unica que decide si sirve ────────────────────── */
+function opCurva(serie){
+  var c=tema();
+  return {
+    animation:false, grid:{left:46,right:14,top:16,bottom:26},
+    tooltip:{trigger:"axis",backgroundColor:c.carta,borderColor:c.linea,
+      textStyle:{color:c.tinta,fontFamily:c.mono,fontSize:11},
+      axisPointer:{type:"cross",label:{backgroundColor:c.suave}}},
+    legend:{data:["neto","bruto"],top:0,right:0,textStyle:{color:c.suave,fontSize:10},
+      itemWidth:12,itemHeight:2},
+    xAxis:{type:"time",axisLine:{lineStyle:{color:c.linea}},splitLine:{show:false},
+      axisLabel:{color:c.suave,fontFamily:c.mono,fontSize:10}},
+    yAxis:{type:"value",axisLabel:{color:c.suave,fontFamily:c.mono,fontSize:10,
+        formatter:function(v){return v.toFixed(2)+"%"}},
+      splitLine:{lineStyle:{color:c.linea}}},
+    series:[
+      {name:"bruto",type:"line",showSymbol:false,smooth:false,
+       lineStyle:{color:c.suave,width:1.2,type:"dashed"},
+       data:serie.map(function(x){return [x.t,x.bruto]})},
+      {name:"neto",type:"line",showSymbol:false,smooth:false,
+       lineStyle:{color:c.acento,width:2},
+       areaStyle:{color:c.acento,opacity:.10},
+       markLine:{silent:true,symbol:"none",label:{show:false},
+         lineStyle:{color:c.suave,type:"dotted",width:1},data:[{yAxis:0}]},
+       data:serie.map(function(x){return [x.t,x.neto]})}],
+  };
+}
+
+function opBrier(s){
+  var c=tema();
+  var d=[["agente",s.brier_agente,c.acento],["azar",s.brier_azar,c.suave],
+         ["inercia",s.brier_inercia,c.baja]];
+  return {
+    animation:false, grid:{left:4,right:44,top:4,bottom:4,containLabel:true},
+    tooltip:{trigger:"item",backgroundColor:c.carta,borderColor:c.linea,
+      textStyle:{color:c.tinta,fontFamily:c.mono,fontSize:11}},
+    xAxis:{type:"value",show:false,min:0.2,max:0.3},
+    yAxis:{type:"category",inverse:true,data:d.map(function(x){return x[0]}),
+      axisLine:{show:false},axisTick:{show:false},
+      axisLabel:{color:c.suave,fontSize:11}},
+    series:[{type:"bar",barWidth:"52%",itemStyle:{borderRadius:[0,3,3,0]},
+      data:d.map(function(x){return {value:x[1],itemStyle:{color:x[2]}}}),
+      label:{show:true,position:"right",color:c.suave,fontFamily:c.mono,fontSize:10,
+        formatter:function(p){return (+p.value).toFixed(4)}}}]};
+}
+
+/* ── detalle de una prediccion ─────────────────────────────────────── */
+function Detalle(p){
+  var x=p.x, ctx=x.contexto||{};
+  if(typeof ctx==="string"){try{ctx=JSON.parse(ctx)}catch(e){ctx={}}}
+  var mov=(x.precio_fin&&x.precio_ini)?(x.precio_fin/x.precio_ini-1)*100:null;
+  var lado=x.p_agente>0.5?"LARGO":(x.p_agente<0.5?"CORTO":"QUIETO");
+  var campos=[["precio al decidir",x.precio_ini],["precio al vencer",x.precio_fin],
+    ["cambio 5m",ctx.cambio_5m],["cambio 1h",ctx.cambio_1h],["cambio 24h",ctx.cambio_24h],
+    ["RSI 5m",ctx.rsi_5m],["RSI 15m",ctx.rsi_15m],
+    ["EMA9 vs 21",ctx.ema9_vs_ema21],["vs EMA50",ctx.precio_vs_ema50],
+    ["volatilidad",ctx.volatilidad_pct],["volumen vs medio",ctx.volumen_vs_medio],
+    ["libro",ctx.libro_desequilibrio],["pos rango 24h",ctx.pos_en_rango_24h]];
+  var pa=(x.p_agente*100), resto=100-pa;
+  return html`<tr class="det"><td colspan="9" style="padding:0">
+    <div class="det-in">
+      <div>
+        <div class="razon"><b>Por qué dijo eso — ${x.modelo||"?"}</b>
+          ${x.razon||"(sin razón)"}</div>
+        <div class="barra" title="probabilidad que asignó">
+          <i style=${"width:"+pa.toFixed(1)+"%;background:var(--sube)"}>
+            ${pa>=18?("sube "+pa.toFixed(0)+"%"):""}</i>
+          <i style=${"width:"+resto.toFixed(1)+"%;background:var(--baja)"}>
+            ${resto>=18?("baja "+resto.toFixed(0)+"%"):""}</i>
+        </div>
+        <div class="ctx" style="margin-top:10px">
+          <div><span>decidió</span><b>${fecha(x.ts)}</b></div>
+          <div><span>venció</span><b>${fecha(x.vence)}</b></div>
+          <div><span>posición</span><b class=${x.opero?(x.p_agente>0.5?"sube":"baja"):"neu"}>${lado}</b></div>
+          <div><span>confianza</span><b>${x.confianza||"—"}</b></div>
+          <div><span>bruto</span><b class=${clase(x.pnl_bruto)}>
+            ${x.pnl_bruto==null?"—":pct(x.pnl_bruto*100)}</b></div>
+          <div><span>neto c/comisión</span><b class=${clase(x.pnl_neto)}>
+            ${x.pnl_neto==null?"—":pct(x.pnl_neto*100)}</b></div>
+        </div>
+      </div>
+      <div>
+        <div class="ctx">
+          ${campos.map(function(c){
+            return html`<div key=${c[0]}><span>${c[0]}</span>
+              <b>${c[1]==null?"—":(typeof c[1]==="number"?c[1].toLocaleString("es",
+                {maximumFractionDigits:4}):c[1])}</b></div>`;
+          })}
+        </div>
+        ${mov!=null?html`<div style="margin-top:9px;font:400 12px var(--mono);color:var(--suave)">
+          el mercado se movió <b class=${clase(mov)}>${pct(mov)}</b>
+          ${x.opero?html` · la apuesta ${x.pnl_bruto>0?"acertó":"falló"}`:
+            html` · no operó, así que no costó nada`}
+        </div>`:null}
+      </div>
+    </div>
+  </td></tr>`;
+}
+
+function App(){
+  var s1=useState(null), res=s1[0], setRes=s1[1];
+  var s2=useState([]), preds=s2[0], setPreds=s2[1];
+  var s3=useState([]), sims=s3[0], setSims=s3[1];
+  var s4=useState([]), ser=s4[0], setSer=s4[1];
+  var s5=useState(null), abierta=s5[0], setAbierta=s5[1];
+  var s6=useState(""), filtro=s6[0], setFiltro=s6[1];
+  var s7=useState(false), soloOp=s7[0], setSoloOp=s7[1];
+  var s8=useState(15), cuenta=s8[0], setCuenta=s8[1];
+
+  var cargar=useCallback(function(){
+    api("/resumen").then(setRes).catch(function(){});
+    api("/simbolos").then(function(j){setSims(j.items||[])}).catch(function(){});
+    api("/serie").then(function(j){setSer(j.items||[])}).catch(function(){});
+    api("/predicciones?n=150"+(filtro?"&simbolo="+filtro:"")+(soloOp?"&op=1":""))
+      .then(function(j){setPreds(j.items||[])}).catch(function(){});
+  },[filtro,soloOp]);
+
+  useEffect(function(){cargar()},[cargar]);
+  useEffect(function(){
+    var t=setInterval(function(){
+      setCuenta(function(c){if(c<=1){cargar();return 15}return c-1});
+    },1000);
+    return function(){clearInterval(t)};
+  },[cargar]);
+
+  var r=res||{};
+  var neto=r.pnl_neto_pct, bruto=r.pnl_bruto_pct;
+  var gana=r.brier_agente!=null&&r.brier_azar!=null&&r.brier_agente<r.brier_azar;
+
+  return html`<div class="wrap">
+    <header><div class="hd">
+      <h1>Banco de Pruebas<small>cripto · 15 minutos · sin dinero</small></h1>
+      <div class="r">
+        <span class="vivo"><span class="dot"></span>en ${cuenta}s</span>
+        <button class="btn" onClick=${function(){setCuenta(15);cargar()}}>Actualizar</button>
+      </div>
+    </div></header>
+
+    <div class="kpis">
+      <div class="kpi"><span class="l">PnL neto</span>
+        <span class=${"v "+clase(neto)}>${neto==null?"—":pct(neto)}</span>
+        <span class="s">${r.sobre_20==null?"con comisión 0,10%":usd(r.sobre_20)+" sobre $20"}</span></div>
+      <div class="kpi"><span class="l">PnL bruto</span>
+        <span class=${"v "+clase(bruto)}>${bruto==null?"—":pct(bruto)}</span>
+        <span class="s">sin comisión</span></div>
+      <div class="kpi"><span class="l">Brier agente</span>
+        <span class=${"v "+(gana?"sube":"baja")}>${n4(r.brier_agente)}</span>
+        <span class="s">azar ${n4(r.brier_azar)}</span></div>
+      <div class="kpi"><span class="l">Acierto</span>
+        <span class="v">${r.acierto_pct==null?"—":r.acierto_pct+"%"}</span>
+        <span class="s">${r.acierto_operadas_pct==null?"—":
+          r.acierto_operadas_pct+"% cuando operó"}</span></div>
+      <div class="kpi"><span class="l">Resueltas</span>
+        <span class="v">${r.n==null?"—":r.n}</span>
+        <span class="s">operó en ${r.operadas||0}</span></div>
+      <div class="kpi"><span class="l">En vuelo</span>
+        <span class="v">${r.en_vuelo==null?"—":r.en_vuelo}</span>
+        <span class="s">${r.proxima_resolucion?"vence "+hora(r.proxima_resolucion):"—"}</span></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-h"><h2>Plata acumulada</h2>
+          <span class="sub">la línea que decide si sirve</span></div>
+        ${ser.length>1
+          ? html`<${Chart} dep=${ser.length} opcion=${function(){return opCurva(ser)}} />`
+          : html`<div class="vacio">Hacen falta al menos dos resoluciones.</div>`}
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>Contra quién compite</h2>
+          <span class="sub">más bajo es mejor</span></div>
+        <div class="pad">
+          ${r.brier_agente!=null
+            ? html`<${Chart} clase="chart sm" dep=${r.n}
+                 opcion=${function(){return opBrier(r)}} />`
+            : html`<div class="vacio">Sin datos.</div>`}
+          <div style="font-size:12px;color:var(--suave);margin-top:8px">
+            ${r.brier_agente==null?"":
+              (gana?"Le gana al azar, pero mirá el PnL: acertar no es ganar."
+                  :"No le gana al azar. No hay señal.")}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-h"><h2>Por moneda</h2>
+        <span class="sub">tocá una para filtrar</span>
+        <div class="r">${filtro?html`<button class="btn"
+          onClick=${function(){setFiltro("")}}>quitar filtro: ${filtro}</button>`:null}</div>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>moneda</th><th>predic.</th><th>operó</th><th>acierto</th>
+          <th>Brier</th><th>vs azar</th><th>PnL neto</th></tr></thead>
+        <tbody>${sims.map(function(x){
+          var mejor=x.brier<x.brier_azar;
+          return html`<tr class="click" key=${x.simbolo}
+            onClick=${function(){setFiltro(filtro===x.simbolo?"":x.simbolo)}}>
+            <td class="sim">${x.simbolo}</td><td>${x.n}</td><td>${x.operadas}</td>
+            <td>${x.acierto_pct}%</td><td>${n4(x.brier)}</td>
+            <td class=${mejor?"sube":"baja"}>${mejor?"mejor":"peor"}</td>
+            <td class=${clase(x.pnl_pct)}>${pct(x.pnl_pct)}</td></tr>`;
+        })}</tbody>
+      </table></div>
+      ${!sims.length?html`<div class="vacio">Todavía nada resuelto.</div>`:null}
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-h"><h2>Cada decisión</h2>
+        <span class="sub">tocá una fila para ver todo lo que miró</span>
+        <div class="r">
+          <button class="btn" aria-pressed=${soloOp}
+            onClick=${function(){setSoloOp(!soloOp)}}>solo las que operó</button>
+        </div>
+      </div>
+      <div class="tabla-caja"><table>
+        <thead><tr><th>hora</th><th>moneda</th><th>dijo</th><th>posición</th>
+          <th>resultado</th><th>movió</th><th>bruto</th><th>neto</th><th></th></tr></thead>
+        <tbody>${preds.map(function(x){
+          var ab=abierta===x.id;
+          var mov=(x.precio_fin&&x.precio_ini)?(x.precio_fin/x.precio_ini-1)*100:null;
+          var lado=!x.opero?html`<span class="pastilla p-quieto">quieto</span>`
+            :(x.p_agente>0.5?html`<span class="pastilla p-largo">largo</span>`
+                            :html`<span class="pastilla p-corto">corto</span>`);
+          var fila=[html`<tr class=${"click"+(ab?" abierta":"")} key=${x.id}
+            onClick=${function(){setAbierta(ab?null:x.id)}}>
+            <td>${hora(x.ts)}</td><td class="sim">${x.simbolo}</td>
+            <td>${(x.p_agente*100).toFixed(1)}%</td><td>${lado}</td>
+            <td>${x.subio==null?html`<span class="pastilla p-vuelo">en vuelo</span>`
+              :html`<span class=${x.subio?"sube":"baja"}>${x.subio?"subió":"bajó"}</span>`}</td>
+            <td class=${clase(mov)}>${mov==null?"—":pct(mov)}</td>
+            <td class=${clase(x.pnl_bruto)}>${x.pnl_bruto==null?"—":pct(x.pnl_bruto*100)}</td>
+            <td class=${clase(x.pnl_neto)}>${x.pnl_neto==null?"—":pct(x.pnl_neto*100)}</td>
+            <td style="color:var(--tenue)">${ab?"▾":"▸"}</td></tr>`];
+          if(ab)fila.push(html`<${Detalle} x=${x} key=${x.id+"d"} />`);
+          return fila;
+        })}</tbody>
+      </table></div>
+      ${!preds.length?html`<div class="vacio">Sin predicciones todavía.</div>`:null}
+    </div>
+
+    <footer>Plata de mentira. Comisión de futuros 0,10% ida y vuelta.
+      Se opera solo cuando se aleja más de 2 puntos de 0,50.</footer>
+  </div>`;
+}
+render(html`<${App} />`, document.getElementById("app"));
+</script>
+</body>
+</html>
