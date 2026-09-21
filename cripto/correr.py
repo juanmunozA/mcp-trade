@@ -152,12 +152,60 @@ async def tablero(pool: asyncpg.Pool) -> dict:
     return d
 
 
+async def _servidor(pool: asyncpg.Pool) -> None:
+    """
+    Puerto abierto y auto-ping.
+
+    Render mata lo que no escucha un puerto, y duerme lo que no recibe
+    trafico durante 15 minutos. Pegarse a la propia URL publica cuenta
+    como trafico entrante, asi que el experimento se mantiene despierto
+    solo -- sin depender de un servicio externo ni del PC de nadie.
+    """
+    import contextlib
+    import json as _json
+
+    async def atender(reader, writer):
+        with contextlib.suppress(Exception):
+            while True:
+                linea = await asyncio.wait_for(reader.readline(), timeout=5)
+                if not linea.strip():
+                    break
+            cuerpo = _json.dumps(await tablero(pool), default=str).encode()
+            cab = (
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: application/json; charset=utf-8\r\n"
+                f"Content-Length: {len(cuerpo)}\r\n"
+                "Connection: close\r\n\r\n"
+            ).encode()
+            writer.write(cab + cuerpo)
+            await writer.drain()
+        with contextlib.suppress(Exception):
+            writer.close()
+
+    await asyncio.start_server(atender, "0.0.0.0", int(os.getenv("PORT", "10000")))
+
+    url = os.getenv("RENDER_EXTERNAL_URL", "")
+    if not url:
+        return
+    import httpx as _httpx
+
+    async def despertarse():
+        while True:
+            await asyncio.sleep(600)
+            with contextlib.suppress(Exception):
+                async with _httpx.AsyncClient(timeout=30) as c:
+                    await c.get(url)
+
+    asyncio.create_task(despertarse())
+
+
 async def main() -> None:
     dsn = os.environ["DATABASE_URL"].replace("-pooler", "")
     pool = await asyncpg.create_pool(dsn, min_size=1, max_size=3)
     async with pool.acquire() as c:
         await c.execute(ESQUEMA)
 
+    await _servidor(pool)
     fin = datetime.fromisoformat(HASTA) if HASTA else None
     parar = asyncio.Event()
     for s in (signal.SIGINT, signal.SIGTERM):
