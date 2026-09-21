@@ -15,18 +15,49 @@ import asyncio
 import contextlib
 import json
 import logging
+import os
 import pathlib
 from datetime import UTC, datetime
 
 import asyncpg
 
 log = logging.getLogger("cripto.api")
+
+DESDE = os.getenv("CRIPTO_DESDE", "").strip()
+"""
+Desde cuando mostrar. Las predicciones anteriores siguen en la base
+-- sirven de comparacion: mismo modelo y metodo sobre pares que no
+daban -- pero mezclarlas en el tablero ensucia la unica pregunta que
+importa ahora, que es si esto funciona con pares que se mueven.
+
+Vacio muestra todo.
+"""
+
+
+def _corte() -> tuple[str, list]:
+    """
+    Condicion y argumentos del filtro, para pegar en cada consulta.
+
+    La fecha se parsea a datetime: asyncpg rechaza el texto aunque la
+    consulta lleve el cast, porque valida el tipo antes de mandarlo.
+    """
+    if not DESDE:
+        return "true", []
+    try:
+        d = datetime.fromisoformat(DESDE.replace("Z", "+00:00"))
+    except ValueError:
+        log.warning("CRIPTO_DESDE ilegible (%r), se muestra todo", DESDE)
+        return "true", []
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=UTC)
+    return "ts >= $1", [d]
 UI = pathlib.Path(__file__).with_name("ui.html")
 NL = chr(10)
 CRLF = chr(13) + chr(10)
 
 
 async def resumen(pool: asyncpg.Pool) -> dict:
+    cond, args = _corte()
     r = await pool.fetchrow("""
         SELECT count(*) n,
                count(*) FILTER (WHERE opero) operadas,
@@ -40,11 +71,12 @@ async def resumen(pool: asyncpg.Pool) -> dict:
                coalesce(sum(pnl_bruto), 0) pnl_bruto,
                coalesce(sum(pnl_neto), 0) pnl_neto,
                min(ts) desde, max(ts) hasta
-        FROM cripto.predicciones WHERE subio IS NOT NULL""")
+        FROM cripto.predicciones WHERE subio IS NOT NULL AND """ + cond,
+        *args)
     d = dict(r)
     pend = await pool.fetchrow(
         "SELECT count(*) n, min(vence) prox FROM cripto.predicciones "
-        "WHERE subio IS NULL")
+        "WHERE subio IS NULL AND " + cond, *args)
     d["en_vuelo"] = pend["n"]
     d["proxima_resolucion"] = pend["prox"]
     if d["n"]:
@@ -61,8 +93,8 @@ async def resumen(pool: asyncpg.Pool) -> dict:
 
 async def predicciones(pool: asyncpg.Pool, n: int = 120,
                        simbolo: str = "", solo_op: bool = False) -> list[dict]:
-    cond = ["true"]
-    args: list = []
+    c0, args = _corte()
+    cond = [c0]
     if simbolo:
         args.append(simbolo)
         cond.append(f"simbolo = ${len(args)}")
@@ -75,6 +107,7 @@ async def predicciones(pool: asyncpg.Pool, n: int = 120,
 
 
 async def por_simbolo(pool: asyncpg.Pool) -> list[dict]:
+    cond, args = _corte()
     filas = await pool.fetch("""
         SELECT simbolo, count(*) n,
                count(*) FILTER (WHERE opero) operadas,
@@ -82,8 +115,8 @@ async def por_simbolo(pool: asyncpg.Pool) -> list[dict]:
                avg((0.5      - (subio)::int::float) ^ 2) brier_azar,
                count(*) FILTER (WHERE (p_agente > 0.5) = subio) aciertos,
                coalesce(sum(pnl_neto), 0) pnl
-        FROM cripto.predicciones WHERE subio IS NOT NULL
-        GROUP BY 1 ORDER BY 7 DESC NULLS LAST""")
+        FROM cripto.predicciones WHERE subio IS NOT NULL AND """ + cond + """
+        GROUP BY 1 ORDER BY 7 DESC NULLS LAST""", *args)
     out = []
     for f in filas:
         d = dict(f)
@@ -98,11 +131,13 @@ async def serie(pool: asyncpg.Pool) -> list[dict]:
     # coalesce porque las primeras resoluciones son anteriores a que
     # existieran estas columnas: sin eso la suma acumulada devuelve NULL
     # desde la primera fila vieja y la curva entera queda vacia.
+    cond, args = _corte()
     filas = await pool.fetch("""
         SELECT ts,
                sum(coalesce(pnl_neto, 0))  OVER (ORDER BY id) acum_neto,
                sum(coalesce(pnl_bruto, 0)) OVER (ORDER BY id) acum_bruto
-        FROM cripto.predicciones WHERE subio IS NOT NULL ORDER BY id""")
+        FROM cripto.predicciones WHERE subio IS NOT NULL AND """ + cond + """
+        ORDER BY id""", *args)
     return [{"t": f["ts"].isoformat(),
              "neto": round(float(f["acum_neto"]) * 100, 4),
              "bruto": round(float(f["acum_bruto"]) * 100, 4)} for f in filas]
