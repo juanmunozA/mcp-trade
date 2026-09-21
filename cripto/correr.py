@@ -43,6 +43,10 @@ log = logging.getLogger("cripto")
 PARES = os.getenv("CRIPTO_PARES", "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,"
                                   "XRPUSDT,DOGEUSDT,ADAUSDT,AVAXUSDT").split(",")
 CADA_S = int(os.getenv("CRIPTO_CADA_S", "300"))
+COSTO = float(os.getenv("CRIPTO_COSTO_PCT", "0.10")) / 100
+"""Comision de ida y vuelta en futuros, nivel base. Es el listón real."""
+UMBRAL_OP = float(os.getenv("CRIPTO_UMBRAL_OP", "0.02"))
+"""Cuanto tiene que alejarse de 0.50 para considerar que decidio operar."""
 HORIZONTE_MIN = int(os.getenv("CRIPTO_HORIZONTE_MIN", "15"))
 HASTA = os.getenv("CRIPTO_HASTA", "")
 
@@ -62,8 +66,16 @@ CREATE TABLE IF NOT EXISTS cripto.predicciones (
     contexto    JSONB,
     precio_fin  DOUBLE PRECISION,
     subio       BOOLEAN,
-    resuelto_en TIMESTAMPTZ
+    resuelto_en TIMESTAMPTZ,
+    -- La plata, que es lo unico que decide. Acertar y perder es posible
+    -- y de hecho es lo normal: el peaje se cobra igual.
+    opero       BOOLEAN,
+    pnl_bruto   DOUBLE PRECISION,
+    pnl_neto    DOUBLE PRECISION
 );
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS opero BOOLEAN;
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS pnl_bruto DOUBLE PRECISION;
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS pnl_neto DOUBLE PRECISION;
 CREATE INDEX IF NOT EXISTS idx_cp_pend ON cripto.predicciones (vence)
     WHERE subio IS NULL;
 """
@@ -86,7 +98,9 @@ async def ciclo(pool: asyncpg.Pool) -> int:
         log.warning("sin datos de mercado")
         return 0
     try:
-        preds = await predecir(fs)
+        # Se le pasa su propio resultado: cada llamada arranca sin memoria,
+        # asi que si nadie le muestra la cuenta, repite el error toda la noche.
+        preds = await predecir(fs, historial=await tablero(pool))
     except ErrorIA as exc:
         log.warning("el modelo no respondió: %s", exc)
         return 0
@@ -116,7 +130,7 @@ async def ciclo(pool: asyncpg.Pool) -> int:
 
 async def resolver(pool: asyncpg.Pool) -> int:
     pend = await pool.fetch(
-        "SELECT id, simbolo, precio_ini FROM cripto.predicciones "
+        "SELECT id, simbolo, precio_ini, p_agente FROM cripto.predicciones "
         "WHERE subio IS NULL AND vence <= now() LIMIT 400")
     if not pend:
         return 0
@@ -124,13 +138,26 @@ async def resolver(pool: asyncpg.Pool) -> int:
     if not px:
         return 0
     ahora = datetime.now(UTC)
-    up = [(px[r["simbolo"]], px[r["simbolo"]] > r["precio_ini"], ahora, r["id"])
-          for r in pend if r["simbolo"] in px]
+    up = []
+    for r in pend:
+        if r["simbolo"] not in px:
+            continue
+        fin = px[r["simbolo"]]
+        subio = fin > r["precio_ini"]
+        mov = fin / r["precio_ini"] - 1
+        opero = abs(r["p_agente"] - 0.5) > UMBRAL_OP
+        # Largo si dijo que sube, corto si dijo que baja. Sin operar, cero:
+        # no cobrar comision por quedarse quieto es parte del resultado.
+        bruto = (mov if r["p_agente"] > 0.5 else -mov) if opero else 0.0
+        neto = (bruto - COSTO) if opero else 0.0
+        up.append((fin, subio, ahora, opero, bruto, neto, r["id"]))
     if up:
         await pool.executemany(
-            "UPDATE cripto.predicciones SET precio_fin=$1, subio=$2, "
-            "resuelto_en=$3 WHERE id=$4", up)
-        log.info("resueltas %d (subieron %d)", len(up), sum(1 for x in up if x[1]))
+            "UPDATE cripto.predicciones SET precio_fin=$1, subio=$2, resuelto_en=$3,"
+            " opero=$4, pnl_bruto=$5, pnl_neto=$6 WHERE id=$7", up)
+        neto = sum(x[5] for x in up)
+        log.info("resueltas %d | operó %d | neto %+.3f%%",
+                 len(up), sum(1 for x in up if x[3]), neto * 100)
     return len(up)
 
 
@@ -143,12 +170,17 @@ async def tablero(pool: asyncpg.Pool) -> dict:
                avg((subio)::int::float) tasa_subida,
                avg(p_agente) p_media,
                count(*) FILTER (WHERE (p_agente > 0.5) = subio) aciertos,
-               count(*) FILTER (WHERE abs(p_agente - 0.5) > 0.05) se_moja
+               count(*) FILTER (WHERE opero) operadas,
+               coalesce(sum(pnl_bruto), 0) pnl_bruto,
+               coalesce(sum(pnl_neto), 0) pnl_neto
         FROM cripto.predicciones WHERE subio IS NOT NULL""")
     d = {k: (float(v) if isinstance(v, (int, float)) and v is not None else v)
          for k, v in dict(r).items()}
     if d["n"]:
         d["acierto_pct"] = round(100 * d["aciertos"] / d["n"], 1)
+        d["pnl_bruto_pct"] = round(d["pnl_bruto"] * 100, 3)
+        d["pnl_neto_pct"] = round(d["pnl_neto"] * 100, 3)
+        d["sobre_20usd"] = round(20 * d["pnl_neto"], 4)
     return d
 
 
