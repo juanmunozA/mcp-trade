@@ -24,46 +24,50 @@ URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
        "{m}:generateContent")
 
 PROMPT = """Sos un operador cuantitativo. Para cada par te doy el estado del
-mercado AHORA y tenés que decir la probabilidad de que el precio esté MÁS ALTO
-dentro de 15 minutos.
+mercado AHORA y decís la probabilidad de que el precio esté MÁS ALTO dentro de
+15 minutos.
 
-LO QUE CUESTA EQUIVOCARSE — leelo antes de responder
-Cada operación paga 0,10% de comisión entre entrar y salir. El movimiento
-típico de estos pares en 15 minutos es 0,08%.
+DIRECTRIZ: SIEMPRE SE ENTRA
+Este sistema toma posición en todos los pares, en todos los ciclos. No existe
+quedarse afuera. Tu número decide de qué LADO y con cuánta convicción, nunca
+si se opera o no.
 
-Es decir: **la comisión es MÁS GRANDE que el movimiento normal**. Acertar la
-dirección no alcanza para ganar plata. Si acertás el 60% de las veces, igual
-perdés, porque lo que ganás cuando acertás no paga el peaje de todas.
+Por eso 0.500 exacto no sirve: obliga a desempatar por defecto. Elegí lado
+siempre, aunque sea por poco.
 
-Solo vale la pena alejarse de 0.50 si esperás un movimiento de al menos 0,25%
-en 15 minutos — el triple de lo normal. Eso pasa poco: en rupturas con volumen
-real, en liquidaciones en cadena, en noticias. No en "el RSI está sobrecomprado".
+LO QUE ESO CUESTA — tenelo presente
+Cada operación paga 0,10% entre entrar y salir, y el movimiento típico en 15
+minutos es 0,077%. Con entrada forzada la comisión se paga igual, así que tu
+trabajo es doble: elegir el lado menos malo cuando no hay nada, y reconocer
+los pocos momentos donde el movimiento sí supera el peaje.
 
-DATOS QUE RECIBÍS
-- velas_5m: últimas 12 velas de 5 min como [máximo%, mínimo%, cierre%] contra
-  la apertura de cada vela
-- cambio_5m/15m/1h/4h/24h: variación porcentual en esos plazos
-- rsi_5m, rsi_15m: RSI (sobre 70 sobrecomprado, bajo 30 sobrevendido)
-- ema9_vs_ema21 y precio_vs_ema50: distancia a las medias, en %
-- volatilidad_pct: rango medio de las últimas 20 velas
-- volumen_vs_medio: volumen de la última vela contra su promedio
-- libro_desequilibrio: -1 a 1, positivo = más dinero comprando
-- pos_en_rango_24h: 0 = mínimo del día, 1 = máximo del día
+CÓMO ELEGIR (del más fuerte al más débil)
+1. Contagio: si BTC se movió fuerte y una moneda chica no reaccionó todavía,
+   seguí a BTC. Es lo más confiable a este horizonte.
+2. Libro CON volumen: un desequilibrio grande respaldado por volumen alto es
+   dinero real. Sin volumen es una pared que se cancela sola.
+3. Extremos con volumen: RSI 5m bajo 25 o sobre 75 más volumen alto suele
+   revertir. Sin volumen, no.
+4. Si no ves nada: seguí el movimiento de las últimas dos velas de 5m. Es
+   apenas mejor que una moneda, y mejor que inventar una razón.
 
-REGLAS
-1. 0.50 es la respuesta correcta casi siempre. No es rendirse: es reconocer
-   que el movimiento esperado no paga la comisión.
-2. Los indicadores clásicos —EMA cruzada, RSI sobrecomprado, tendencia en
-   varios plazos— ya están en el precio. Que el RSI esté alto NO es razón
-   suficiente: todos lo ven.
-3. Alejate de 0.50 solo si podés nombrar algo que justifique un movimiento
-   TRES VECES más grande de lo normal en los próximos 15 minutos.
-4. Nadie te premia por opinar. Se mide la plata, y quedarse quieto no cuesta
-   nada mientras que equivocarse sí.
-5. Si te alejás de 0.50, tu razón tiene que decir QUÉ esperás que pase y de
-   qué tamaño — no qué indicador miraste.
+CUÁNDO SÍ HAY ALGO GRANDE (ahí vale 0.65 o 0.35)
+- volumen sobre 3x el promedio con movimiento de 5m mayor a 0,3% (cascada)
+- ruptura del rango de 24h CON volumen
+- contagio rezagado: BTC movió más de 0,3% y la chica todavía no
 
-Devolvé una entrada por par."""
+CALIBRÁ EL NÚMERO, NO EL LADO
+El lado lo elegís siempre. La convicción no.
+- sin señal clara: 0.48 o 0.52 — elegiste lado, admitís que no sabés
+- señal razonable: 0.44 o 0.56
+- algo grande de los de arriba: 0.35 o 0.65
+
+Nunca 0.500 exacto. Nunca más allá de 0.30-0.70: a 15 minutos esa certeza no
+existe y solo agranda la pérdida cuando te equivocás.
+
+La razón tiene que decir QUÉ esperás y de qué tamaño, no qué indicador
+miraste. "EMA9 sobre EMA21" no es una razón; "BTC subió 0,4% y ADA no
+reaccionó" sí."""
 
 ESQUEMA = {
     "type": "object",
@@ -190,6 +194,12 @@ async def predecir(fotos: list[dict], modelo: str = "",
         # Fuera de [0,1] es basura; pegarlo al borde disfrazaria el error.
         if not 0.0 <= p <= 1.0:
             continue
+        # Con entrada forzada, 0.500 exacto no define lado y el motor lo
+        # leeria como "no opera". Se desempata con el ultimo movimiento,
+        # que es la regla que el prompt ya le da para cuando no ve nada.
+        if abs(p - 0.5) < 1e-9:
+            f = next((x for x in fotos if x["simbolo"] == s), None)
+            p = 0.52 if (f or {}).get("cambio_5m", 0) >= 0 else 0.48
         validas.append({
             "simbolo": s, "p_sube": round(p, 4),
             "razon": str(it.get("razon", ""))[:160],

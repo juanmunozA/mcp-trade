@@ -45,8 +45,18 @@ PARES = os.getenv("CRIPTO_PARES", "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT,"
 CADA_S = int(os.getenv("CRIPTO_CADA_S", "300"))
 COSTO = float(os.getenv("CRIPTO_COSTO_PCT", "0.10")) / 100
 """Comision de ida y vuelta en futuros, nivel base. Es el listón real."""
-UMBRAL_OP = float(os.getenv("CRIPTO_UMBRAL_OP", "0.02"))
-"""Cuanto tiene que alejarse de 0.50 para considerar que decidio operar."""
+UMBRAL_OP = float(os.getenv("CRIPTO_UMBRAL_OP", "0"))
+"""
+Cuanto tiene que alejarse de 0.50 para que cuente como operacion.
+
+En 0 significa ENTRADA FORZADA: se toma posicion siempre, en todos los
+pares y todos los ciclos. Es una directriz del operador, no un hallazgo.
+
+La aritmetica dice que pierde: 0.10% de comision contra 0.077% de
+movimiento tipico. Queda medido igual -- pnl_bruto contra pnl_neto en
+cada fila -- asi que en doscientas operaciones la curva lo confirma o
+lo desmiente con datos propios en vez de con un calculo.
+"""
 HORIZONTE_MIN = int(os.getenv("CRIPTO_HORIZONTE_MIN", "15"))
 HASTA = os.getenv("CRIPTO_HASTA", "")
 
@@ -145,7 +155,7 @@ async def resolver(pool: asyncpg.Pool) -> int:
         fin = px[r["simbolo"]]
         subio = fin > r["precio_ini"]
         mov = fin / r["precio_ini"] - 1
-        opero = abs(r["p_agente"] - 0.5) > UMBRAL_OP
+        opero = abs(r["p_agente"] - 0.5) >= UMBRAL_OP if UMBRAL_OP > 0 else True
         # Largo si dijo que sube, corto si dijo que baja. Sin operar, cero:
         # no cobrar comision por quedarse quieto es parte del resultado.
         bruto = (mov if r["p_agente"] > 0.5 else -mov) if opero else 0.0
