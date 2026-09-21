@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import pathlib
 
 import httpx
 
@@ -86,6 +87,32 @@ ESQUEMA = {
 }
 
 
+NOTAS = pathlib.Path(__file__).parent.parent / "vault" / "cripto"
+
+
+def _notas() -> str:
+    """
+    Lo que se sabe del mercado, no lo que el modelo recuerde.
+
+    Son hallazgos con evidencia, no consejos de curso: flujo de ordenes,
+    vuelta de vela, contagio entre monedas, financiacion extrema, y por
+    que fracasan las estrategias. Van en cada llamada porque el modelo no
+    tiene memoria entre una y otra.
+
+    Si la carpeta no esta, devuelve vacio y el resto sigue igual.
+    """
+    try:
+        trozos = []
+        for f in sorted(NOTAS.glob("*.md")):
+            trozos.append(f"### {f.stem}" + chr(10) + f.read_text(encoding="utf-8").strip())
+        if not trozos:
+            return ""
+        return ("LO QUE SE SABE DE ESTE MERCADO" + chr(10) + chr(10)
+                + (chr(10) + chr(10)).join(trozos))
+    except OSError:
+        return ""
+
+
 class ErrorIA(Exception):
     pass
 
@@ -126,6 +153,7 @@ async def predecir(fotos: list[dict], modelo: str = "",
     cuerpo = {
         "contents": [{"parts": [
             {"text": PROMPT},
+            *([{"text": notas}] if (notas := _notas()) else []),
             *([{"text": boletin}] if (boletin := _boletin(historial)) else []),
             {"text": "MERCADO AHORA:" + chr(10) + json.dumps(fotos, ensure_ascii=False)},
         ]}],
