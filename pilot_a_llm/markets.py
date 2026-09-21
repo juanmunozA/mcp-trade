@@ -391,6 +391,17 @@ def select(
     now = now or datetime.now(UTC)
     f = f or MarketFilter()
     candidates = [c for m in markets if (c := passes(m, f, now)) is not None]
+
+    # Gamma lista el mismo mercado mas de una vez cuando pertenece a varios
+    # eventos. Sin esto el ciclo lo investiga y lo pronostica dos veces:
+    # doble gasto de cuota, y dos filas que la calibracion tendria que
+    # volver a colapsar despues. Medido: 2 slugs repetidos en 2100.
+    unicos: dict[str, Candidate] = {}
+    for c in candidates:
+        if c.slug not in unicos or c.score > unicos[c.slug].score:
+            unicos[c.slug] = c
+    candidates = list(unicos.values())
+
     candidates.sort(key=lambda c: (c.slug in vistos, -c.score))
 
     # Reparto por categoria. Se recorre en orden de puntaje y se toma el

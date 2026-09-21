@@ -215,13 +215,24 @@ def test_score_acotado():
 
 
 def test_select_ordena_por_score():
+    # Slugs distintos a proposito: `select` deduplica por slug, y dos
+    # mercados que comparten uno son el mismo mercado listado dos veces.
     markets = [
-        raw(outcomePrices=json.dumps(["0.50", "0.50"]), liquidityNum=80_000),
-        raw(outcomePrices=json.dumps(["0.85", "0.15"]), liquidityNum=1_900_000),
+        raw(slug="mercado-centrado", outcomePrices=json.dumps(["0.50", "0.50"]),
+            liquidityNum=80_000),
+        raw(slug="mercado-extremo", outcomePrices=json.dumps(["0.85", "0.15"]),
+            liquidityNum=1_900_000),
     ]
     picks = select(markets, MarketFilter(), limit=10, now=NOW)
     assert len(picks) == 2
     assert picks[0].score > picks[1].score
+
+
+def test_select_deduplica_por_slug():
+    """Gamma lista el mismo mercado en varios eventos: no se investiga dos veces."""
+    uno = raw(slug="repetido", outcomePrices=json.dumps(["0.50", "0.50"]))
+    picks = select([uno, dict(uno), dict(uno)], MarketFilter(), limit=10, now=NOW)
+    assert len(picks) == 1
 
 
 def test_limit_es_presupuesto_no_meta():
