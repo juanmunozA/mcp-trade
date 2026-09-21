@@ -101,11 +101,21 @@ class ResolutionTracker:
         """
         Consulta a Gamma si el mercado cerró y con qué resultado.
         None = todavía no resolvió (o no se pudo determinar).
+
+        `closed=true` NO es opcional. Gamma filtra por defecto a mercados
+        abiertos, asi que pedir uno cerrado sin ese parametro devuelve una
+        lista vacia -- y este metodo lo leia como "todavia no resolvio".
+
+        Buscar mercados cerrados con una consulta que excluye los cerrados
+        significaba que NADA podia resolverse nunca. Medido: dos mercados
+        resueltos hace dos dias, `resolutions` en cero, y el resolver
+        corriendo cada 6 horas sin encontrar nada.
         """
         try:
             async with httpx.AsyncClient(timeout=30) as http:
                 r = await http.get(
-                    f"{GAMMA}/markets", params={"condition_ids": condition_id}
+                    f"{GAMMA}/markets",
+                    params={"condition_ids": condition_id, "closed": "true"},
                 )
                 if r.status_code != 200:
                     return None
