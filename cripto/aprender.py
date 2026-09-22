@@ -163,6 +163,23 @@ async def _con_gemini(instruccion: str, cuerpo: str) -> str:
 DEEPSEEK = "https://api.deepseek.com/anthropic"
 
 
+async def _con_mistral(instruccion: str, cuerpo: str, llave: str,
+                       modelo: str) -> str:
+    """Formato de OpenAI. El unico gratuito que quedo en pie."""
+    import httpx
+
+    async with httpx.AsyncClient(timeout=600) as c:
+        r = await c.post("https://api.mistral.ai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {llave}"},
+            json={"model": modelo, "max_tokens": 32000, "temperature": 0.3,
+                  "response_format": {"type": "json_object"},
+                  "messages": [{"role": "system", "content": instruccion},
+                               {"role": "user", "content": cuerpo}]})
+    if r.status_code != 200:
+        raise SinLlave(f"mistral HTTP {r.status_code}: {r.text[:160]}")
+    return r.json()["choices"][0]["message"]["content"]
+
+
 async def _pensar(instruccion: str, cuerpo: str) -> str:
     """
     El primero que tenga llave.
@@ -178,9 +195,14 @@ async def _pensar(instruccion: str, cuerpo: str) -> str:
     if k := os.getenv("DEEPSEEK_API_KEY", "").strip():
         return await _con_anthropic(instruccion, cuerpo, k,
                                     m or "deepseek-v4-pro", DEEPSEEK)
+    if k := os.getenv("MISTRAL_API_KEY", "").strip():
+        # `magistral` razona antes de responder, que es lo que pide decidir
+        # si una regla dejo de sostenerse.
+        return await _con_mistral(instruccion, cuerpo, k,
+                                  m or "magistral-medium-latest")
     if os.getenv("GEMINI_API_KEY", "").strip():
         return await _con_gemini(instruccion, cuerpo)
-    raise SinLlave("no hay ANTHROPIC_API_KEY, DEEPSEEK_API_KEY ni GEMINI_API_KEY")
+    raise SinLlave("no hay llave de ningún proveedor")
 
 
 def _json(texto: str) -> dict:

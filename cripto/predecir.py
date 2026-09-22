@@ -355,10 +355,13 @@ async def predecir(fotos: list[dict], modelo: str = "",
     if k := os.getenv("DEEPSEEK_API_KEY", "").strip():
         return await _por_anthropic(fotos, k, pedido or "deepseek-flash",
                                     base, texto, DEEPSEEK)
+    if k := os.getenv("MISTRAL_API_KEY", "").strip():
+        return await _por_mistral(fotos, k, pedido or "ministral-14b-latest",
+                                  base, texto)
 
     llave = os.getenv("GEMINI_API_KEY", "").strip()
     if not llave:
-        raise ErrorIA("no hay ANTHROPIC_API_KEY, DEEPSEEK_API_KEY ni GEMINI_API_KEY")
+        raise ErrorIA("no hay llave de ningún proveedor")
     modelo = pedido or "gemini-2.5-flash"
 
     cuerpo = {
@@ -400,6 +403,33 @@ async def predecir(fotos: list[dict], modelo: str = "",
 
 
 DEEPSEEK = "https://api.deepseek.com/anthropic"
+MISTRAL = "https://api.mistral.ai/v1/chat/completions"
+
+
+async def _por_mistral(fotos, llave, modelo, base, cuerpo) -> list[dict]:
+    """
+    Mistral, que habla el formato de OpenAI.
+
+    Es el unico proveedor con tier gratuito de los que quedaron en pie, y
+    ya venia funcionando en el otro agente. `response_format` en
+    `json_object` obliga a que la respuesta sea JSON valido, que es lo
+    mas cerca del `responseSchema` de Gemini que hay aca.
+    """
+    async with httpx.AsyncClient(timeout=120) as cli:
+        r = await cli.post(MISTRAL,
+            headers={"Authorization": f"Bearer {llave}"},
+            json={"model": modelo, "max_tokens": 8000, "temperature": 0.2,
+                  "response_format": {"type": "json_object"},
+                  "messages": [{"role": "system", "content": PROMPT},
+                               {"role": "user", "content": cuerpo}]})
+    if r.status_code != 200:
+        raise ErrorIA(f"mistral HTTP {r.status_code}: {r.text[:140]}")
+    try:
+        txt = r.json()["choices"][0]["message"]["content"]
+        items = json.loads(txt)["predicciones"]
+    except (KeyError, IndexError, ValueError) as exc:
+        raise ErrorIA("respuesta ilegible") from exc
+    return _validar(items, fotos, base, modelo)
 
 
 def _partes(fotos, historial, referencia, base, nota_base, saber_texto) -> str:
