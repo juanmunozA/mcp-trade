@@ -212,6 +212,27 @@ async def tablero(pool: asyncpg.Pool) -> dict:
         d["pnl_bruto_pct"] = round(d["pnl_bruto"] * 100, 3)
         d["pnl_neto_pct"] = round(d["pnl_neto"] * 100, 3)
         d["sobre_20usd"] = round(20 * d["pnl_neto"], 4)
+        # Cual de sus propias razones sirve. El promedio global le dice que
+        # esta perdiendo; esto le dice POR DONDE, que es lo accionable.
+        d["por_fundamento"] = [dict(r) for r in await pool.fetch("""
+            SELECT fundamento, count(*) n,
+                   round(100.0 * count(*) FILTER (WHERE (p_agente > 0.5) = subio)
+                         / count(*), 1) acierto_pct,
+                   round((sum(pnl_neto) * 100)::numeric, 2) neto_pct
+            FROM cripto.predicciones
+            WHERE subio IS NOT NULL AND fundamento IS NOT NULL
+            GROUP BY fundamento HAVING count(*) >= 5 ORDER BY sum(pnl_neto) DESC""")]
+        # Cuanto se mueven de verdad estos pares, contra lo que el dijo que se
+        # moverian. La primera noche lo subestimo por mas del doble.
+        cal = await pool.fetchrow("""
+            SELECT round(avg(abs(mov_esperado))::numeric, 3) esperado,
+                   round((percentile_cont(0.5) WITHIN GROUP (
+                       ORDER BY abs(precio_fin / precio_ini - 1)) * 100)::numeric, 3) real
+            FROM cripto.predicciones
+            WHERE subio IS NOT NULL AND precio_ini > 0 AND mov_esperado IS NOT NULL""")
+        if cal and cal["real"]:
+            d["mov_esperado_medio"] = float(cal["esperado"] or 0)
+            d["mov_real_mediano"] = float(cal["real"])
     return d
 
 

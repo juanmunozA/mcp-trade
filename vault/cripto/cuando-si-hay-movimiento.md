@@ -1,26 +1,49 @@
-**Hay momentos donde el movimiento sí paga la comisión.** Son pocos y hay que
-reconocerlos, porque ahí es donde se recupera lo que se pierde el resto del
-tiempo.
+**Casi siempre hay movimiento. Eso ya no es el problema.**
 
-**Cascadas de liquidación.** Una caída o subida fuerte con volumen muy por
-encima del promedio arrastra liquidaciones que se alimentan entre sí. Una vez
-que arranca, sigue: cada liquidación produce la orden que causa la siguiente.
-Señal: volumen sobre 3x el medio y movimiento de 5m mayor a 0,3%.
+Medido sobre tus 229 predicciones resueltas:
 
-**Ruptura de rango con volumen.** Precio que sale del rango de 24 horas
-—`pos_en_rango_24h` cerca de 0 o de 1— **con volumen alto**. Sin volumen es
-una mecha falsa y vuelve.
+```
+movimiento mediano a 15 min       0,478%
+movimientos que superaron el peaje (0,10%)   202 de 229  =  88,2%
+```
 
-**Los minutos 0, 15, 30 y 45.** Los algoritmos operan en cierres de vela de
-15 minutos y eso deja huella medible. Si tu predicción cruza uno de esos
-cierres, tenés el viento un poco a favor.
+Con los pares volátiles la mediana sube a **0,566%**, casi seis veces la
+comisión. La vieja advertencia de "el movimiento típico es 0,077%, menor que
+el peaje" era del tiempo en que se operaba BTC. Con estos pares es falsa y
+te volvió tímido sin motivo.
 
-**Contagio rezagado.** BTC se movió más de 0,3% y una moneda chica todavía no
-reaccionó. Es la oportunidad más limpia que vas a ver a este horizonte.
+**Tu problema no es que no haya movimiento. Es que elegís mal el lado.**
 
-En esos casos vale ir a 0,65 o 0,35. El resto del tiempo, cerca de 0,50
-aunque tengas que elegir lado.
+## Los momentos que de verdad pagan
 
-**Lo que NO es señal**, por mucho que lo parezca: un cruce de medias sin
-volumen, un RSI en 60, una tendencia de la que ya habla todo el mundo. Eso ya
-está en el precio, y actuar sobre ello es pagar comisión por nada.
+**Extremo de RSI con volumen.** El único que midió ganancia consistente:
+RSI 5m fuera de 40–60 con `volumen_vs_medio` sobre 1,2 dio 73,3% de acierto.
+Ahí sí vale 0,35 o 0,65.
+
+**Cascadas de liquidación.** Volumen sobre 3x el medio con movimiento de 5m
+mayor a 0,3%. Una vez que arranca, sigue: cada liquidación produce la orden
+que causa la siguiente. Es la excepción a la regla de reversión — acá el
+movimiento continúa. Se distingue del extremo normal por el volumen: 1,2x es
+reversión, 3x es cascada.
+
+**Financiación extrema.** Avisa de movimiento grande en cualquier dirección,
+no de dirección. Sirve para subir el tamaño esperado, no para elegir lado.
+
+## El volumen anuncia el tamaño, no el lado
+
+```
+volumen_vs_medio < 0,8   →  |movimiento| mediano 0,416%
+volumen_vs_medio 1,2–2   →  |movimiento| mediano 0,755%
+```
+
+Casi el doble. Usalo para saber cuánto vas a jugarte, nunca para saber hacia
+dónde.
+
+## Lo que NO es señal, confirmado con datos
+
+Un cruce de medias: `ema9_vs_ema21` midió **−18,3 pp**, al revés. Una
+tendencia de 1h de la que ya habla todo el mundo: `cambio_1h` midió **−22,7
+pp**, al revés. El libro cargado: **−0,6 pp**, cero.
+
+Todo eso ya está en el precio. Actuar sobre ello es pagar comisión por nada,
+y peor: es comprar justo donde el que ya está adentro quiere vender.
