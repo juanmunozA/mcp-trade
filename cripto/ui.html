@@ -14,6 +14,11 @@
   --tinta:#EDEDF5; --suave:#8C8CA6; --tenue:#56566E;
   --cian:#4CE0E0; --violeta:#8B6CF6; --magenta:#F0509B;
   --verde:#3FE0A0; --rojo:#FF5C72;
+  /* Origen de la fila. Dos categorias, en orden fijo. Pasan los seis
+     chequeos sobre el fondo #101019: banda de luminosidad, croma,
+     separacion CVD (dE 15.9 deutan) y contraste. Verde y rojo quedan
+     libres porque ya codifican el signo del PnL. */
+  --org-jj:#22A8AE; --org-jp:#8B6CF6;
   --sans:"Space Grotesk",system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,monospace;
 }
@@ -188,6 +193,21 @@ tbody tr.on{background:rgba(139,108,246,.10)}
 .fund b{display:block;font:500 9px var(--mono);letter-spacing:.17em;
   text-transform:uppercase;color:var(--tenue);margin-bottom:7px}
 .fund .dato{display:block;margin-top:9px;font:500 12px var(--mono);color:var(--cian)}
+/* La inicial va SIEMPRE escrita: el color acompana, nunca carga solo la identidad. */
+.org{display:inline-flex;align-items:center;gap:5px;font:600 10px var(--mono);
+  letter-spacing:.06em;color:var(--suave);white-space:nowrap}
+.org i{width:7px;height:7px;border-radius:2px;background:var(--o,var(--tenue));
+  flex:none}
+.org.jj{--o:var(--org-jj)} .org.jp{--o:var(--org-jp)}
+.orig-lista{display:flex;flex-direction:column;gap:2px}
+.orig-f{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;
+  align-items:center;padding:7px 9px;border-radius:7px;
+  font:500 11px var(--mono);color:var(--suave)}
+.orig-f:hover{background:rgba(255,255,255,.035)}
+.orig-f.act{cursor:pointer}
+.orig-f.sel{background:rgba(255,255,255,.06);color:var(--tinta)}
+.orig-f .mod{color:var(--tenue);overflow:hidden;text-overflow:ellipsis}
+.orig-f .num{color:var(--tinta);font-variant-numeric:tabular-nums}
 .malla{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
   gap:8px;margin-top:11px}
 .celda{background:rgba(255,255,255,.028);border:1px solid var(--line);
@@ -430,7 +450,7 @@ function Detalle(p){
     ["rsi 5m",ctx.rsi_5m],["rsi 15m",ctx.rsi_15m],
     ["volatilidad",ctx.volatilidad_pct],["pos rango 24h",ctx.pos_en_rango_24h]];
   var pa=x.p_agente*100, resto=100-pa;
-  return html`<tr class="det"><td colspan="10"><div class="det-in">
+  return html`<tr class="det"><td colspan="11"><div class="det-in">
     <div>
       <div class="fund"><b>fundamento — ${x.modelo||"?"}</b>
         <span class="tag t-f">${FUND[x.fundamento]||x.fundamento||"?"}</span>
@@ -471,6 +491,8 @@ function App(){
   var d=useState([]), ser=d[0], setSer=d[1];
   var e=useState(null), abre=e[0], setAbre=e[1];
   var f=useState(""), filtro=f[0], setFiltro=f[1];
+  // Que origen se esta mirando en el tablero. Vacio = todos mezclados.
+  var q=useState(""), quien=q[0], setQuien=q[1];
   var g=useState(15), cta=g[0], setCta=g[1];
   var i=useState(false), listo=i[0], setListo=i[1];
   var k=useState((function(){
@@ -483,9 +505,10 @@ function App(){
       .catch(function(){});
     api("/simbolos").then(function(j){setSims(j.items||[])}).catch(function(){});
     api("/serie").then(function(j){setSer(j.items||[])}).catch(function(){});
-    api("/predicciones?n=150"+(filtro?"&simbolo="+filtro:""))
+    api("/predicciones?n=150"+(filtro?"&simbolo="+filtro:"")
+        +(quien?"&origen="+quien:""))
       .then(function(j){setPreds(j.items||[])}).catch(function(){});
-  },[filtro]);
+  },[filtro,quien]);
 
   useEffect(function(){cargar()},[cargar]);
   useEffect(function(){
@@ -604,6 +627,31 @@ function App(){
           :html`<div class="nada">Esperando las primeras resoluciones.</div>`}
       </section>
       <section class="panel glass">
+        <div class="panel-h"><h2>Quién lo está corriendo</h2>
+          <span class="sub">JJ es Render · JP corre en local · tocá para filtrar</span></div>
+        <div class="cuerpo">
+          ${(r.origenes&&r.origenes.length)?html`<div class="orig-lista">
+            ${r.origenes.map(function(o){
+              var sel=quien===o.origen;
+              return html`<div key=${o.origen+o.modelo}
+                class=${"orig-f act"+(sel?" sel":"")}
+                onClick=${function(){setQuien(sel?"":o.origen)}}>
+                <span class=${"org "+o.origen.toLowerCase()}><i></i>${o.origen}</span>
+                <span class="mod">${o.modelo}</span>
+                <span class="num">${o.n}${o.en_vuelo?" ·"+o.en_vuelo+"↑":""}</span>
+                <span class=${sig(o.neto_pct)}>
+                  ${o.acierto_pct==null?"en vuelo":o.acierto_pct+"% · "+pct(o.neto_pct,2)}</span>
+              </div>`})}
+          </div>`:html`<div class="nada">Sin datos.</div>`}
+          <p style="margin:10px 0 0;font-size:12px;color:var(--suave);line-height:1.55">
+            Todos escriben en la misma base, así que el promedio general los
+            mezcla. Filtrá por origen antes de sacar conclusiones.</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="rejilla">
+      <section class="panel glass">
         <div class="panel-h"><h2>Contra quién compite</h2>
           <span class="sub">más bajo, mejor</span></div>
         <div class="cuerpo">
@@ -638,14 +686,17 @@ function App(){
       <div class="panel-h"><h2>Cada decisión</h2>
         <span class="sub">tocá una fila para ver el fundamento y las 12 variables</span></div>
       <div class="scroll"><table>
-        <thead><tr><th>hora</th><th>par</th><th>p</th><th>lado</th><th>fundamento</th>
-          <th>esperaba</th><th>resultado</th><th>movió</th><th>neto</th><th></th></tr></thead>
+        <thead><tr><th>hora</th><th>quién</th><th>par</th><th>p</th><th>lado</th>
+          <th>fundamento</th><th>esperaba</th><th>resultado</th><th>movió</th>
+          <th>neto</th><th></th></tr></thead>
         <tbody>${preds.map(function(x){
           var on=abre===x.id;
           var mov=(x.precio_fin&&x.precio_ini)?(x.precio_fin/x.precio_ini-1)*100:null;
           var fila=[html`<tr class=${"tap"+(on?" on":"")} key=${x.id}
             onClick=${function(){setAbre(on?null:x.id)}}>
-            <td>${hora(x.ts)}</td><td class="par">${x.simbolo.replace("USDT","")}</td>
+            <td>${hora(x.ts)}</td>
+            <td><span class=${"org "+(x.origen||"").toLowerCase()}><i></i>${x.origen||"?"}</span></td>
+            <td class="par">${x.simbolo.replace("USDT","")}</td>
             <td>${(x.p_agente*100).toFixed(1)}</td>
             <td><span class=${"tag "+(x.p_agente>0.5?"t-l":"t-s")}>
               ${x.p_agente>0.5?"largo":"corto"}</span></td>
