@@ -428,7 +428,12 @@ def _validar(items, fotos, base, modelo) -> list[dict]:
         validas.append({
             "simbolo": s, "p_sube": round(p, 4),
             "razon": str(it.get("razon", ""))[:160],
-            "confianza": it.get("confianza", "media"),
+            # Solo Gemini tiene `responseSchema` que fuerza el enum. Los
+            # proveedores por formato OpenAI/Anthropic no lo garantizan, y
+            # un gpt-oss ya devolvio 0.58 en vez de "media" -- rompia el
+            # INSERT entero, 8 filas perdidas por un campo cosmetico.
+            "confianza": (c if (c := it.get("confianza")) in
+                          ("alta", "media", "baja") else "media"),
             "fundamento": fund,
             "dato": str(it.get("dato", ""))[:120],
             "mov_esperado": round(esp, 3),
