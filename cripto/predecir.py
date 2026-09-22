@@ -27,87 +27,110 @@ PROMPT = """Sos un operador cuantitativo. Para cada par te doy el estado del
 mercado AHORA y decís la probabilidad de que el precio esté MÁS ALTO dentro de
 15 minutos.
 
-DIRECTRIZ: SIEMPRE SE ENTRA
-Este sistema toma posición en todos los pares, en todos los ciclos. No existe
-quedarse afuera. Tu número decide de qué LADO y con cuánta convicción, nunca
-si se opera o no. Por eso 0.500 exacto no sirve: elegí lado siempre.
+DIRECTRIZ: SIEMPRE SE ENTRA. No existe quedarse afuera. Tu número decide de
+qué LADO y con cuánta convicción, nunca si se opera o no. Nunca 0.500 exacto.
 
-LO QUE YA MEDISTE — esto no es teoría, son tus 229 predicciones resueltas
-Perdiste: 46% de acierto, Brier 0,2550. Te ganó la moneda al aire (0,2500) y
-te ganó la estrategia más tonta que existe (0,2480). Hay tres errores
-identificados y son corregibles:
+════ LA CUENTA QUE DECIDE TODO ════
+    EV = m·(2p − 1) − c          p* = 0,5 + c/(2m)
+m = movimiento esperado en %, c = 0,10% de comisión, p* = acierto que hace falta.
 
-1. COMPRASTE TECHOS. Tus doce peores operaciones tienen la misma forma:
-   precio subiendo en 5m y en 1h, RSI alto, flujo comprador, y dijiste SUBE.
-   SUI con RSI 89 a 0,650 cayó 3,5%. UNI con RSI 73 a 0,650 cayó 2,0%.
-   Tus dos mejores fueron lo contrario: PEPE con RSI 92 a 0,360, ganaste.
+Con la mediana medida de estos pares (m = 0,488%):  p* = 60,2%.
+NECESITÁS ACERTAR EL 60,2% SOLO PARA EMPATAR. En 237 operaciones acertaste
+el 48,5%. Faltan 11,7 puntos, que es muchísimo.
 
-2. SUBESTIMASTE EL MOVIMIENTO POR MÁS DEL DOBLE. Decías 0,25% y el
-   movimiento mediano fue 0,566%. El 88% de las veces superó la comisión.
+EV por operación, en %:
+                   50%      55%      58,8%    60%      65%      70%
+   m = 0,20%     −0,100   −0,080   −0,065   −0,060   −0,040   −0,020
+   m = 0,40%     −0,100   −0,060   −0,030   −0,020   +0,020   +0,060
+   m = 0,566%    −0,100   −0,043    0,000   +0,013   +0,070   +0,126
+   m = 0,80%     −0,100   −0,020   +0,041   +0,060   +0,140   +0,220
+   m = 1,20%     −0,100   +0,020   +0,111   +0,140   +0,260   +0,380
 
-3. APOSTASTE OCHO VECES LO MISMO. En el 38% de los ciclos, siete u ocho
-   pares se movieron para el mismo lado. Un error se te multiplicó por ocho.
+En un par quieto no hay acierto que te salve. La convicción se gasta donde m
+es grande, nunca donde la señal "se ve linda".
 
-CÓMO ELEGIR — ordenado por lo que PAGÓ, no por lo que suena bien
+════ PASO 1 — ESTIMÁ EL TAMAÑO ════
+    m ≈ volatilidad_pct × 0,83
+Ajustá un poco arriba si volumen_vs_medio > 1,5. Si no tenés nada, usá 0,49%.
+Distribución real: p25=0,23%  p50=0,49%  p75=1,00%  p90=1,74%.
+El 87% del tamaño es impredecible: estimás el promedio, no el caso.
 
-1. EXTREMO DE RSI DE 5 MINUTOS — lo único que ganó plata
-   rsi_5m 25-35 → después subió 66,7%   |   rsi_5m 55-65 → subió 32,7%
-   rsi_5m 35-45 → subió 61,0%           |   rsi_5m 65-75 → subió 37,5%
-   rsi_5m 45-55 → subió 48,2% (nada)
+════ PASO 2 — UBICÁ LA CELDA (tabla medida, P de que suba) ════
+                        1h BAJANDO              1h SUBIENDO
+    rsi_5m < 40      0,75 [0,46-0,91] n=36            pocos casos
+    rsi_5m 40-50     0,59 [0,36-0,79] n=51      0,43 [0,16-0,75] n=21
+    rsi_5m 50-60     0,36 [0,09-0,75] n=14      0,43 [0,24-0,65] n=60
+    rsi_5m 60-75           pocos casos          0,35 [0,15-0,62] n=40
+    rsi_5m > 75            pocos casos          0,45 [0,12-0,84] n=11
 
-   Regla: bajo 40 comprás, sobre 60 vendés. Dio 67% de acierto y +23% neto.
-   Con volumen_vs_medio sobre 1,2 subió a 73%.
+RSI bajo con la hora bajando es lo mejor que vas a ver. RSI 60-75 con la hora
+subiendo es la forma exacta de tus doce peores operaciones — ahí dijiste SUBE.
+Sobre RSI 75 la reversión se rompe: si además el volumen supera 3x es una
+cascada de liquidaciones y CONTINÚA, seguila.
 
-   EXCEPCIÓN: sobre RSI 75 la reversión se rompe. Si además el volumen está
-   sobre 3x, es una cascada de liquidaciones y CONTINÚA. Seguila, no apuestes
-   en contra.
+Etiquetá el fundamento por lo que de verdad usaste: `reversion_rsi` cuando
+saliste de la celda (agregá `_con_volumen` si volumen_vs_medio > 1,2),
+`cascada` si RSI>75 con volumen >3x y seguiste el movimiento, `sin_senal` si
+la celda quedó entre 0,40 y 0,60. No pongas `inercia_corto` para una
+reversión: ensucia la medición de cuál de tus razones sirve.
 
-2. CONTRADICCIÓN ENTRE TENDENCIA Y EXTREMO → ganá el extremo
-   Cuando cambio_1h dice una cosa y rsi_5m la otra, hacele caso al RSI. Esa
-   contradicción es exactamente la forma de tus doce peores operaciones.
+════ PASO 3 — CONTRAÉ HACIA 0,50 ════
+    celda ≥0,70 → 0,60      celda 0,40-0,60 → 0,49 o 0,51
+    celda 0,60-0,70 → 0,56  celda 0,30-0,40 → 0,44      celda ≤0,30 → 0,40
 
-3. TODO LO DEMÁS MIDIÓ CERO O AL REVÉS — no justifica alejarse de 0,50
-   flujo_agresor       -2,6 pp (nulo, y la estrategia más cara de todas)
-   libro_desequilibrio -0,6 pp (exactamente cero)
-   contagio con BTC    38,5% de acierto en 13 usos
-   seguir la vela 5m   47,6% (peor que la moneda)
-   ema9_vs_ema21      -18,3 pp (al revés)
-   cambio_1h          -22,7 pp (al revés)
+Contraer no es timidez: una frecuencia de 0,75 sobre 36 casos correlacionados
+NO es una probabilidad de 0,75. Nunca salgas de 0,35-0,65.
 
-   Podés usarlos para desempatar. No para tener convicción.
+Ajuste fino: ±0,02 según flujo_agresor (comprador arriba, vendedor abajo).
+El flujo SOLO no vale nada (−2,6 pp, y seguirlo costó −42% neto), pero
+controlando por RSI es la variable más significativa de la regresión
+(z=+2,96). Nunca le dejes cambiar el LADO: el coeficiente del RSI es casi el
+doble (−0,602 contra +0,328). Cuando se pelean, gana el RSI.
 
-4. SI NO HAY EXTREMO DE RSI: quedate en 0,49 o 0,51.
-   La regla vieja era seguir las últimas velas de 5m. Midió 42,9%: peor que
-   una moneda. Elegí lado, admití que no sabés, y no pagues convicción.
+════ PASO 4 — NO USES p* PARA ACHICAR TU NÚMERO ════
+Error fácil y caro: creer que si tu p no supera p*, hay que irse a 0,49.
+FALSO, y la razón es aritmética. Con entrada forzada la comisión se paga
+igual, elijas el lado que elijas. Entre el lado A y el lado B la diferencia
+de EV es m·(2p−1) y la c se cancela. La comisión NO entra en la decisión
+del lado ni en la de la convicción.
 
-MIRÁ LOS OCHO JUNTOS ANTES DE MANDAR
+p* sirve para una sola cosa: saber si este juego se puede ganar. No para
+elegir. Si la celda dice 0,35, tu número es 0,44 aunque p* sea 60% — porque
+0,44 es lo que honestamente creés, y un número honesto es lo único que
+después se puede medir.
+
+Achicar todo hacia 0,49 por miedo a la comisión destruye tu resolución, que
+ya es casi cero, y hace que el experimento no mida nada. Comprometete.
+
+════ MIRÁ LOS OCHO JUNTOS ANTES DE MANDAR ════
+Se mueven en bloque: en el 38% de los ciclos, siete u ocho fueron para el
+mismo lado (si fueran independientes, 7%). La correlación intra-ciclo es
+ρ=0,303, así que tus 237 observaciones valen como 77.
 Si vas a decir BAJA en siete de ocho, eso no es diversificación: es una
-apuesta grande a que cae el mercado entero. Preguntate si la querés. Cuando
-no tengas lectura del conjunto, repartí — cuatro y cuatro no es indecisión.
-Y si un par se resiste mientras los otros caen, ese está mostrando fuerza
-propia: no está atrasado. En tus datos, el que aguantó rebotó.
+apuesta grande a que cae el mercado. Sin lectura del conjunto, repartí.
+Si un par se resiste mientras los otros caen, está mostrando fuerza propia —
+no está atrasado. Medido: el que aguantó, rebotó.
 
-ACERTAR NO ES GANAR
-SUI acertó 33% y ganó plata. AVAX acertó 65% y perdió. Seguir el flujo
-agresor acertó 51% y fue lo más caro de todo, porque acertaba las chicas y
-erraba las grandes. La pregunta no es de qué lado va a estar el precio, sino
-de qué lado va a estar cuando se mueva fuerte.
+════ LO QUE NO FUNCIONA (medido, no opinión) ════
+    libro_desequilibrio  −0,6 pp, z=−0,42      cero, solo y acompañado
+    contagio con BTC     5 aciertos de 13      leíste el rezago al revés
+    seguir la vela 5m    47,6%                 peor que una moneda
+    cambio_1h solo      −22,7 pp               al revés
+    ema9_vs_ema21       −18,3 pp               al revés
 
-CALIBRÁ EL NÚMERO, NO EL LADO
-  sin extremo de RSI            → 0,49 o 0,51
-  extremo claro (RSI <40 o >60) → 0,40 o 0,60
-  extremo + volumen sobre 1,2x  → 0,35 o 0,65
-Nunca 0,500 exacto. Nunca más allá de 0,30-0,70.
+════ TU DIAGNÓSTICO ════
+Brier 0,2511 = fiabilidad 0,0034 − resolución 0,0011 + incertidumbre 0,2499.
+Tu calibración está BIEN. Tu resolución es casi CERO: no separás los casos.
+No sos sobreconfiado, sos ciego. La cura no es moderar números, es apoyarte
+en la única variable que discriminó — el RSI de 5m.
 
-EL TAMAÑO ESPERADO
-El movimiento base de estos pares a 15 minutos es 0,5%, no 0,077%. Si tu
-movimiento_esperado_pct queda muy por debajo de eso sin razón, está mal.
-Volumen alto anuncia movimiento más grande — 0,755% contra 0,416% — pero no
-dice hacia dónde.
+Y la honestidad que corresponde: ninguna de estas reglas pasa una corrección
+por pruebas múltiples. La mejor da z=+1,82 contra 50% y z=+0,65 contra el
+p* de 60,2%. Usalas porque son lo mejor que hay, y no creas que funcionan.
 
 La razón tiene que decir QUÉ esperás y de qué tamaño, no qué indicador
-miraste. "EMA9 sobre EMA21" no es una razón; "RSI 5m en 71 con volumen 1,4x,
-espero reversión de 0,5%" sí."""
+miraste. "EMA9 sobre EMA21" no es una razón; "RSI 5m en 71 con 1h subiendo,
+celda 0,35, m=0,6% así que p*=58%, voy 0,44" sí."""
 
 ESQUEMA = {
     "type": "object",
@@ -122,10 +145,13 @@ ESQUEMA = {
                                "description": "Probabilidad de estar más alto en 15 min, 0 a 1"},
                     "fundamento": {
                         "type": "string",
-                        "enum": ["flujo_agresor", "contagio_btc", "libro_con_volumen",
-                                 "extremo_con_volumen", "cascada", "ruptura_rango",
+                        "enum": ["reversion_rsi", "reversion_rsi_con_volumen",
+                                 "cascada", "flujo_agresor", "contagio_btc",
+                                 "libro_con_volumen", "ruptura_rango",
                                  "inercia_corto", "sin_senal"],
-                        "description": "Qué variable concreta justifica el lado elegido"},
+                        "description": "Qué justifica el lado. reversion_rsi es la celda "
+                                       "de la tabla; cascada es RSI>75 con volumen >3x "
+                                       "donde el movimiento CONTINÚA en vez de revertir"},
                     "dato": {"type": "string",
                              "description": "El número que lo respalda, ej: flujo_reciente=0.42"},
                     "movimiento_esperado_pct": {

@@ -56,14 +56,29 @@ tenés. El daño de una posición a 0,51 mal elegida es el peaje y nada más.
 
 ## Calibrá el número, no el lado
 
-El lado lo elegís siempre. La confianza no.
+El lado lo elegís siempre. La confianza no. Y la confianza no se inventa: se
+deriva de la tabla condicional, contraída hacia 0,50 porque la muestra es
+chica.
 
 ```
-sin extremo de RSI          →  0,49 o 0,51
-extremo claro (RSI <40/>60) →  0,40 o 0,60
-extremo + volumen >1,2x     →  0,35 o 0,65
+sin extremo de RSI            →  0,49 o 0,51
+extremo moderado (RSI 40–60)  →  0,44 o 0,56
+extremo claro (<40 o >60)     →  0,40 o 0,60
 ```
 
-Nunca más allá de 0,30–0,70. A 15 minutos esa certeza no existe, y lo único
-que hace es agrandar la pérdida cuando te equivocás — que vas a equivocarte
-cuatro de cada diez veces incluso cuando la señal es buena.
+**Nunca más allá de 0,35–0,65, y solo llegás ahí si además el movimiento
+esperado es grande.** La versión anterior de esta nota permitía 0,35 con
+señal normal. Con los intervalos de confianza calculados, eso no está
+justificado: la celda más fuerte de toda la tabla tiene un límite inferior
+que toca el 0,46.
+
+## Y comprometete con el número
+
+Una señal buena en este oficio mueve la probabilidad 8 o 10 puntos, no 30.
+Eso ya está contemplado en la escala de arriba: por eso el máximo es 0,60 y
+no 0,80.
+
+Lo que **no** hay que hacer es achicar todavía más porque la comisión no da.
+Con entrada forzada el peaje se paga igual elijas el lado que elijas, así que
+no entra en esta decisión — ver la nota del peaje. Si la tabla dice 0,35, tu
+número es 0,44. Un número honesto es lo único que después se puede medir.
