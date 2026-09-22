@@ -19,11 +19,50 @@ Un precio con ocho decimales gasta tokens y no aporta: la decision es
 from __future__ import annotations
 
 import asyncio
+import logging
 
 import httpx
 
-SPOT = "https://api.binance.com/api/v3"
+log = logging.getLogger("cripto.datos")
+
+ESPEJOS = [
+    "https://data-api.binance.vision/api/v3",
+    "https://api-gcp.binance.com/api/v3",
+    "https://api1.binance.com/api/v3",
+    "https://api.binance.com/api/v3",
+]
+"""
+Varios hosts porque Binance geobloquea por IP.
+
+Medido en produccion: desde Render (Ohio) `api.binance.com` empezo a
+devolver 451 -- "no disponible por motivos legales" -- y el experimento
+quedo una hora sin grabar nada. El primero de la lista es el endpoint
+publico de datos de mercado, que es el menos restringido.
+
+Se prueba en orden y se recuerda el que funciona; si ese cae, se vuelve
+a probar desde el principio.
+"""
+
+SPOT = ESPEJOS[0]
 FUT = "https://fapi.binance.com/fapi/v1"
+
+
+async def elegir_espejo(cli: httpx.AsyncClient) -> str:
+    """El primer host que responda 200. Se cachea en SPOT."""
+    global SPOT
+    for base in ESPEJOS:
+        try:
+            r = await cli.get(f"{base}/klines",
+                              params={"symbol": "BTCUSDT", "interval": "5m", "limit": 1})
+            if r.status_code == 200:
+                if base != SPOT:
+                    log.warning("espejo de Binance: %s", base)
+                SPOT = base
+                return base
+        except Exception:  # noqa: BLE001
+            continue
+    log.error("ningun espejo de Binance responde (geobloqueo?)")
+    return SPOT
 
 
 def _ema(vals: list[float], n: int) -> float:
@@ -123,6 +162,7 @@ async def foto(cli: httpx.AsyncClient, simbolo: str) -> dict | None:
 
 async def fotos(simbolos: list[str]) -> list[dict]:
     async with httpx.AsyncClient(timeout=25) as cli:
+        await elegir_espejo(cli)
         res = await asyncio.gather(*[foto(cli, s) for s in simbolos])
     return [r for r in res if r]
 
@@ -130,6 +170,7 @@ async def fotos(simbolos: list[str]) -> list[dict]:
 async def precios(simbolos: list[str]) -> dict[str, float]:
     """Precio de cierre ahora. Para resolver las predicciones vencidas."""
     async with httpx.AsyncClient(timeout=25) as cli:
+        await elegir_espejo(cli)
         r = await cli.get(f"{SPOT}/ticker/price")
         if r.status_code != 200:
             return {}
