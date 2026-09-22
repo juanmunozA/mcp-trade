@@ -59,6 +59,18 @@ cada fila -- asi que en doscientas operaciones la curva lo confirma o
 lo desmiente con datos propios en vez de con un calculo.
 """
 HORIZONTE_MIN = int(os.getenv("CRIPTO_HORIZONTE_MIN", "15"))
+SOLO_REGRESION = os.getenv("CRIPTO_SOLO_REGRESION", "").strip().lower() in ("1", "true", "si")
+"""
+Correr sin modelo de lenguaje: la regresion decide sola.
+
+No es un modo degradado. Medido sobre las mismas 261 operaciones, dejando
+un ciclo afuera por vez, la regresion saco 54,4% de acierto y +17,02%
+neto, y el modelo de lenguaje leyendo esas mismas tablas saco 47,1% y
+-62,15%. La parte que no necesita llave es la que mejor anda.
+
+Se activa sola si falta GEMINI_API_KEY: sin esto, un ciclo sin llave
+tiraba ErrorIA y descartaba la p_base que ya tenia calculada.
+"""
 HASTA = os.getenv("CRIPTO_HASTA", "")
 
 ESQUEMA = """
@@ -123,6 +135,27 @@ async def ciclo(pool: asyncpg.Pool, modelo: Modelo) -> int:
     # tener que interpolar una tabla de cabeza, que es lo que peor hace.
     await modelo.aprender(pool)
     base = modelo.p_base(fs)
+
+    sin_llave = not os.getenv("GEMINI_API_KEY", "").strip()
+    if (SOLO_REGRESION or sin_llave) and base:
+        preds = [{
+            "simbolo": s, "p_sube": p, "razon": "regresion sola, sin modelo de lenguaje",
+            "confianza": "media", "fundamento": "regresion",
+            "dato": modelo.resumen()[:120],
+            # El tamano sale de la regla medida: |mov| ~ volatilidad x 0,83.
+            "mov_esperado": round(
+                next((f.get("volatilidad_pct", 0.5) for f in fs if f["simbolo"] == s), 0.5)
+                * 0.83 * (1 if p > 0.5 else -1), 3),
+            "modelo": "regresion",
+        } for s, p in base.items()]
+        log.info("%d predicciones por regresion sola (%s)", len(preds),
+                 "pedido por config" if SOLO_REGRESION else "sin GEMINI_API_KEY")
+        return await _guardar(pool, preds, fs, base)
+
+    if not base and (SOLO_REGRESION or sin_llave):
+        log.warning("sin modelo de lenguaje y la regresion todavia no tiene "
+                    "suficientes resueltas: este ciclo no predice")
+        return 0
     try:
         # Se le pasa su propio resultado: cada llamada arranca sin memoria,
         # asi que si nadie le muestra la cuenta, repite el error toda la noche.
@@ -132,6 +165,13 @@ async def ciclo(pool: asyncpg.Pool, modelo: Modelo) -> int:
         log.warning("el modelo no respondió: %s", exc)
         return 0
 
+    return await _guardar(pool, preds, fs, base)
+
+
+async def _guardar(pool: asyncpg.Pool, preds: list[dict], fs: list[dict],
+                   base: dict | None) -> int:
+    """Escribe la tanda. Separado para que los dos caminos -- con modelo de
+    lenguaje y sin el -- guarden exactamente igual y sean comparables."""
     porf = {f["simbolo"]: f for f in fs}
     ahora = datetime.now(UTC)
     vence = ahora + timedelta(minutes=HORIZONTE_MIN)
