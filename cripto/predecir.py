@@ -343,10 +343,23 @@ async def predecir(fotos: list[dict], modelo: str = "",
                    base: dict[str, float] | None = None,
                    nota_base: str = "",
                    saber_texto: str = "") -> list[dict]:
+    # Quien razona este ciclo. El primero que tenga llave; el experimento
+    # mide igual con cualquiera, y `modelo` queda grabado en cada fila para
+    # poder comparar despues proveedor contra proveedor.
+    pedido = modelo or os.getenv("CRIPTO_MODELO", "").strip()
+    texto = _partes(fotos, historial, referencia, base, nota_base, saber_texto)
+
+    if k := os.getenv("ANTHROPIC_API_KEY", "").strip():
+        return await _por_anthropic(fotos, k, pedido or "claude-opus-5",
+                                    base, texto)
+    if k := os.getenv("DEEPSEEK_API_KEY", "").strip():
+        return await _por_anthropic(fotos, k, pedido or "deepseek-flash",
+                                    base, texto, DEEPSEEK)
+
     llave = os.getenv("GEMINI_API_KEY", "").strip()
     if not llave:
-        raise ErrorIA("falta GEMINI_API_KEY")
-    modelo = modelo or os.getenv("CRIPTO_MODELO", "gemini-2.5-flash")
+        raise ErrorIA("no hay ANTHROPIC_API_KEY, DEEPSEEK_API_KEY ni GEMINI_API_KEY")
+    modelo = pedido or "gemini-2.5-flash"
 
     cuerpo = {
         "contents": [{"parts": [
@@ -383,6 +396,69 @@ async def predecir(fotos: list[dict], modelo: str = "",
         items = json.loads(texto)["predicciones"]
     except (KeyError, IndexError, ValueError) as exc:
         raise ErrorIA("respuesta ilegible") from exc
+    return _validar(items, fotos, base, modelo)
+
+
+DEEPSEEK = "https://api.deepseek.com/anthropic"
+
+
+def _partes(fotos, historial, referencia, base, nota_base, saber_texto) -> str:
+    """Todo lo que el modelo tiene que ver, en un solo texto."""
+    t = []
+    if notas := (saber_texto or _notas()):
+        t.append(notas)
+    if boletin := _boletin(historial):
+        t.append(boletin)
+    if base:
+        t.append("PROBABILIDAD DE LA REGRESION (tu punto de partida):"
+                 + chr(10) + json.dumps(base, ensure_ascii=False)
+                 + chr(10) + nota_base)
+    if referencia:
+        t.append("BTC COMO REFERENCIA (no se opera, es para el contagio):"
+                 + chr(10) + json.dumps(referencia, ensure_ascii=False))
+    t.append("MERCADO AHORA:" + chr(10) + json.dumps(fotos, ensure_ascii=False))
+    t.append("Devolvé SOLO un objeto JSON con esta forma, sin texto alrededor: "
+             + json.dumps({"predicciones": [{k: "…" for k in ESQUEMA["properties"]
+                 ["predicciones"]["items"]["required"]}]}, ensure_ascii=False))
+    return (chr(10) + chr(10)).join(t)
+
+
+async def _por_anthropic(fotos, llave, modelo, base, cuerpo, url="") -> list[dict]:
+    """
+    El formato de Anthropic, que DeepSeek tambien habla en `/anthropic`.
+
+    A diferencia de Gemini no hay `responseSchema` que garantice la forma,
+    asi que el esquema va pedido en el texto y la respuesta se recorta a
+    las llaves extremas. Es menos estricto y por eso `_validar` descarta
+    cualquier fila que no cierre, igual que con Gemini.
+    """
+    import anthropic
+
+    cli = anthropic.AsyncAnthropic(api_key=llave,
+                                   **({"base_url": url} if url else {}))
+    extra = {} if url else {"thinking": {"type": "adaptive"},
+                            "output_config": {"effort": "medium"}}
+    try:
+        msg = await cli.messages.create(
+            model=modelo, max_tokens=8000, system=PROMPT,
+            messages=[{"role": "user", "content": cuerpo}], **extra)
+    except Exception as exc:  # noqa: BLE001
+        raise ErrorIA(f"{type(exc).__name__}: {str(exc)[:140]}") from exc
+    if msg.stop_reason == "refusal":
+        raise ErrorIA(f"declinó: {msg.stop_details}")
+    txt = "".join(b.text for b in msg.content if b.type == "text")
+    i, j = txt.find("{"), txt.rfind("}")
+    if i < 0 or j <= i:
+        raise ErrorIA("respuesta sin JSON")
+    try:
+        items = json.loads(txt[i:j + 1])["predicciones"]
+    except (KeyError, ValueError) as exc:
+        raise ErrorIA("respuesta ilegible") from exc
+    return _validar(items, fotos, base, modelo)
+
+
+def _validar(items, fotos, base, modelo) -> list[dict]:
+    """Lo que sobrevive de lo que dijo. Igual para todos los proveedores."""
 
     validas = []
     conocidos = {f["simbolo"] for f in fotos}
