@@ -3,126 +3,185 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07070C">
 <title>Banco de Pruebas</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap">
 <style>
 :root{
-  --fondo:#0E1116; --carta:#161A21; --carta2:#1D222B; --carta3:#242A35;
-  --tinta:#E6E9EE; --suave:#8B94A3; --tenue:#5D6675;
-  --linea:#242A35; --linea2:#2E3540;
-  --acento:#4C9EEB; --acento2:#7CC0F5;
-  --sube:#3FB37F; --sube-luz:#14281F;
-  --baja:#E0605A; --baja-luz:#2A1A19;
-  --neutro:#8B94A3;
-  --sans:"IBM Plex Sans",system-ui,sans-serif;
-  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --void:#07070C; --deep:#0B0B14; --panel:#101019; --panel2:#15151F;
+  --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13);
+  --tinta:#EDEDF5; --suave:#8C8CA6; --tenue:#56566E;
+  --cian:#4CE0E0; --violeta:#8B6CF6; --magenta:#F0509B;
+  --verde:#3FE0A0; --rojo:#FF5C72;
+  --sans:"Space Grotesk",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
 }
-@media (prefers-color-scheme:light){:root:not([data-t="dark"]){
-  --fondo:#F5F6F8; --carta:#FFFFFF; --carta2:#F0F2F5; --carta3:#E7EAEF;
-  --tinta:#141820; --suave:#5A6472; --tenue:#8892A2;
-  --linea:#E2E6EC; --linea2:#D5DAE2;
-  --acento:#1F6FBF; --acento2:#4C9EEB;
-  --sube:#1E7A52; --sube-luz:#DFF2E8;
-  --baja:#C23B34; --baja-luz:#FBE3E1;
-}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{background:var(--fondo);color:var(--tinta);font-family:var(--sans);
-  font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
-  padding:0 16px calc(40px + env(safe-area-inset-bottom,0px))}
-.wrap{max-width:1180px;margin:0 auto}
-h1,h2,h3{margin:0}
-.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.sube{color:var(--sube)} .baja{color:var(--baja)} .neu{color:var(--neutro)}
+html{scroll-behavior:smooth}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--void); color:var(--tinta); font-family:var(--sans);
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  padding:0 18px calc(60px + env(safe-area-inset-bottom,0px));
+  overflow-x:hidden;
+}
+/* ── capas de fondo ────────────────────────────────────────────────── */
+#cielo{position:fixed;inset:0;z-index:-3;pointer-events:none}
+.aura{position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(60vw 44vh at 12% -6%, rgba(139,108,246,.20), transparent 62%),
+    radial-gradient(52vw 40vh at 92% 4%,  rgba(76,224,224,.13), transparent 64%),
+    radial-gradient(70vw 50vh at 50% 108%,rgba(240,80,155,.09), transparent 66%);}
+.grano{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");}
 
-header{position:sticky;top:0;z-index:30;background:var(--fondo);
-  border-bottom:1px solid var(--linea);margin:0 -16px;
-  padding:calc(12px + env(safe-area-inset-top,0px)) 16px 11px}
-.hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.hd h1{font-size:17px;font-weight:700;letter-spacing:-.02em}
-.hd h1 small{display:block;font:600 10px var(--cond);letter-spacing:.09em;
-  text-transform:uppercase;color:var(--tenue);margin-top:2px}
-.hd .r{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.vivo{display:flex;align-items:center;gap:6px;font:400 11px var(--mono);color:var(--suave)}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--sube)}
-@media (prefers-reduced-motion:no-preference){.dot{animation:lat 2s ease-in-out infinite}}
-@keyframes lat{0%,100%{opacity:1}50%{opacity:.25}}
-.btn{font:500 12px var(--sans);background:var(--carta);color:var(--tinta);
-  border:1px solid var(--linea2);border-radius:7px;padding:6px 11px;cursor:pointer}
-.btn:hover{border-color:var(--acento);color:var(--acento)}
-.btn[aria-pressed=true]{background:var(--acento);border-color:var(--acento);color:#fff}
+.wrap{max-width:1240px;margin:0 auto;position:relative}
+h1,h2,h3{margin:0;letter-spacing:-.02em}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.up{color:var(--verde)} .down{color:var(--rojo)} .flat{color:var(--suave)}
 
-.kpis{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
-  border-radius:12px;overflow:hidden;margin-top:14px;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.kpi{background:var(--carta);padding:13px 15px 14px;min-width:0}
-.kpi .l{display:block;font:600 9.5px var(--cond);letter-spacing:.1em;
-  text-transform:uppercase;color:var(--tenue);margin-bottom:6px}
-.kpi .v{display:block;font:500 23px/1.1 var(--mono);letter-spacing:-.03em;
-  font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.kpi .v.sm{font-size:16px}
-.kpi .s{display:block;font:400 10.5px var(--mono);color:var(--tenue);margin-top:4px}
+/* ── cristal ───────────────────────────────────────────────────────── */
+.glass{position:relative;background:linear-gradient(160deg,
+    rgba(255,255,255,.055),rgba(255,255,255,.018) 42%,rgba(255,255,255,.008));
+  border:1px solid var(--line); border-radius:18px;
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  box-shadow:0 1px 0 rgba(255,255,255,.07) inset, 0 20px 50px -24px rgba(0,0,0,.9);
+  overflow:hidden}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;
+  padding:1px;pointer-events:none;opacity:.55;
+  background:linear-gradient(140deg,rgba(255,255,255,.28),transparent 34%,transparent 66%,rgba(255,255,255,.10));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude}
 
-.grid2{display:grid;gap:14px;margin-top:14px;
-  grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}
-@media (max-width:860px){.grid2{grid-template-columns:1fr}}
-.card{background:var(--carta);border:1px solid var(--linea);border-radius:12px;
-  overflow:hidden;min-width:0}
-.card-h{display:flex;align-items:center;gap:10px;padding:11px 15px;
-  border-bottom:1px solid var(--linea);background:var(--carta2);flex-wrap:wrap}
-.card-h h2{font-size:13px;font-weight:600}
-.card-h .sub{font-size:11.5px;color:var(--tenue)}
-.card-h .r{margin-left:auto;display:flex;gap:6px;align-items:center}
-.chart{width:100%;height:230px}
-.chart.sm{height:180px}
-.pad{padding:13px 15px}
+/* haz que recorre el borde — se enciende solo donde importa */
+.beam::after{content:"";position:absolute;inset:-1px;border-radius:inherit;
+  padding:1px;pointer-events:none;
+  background:conic-gradient(from var(--ang,0deg),transparent 0 72%,
+    var(--haz,var(--cian)) 82%,transparent 92%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  animation:giro 5.5s linear infinite}
+@keyframes giro{to{--ang:360deg}}
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+@media (prefers-reduced-motion:reduce){.beam::after{animation:none;opacity:.35}}
 
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{font:600 9.5px var(--cond);letter-spacing:.09em;text-transform:uppercase;
-  color:var(--tenue);text-align:right;padding:8px 10px;border-bottom:1px solid var(--linea);
-  position:sticky;top:0;background:var(--carta2);white-space:nowrap}
-th:first-child,td:first-child{text-align:left}
-td{padding:8px 10px;border-bottom:1px solid var(--linea);text-align:right;
-  font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-tbody tr:last-child td{border-bottom:0}
-tbody tr.click{cursor:pointer}
-tbody tr.click:hover{background:var(--carta2)}
-tbody tr.abierta{background:var(--carta2)}
-.sim{font-family:var(--sans);font-weight:600}
-.tabla-caja{max-height:520px;overflow-y:auto}
-
-.pastilla{display:inline-block;font:600 9.5px var(--cond);letter-spacing:.07em;
-  text-transform:uppercase;padding:2px 7px;border-radius:4px;white-space:nowrap}
-.p-largo{background:var(--sube-luz);color:var(--sube)}
-.p-corto{background:var(--baja-luz);color:var(--baja)}
-.p-quieto{background:var(--carta3);color:var(--tenue)}
-.p-vuelo{background:var(--carta3);color:var(--acento)}
-
-.det{background:var(--carta2);border-bottom:1px solid var(--linea)}
-.det-in{padding:14px 15px;display:grid;gap:14px;
-  grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
-@media (max-width:760px){.det-in{grid-template-columns:1fr}}
-.razon{background:var(--carta);border:1px solid var(--linea2);border-left:3px solid var(--acento);
-  border-radius:8px;padding:11px 13px;font-size:12.5px;line-height:1.5}
-.razon b{display:block;font:600 9.5px var(--cond);letter-spacing:.1em;
-  text-transform:uppercase;color:var(--tenue);margin-bottom:5px}
-.ctx{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;
-  background:var(--linea);border:1px solid var(--linea);border-radius:8px;overflow:hidden}
-.ctx div{background:var(--carta);padding:8px 10px}
-.ctx span{display:block;font:600 9px var(--cond);letter-spacing:.08em;
+/* ── cabecera ──────────────────────────────────────────────────────── */
+header{position:sticky;top:0;z-index:40;margin:0 -18px;padding:16px 18px 13px;
+  background:linear-gradient(var(--void) 62%,rgba(7,7,12,.82) 86%,transparent);
+  backdrop-filter:blur(8px)}
+.hd{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:11px}
+.sello{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(140deg,var(--violeta),var(--cian));
+  box-shadow:0 0 28px -6px var(--violeta);position:relative;flex:none}
+.sello span{font:700 15px var(--mono);color:#07070C}
+.marca h1{font-size:17px;font-weight:600}
+.marca p{margin:2px 0 0;font:500 9.5px var(--mono);letter-spacing:.22em;
   text-transform:uppercase;color:var(--tenue)}
-.ctx b{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
-.barra{display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--carta3);
-  margin-top:8px;position:relative;font:500 10px var(--mono)}
-.barra i{display:flex;align-items:center;justify-content:center;height:100%;color:#fff}
-.vacio{padding:40px 16px;text-align:center;color:var(--tenue);font-size:13px}
-footer{margin-top:18px;font-size:11px;color:var(--tenue);text-align:center}
+.hd .r{margin-left:auto;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.pulso{display:flex;align-items:center;gap:7px;font:400 11px var(--mono);color:var(--suave)}
+.led{width:7px;height:7px;border-radius:50%;background:var(--verde);
+  box-shadow:0 0 12px var(--verde);flex:none}
+@media (prefers-reduced-motion:no-preference){.led{animation:lat 2.2s ease-in-out infinite}}
+@keyframes lat{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.8)}}
+.btn{font:500 12px var(--sans);color:var(--tinta);cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid var(--line2);
+  border-radius:10px;padding:7px 13px;transition:.2s}
+.btn:hover{border-color:var(--cian);color:var(--cian);
+  box-shadow:0 0 22px -8px var(--cian)}
+.btn[aria-pressed=true]{background:linear-gradient(140deg,var(--violeta),var(--cian));
+  color:#07070C;border-color:transparent;font-weight:600}
+
+/* ── métricas ──────────────────────────────────────────────────────── */
+.kpis{display:grid;gap:12px;margin-top:16px;
+  grid-template-columns:repeat(auto-fit,minmax(178px,1fr))}
+.kpi{padding:16px 17px 17px;opacity:0}
+.kpi .l{display:flex;align-items:center;gap:6px;font:500 9.5px var(--mono);
+  letter-spacing:.17em;text-transform:uppercase;color:var(--tenue);margin-bottom:11px}
+.kpi .l i{width:4px;height:4px;border-radius:50%;background:var(--cian);
+  box-shadow:0 0 8px var(--cian);flex:none}
+.kpi .v{display:block;font:600 30px/1 var(--mono);letter-spacing:-.045em}
+.kpi .v.sm{font-size:21px}
+.kpi .s{display:block;font:400 10.5px var(--mono);color:var(--tenue);margin-top:8px}
+.chispa{height:30px;margin-top:9px;opacity:.85}
+
+/* ── paneles ───────────────────────────────────────────────────────── */
+.rejilla{display:grid;gap:14px;margin-top:14px;
+  grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+@media (max-width:900px){.rejilla{grid-template-columns:1fr}}
+.panel{opacity:0}
+.panel-h{display:flex;align-items:center;gap:11px;padding:14px 17px;
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel-h h2{font-size:13.5px;font-weight:600}
+.panel-h .sub{font:400 11.5px var(--mono);color:var(--tenue)}
+.panel-h .r{margin-left:auto;display:flex;gap:7px;align-items:center}
+.lienzo{width:100%;height:250px}
+.lienzo.sm{height:172px}
+.cuerpo{padding:15px 17px}
+
+/* ── tablas ────────────────────────────────────────────────────────── */
+.scroll{max-height:530px;overflow-y:auto;scrollbar-width:thin;
+  scrollbar-color:var(--line2) transparent}
+.scroll::-webkit-scrollbar{width:7px}
+.scroll::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font:500 9.5px var(--mono);letter-spacing:.15em;text-transform:uppercase;
+  color:var(--tenue);text-align:right;padding:10px 11px;white-space:nowrap;
+  position:sticky;top:0;background:rgba(16,16,25,.94);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);z-index:2}
+th:first-child,td:first-child{text-align:left}
+td{padding:10px 11px;border-bottom:1px solid rgba(255,255,255,.045);
+  text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+tbody tr.tap{cursor:pointer;transition:background .16s}
+tbody tr.tap:hover{background:rgba(255,255,255,.035)}
+tbody tr.on{background:rgba(139,108,246,.10)}
+.par{font-family:var(--sans);font-weight:600;letter-spacing:-.01em}
+
+.tag{display:inline-block;font:600 9px var(--mono);letter-spacing:.11em;
+  text-transform:uppercase;padding:3px 8px;border-radius:5px;white-space:nowrap;
+  border:1px solid transparent}
+.t-l{background:rgba(63,224,160,.11);color:var(--verde);border-color:rgba(63,224,160,.28)}
+.t-s{background:rgba(255,92,114,.11);color:var(--rojo);border-color:rgba(255,92,114,.28)}
+.t-v{background:rgba(76,224,224,.10);color:var(--cian);border-color:rgba(76,224,224,.26)}
+.t-n{background:rgba(255,255,255,.05);color:var(--tenue);border-color:var(--line)}
+.t-f{background:rgba(139,108,246,.13);color:#B9A5FB;border-color:rgba(139,108,246,.3)}
+
+/* ── detalle ───────────────────────────────────────────────────────── */
+.det td{padding:0;border-bottom:1px solid var(--line)}
+.det-in{padding:16px 17px;display:grid;gap:15px;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  background:linear-gradient(180deg,rgba(139,108,246,.055),transparent)}
+@media (max-width:780px){.det-in{grid-template-columns:1fr}}
+.fund{background:rgba(255,255,255,.035);border:1px solid var(--line);
+  border-left:2px solid var(--violeta);border-radius:11px;padding:13px 14px}
+.fund b{display:block;font:500 9px var(--mono);letter-spacing:.17em;
+  text-transform:uppercase;color:var(--tenue);margin-bottom:7px}
+.fund .dato{display:block;margin-top:9px;font:500 12px var(--mono);color:var(--cian)}
+.malla{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:8px;margin-top:11px}
+.celda{background:rgba(255,255,255,.028);border:1px solid var(--line);
+  border-radius:9px;padding:9px 11px}
+.celda span{display:block;font:500 8.5px var(--mono);letter-spacing:.13em;
+  text-transform:uppercase;color:var(--tenue);margin-bottom:3px}
+.celda b{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
+.riel{display:flex;height:26px;border-radius:8px;overflow:hidden;
+  background:rgba(255,255,255,.05);margin-top:11px;font:500 10px var(--mono)}
+.riel i{display:flex;align-items:center;justify-content:center;height:100%;
+  color:#07070C;font-weight:600}
+.nada{padding:46px 18px;text-align:center;color:var(--tenue);font-size:13px}
+footer{margin-top:26px;text-align:center;font:400 10.5px var(--mono);color:var(--tenue);
+  letter-spacing:.06em}
 </style>
 </head>
 <body>
+<canvas id="cielo"></canvas><div class="aura"></div><div class="grano"></div>
 <div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.25.4/preact.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/preact/10.25.4/hooks.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.js"></script>
@@ -133,8 +192,97 @@ var h=preact.h, render=preact.render;
 var useState=preactHooks.useState, useEffect=preactHooks.useEffect,
     useRef=preactHooks.useRef, useCallback=preactHooks.useCallback;
 var html=htm.bind(h);
+var lento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-function css(v,f){try{return getComputedStyle(document.documentElement)
+/* ── campo de partículas en WebGL ─────────────────────────────────────
+   No es adorno suelto: el tinte sigue el signo del PnL, asi que el
+   fondo dice como va antes de que leas un numero. Se degrada solo si
+   el navegador no da WebGL. */
+var Cielo = (function(){
+  var ren, esc, cam, pts, mat, raf, tono = {h:0.58}, mx=0, my=0;
+  function init(){
+    var c = document.getElementById("cielo");
+    if (!c || !window.THREE) return false;
+    try { ren = new THREE.WebGLRenderer({canvas:c, alpha:true, antialias:false}); }
+    catch(e){ return false; }
+    ren.setPixelRatio(Math.min(devicePixelRatio, 1.6));
+    ren.setSize(innerWidth, innerHeight);
+    esc = new THREE.Scene();
+    cam = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.1, 100);
+    cam.position.z = 22;
+
+    var N = lento ? 700 : 2600, pos = new Float32Array(N*3), tam = new Float32Array(N);
+    for (var i=0;i<N;i++){
+      pos[i*3]   = (Math.random()-0.5)*80;
+      pos[i*3+1] = (Math.random()-0.5)*50;
+      pos[i*3+2] = (Math.random()-0.5)*44 - 6;
+      tam[i] = Math.random()*1.7 + 0.35;
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos,3));
+    geo.setAttribute("aTam", new THREE.BufferAttribute(tam,1));
+    mat = new THREE.ShaderMaterial({
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      uniforms:{ uT:{value:0}, uTono:{value:0.58} },
+      vertexShader:[
+        "attribute float aTam; uniform float uT; varying float vA;",
+        "void main(){",
+        "  vec3 p = position;",
+        "  p.y += sin(uT*0.22 + p.x*0.09)*1.5;",
+        "  p.x += cos(uT*0.16 + p.z*0.07)*1.1;",
+        "  vec4 mv = modelViewMatrix * vec4(p,1.0);",
+        "  vA = smoothstep(46.0, 6.0, -mv.z);",
+        "  gl_PointSize = aTam * (150.0 / -mv.z);",
+        "  gl_Position = projectionMatrix * mv;",
+        "}"].join("\n"),
+      fragmentShader:[
+        "uniform float uTono; varying float vA;",
+        "vec3 hsl(float hh){",
+        "  vec3 k = mod(hh*6.0 + vec3(0.0,4.0,2.0), 6.0);",
+        "  return 0.62 + 0.38*clamp(min(k-3.0, 4.0-k), -1.0, 1.0);",
+        "}",
+        "void main(){",
+        "  vec2 d = gl_PointCoord - 0.5;",
+        "  float r = length(d);",
+        "  if (r > 0.5) discard;",
+        "  float a = pow(1.0 - r*2.0, 2.4) * vA * 0.62;",
+        "  gl_FragColor = vec4(hsl(uTono), a);",
+        "}"].join("\n"),
+    });
+    pts = new THREE.Points(geo, mat);
+    esc.add(pts);
+    addEventListener("resize", redim);
+    if (!lento) addEventListener("pointermove", mover, {passive:true});
+    bucle(0);
+    return true;
+  }
+  function mover(e){ mx = (e.clientX/innerWidth-0.5); my = (e.clientY/innerHeight-0.5); }
+  function redim(){ if(!ren) return;
+    ren.setSize(innerWidth, innerHeight);
+    cam.aspect = innerWidth/innerHeight; cam.updateProjectionMatrix(); }
+  function bucle(t){
+    raf = requestAnimationFrame(bucle);
+    if (!ren) return;
+    var s = t*0.001;
+    mat.uniforms.uT.value = s;
+    mat.uniforms.uTono.value += (tono.h - mat.uniforms.uTono.value)*0.02;
+    pts.rotation.y = s*0.012;
+    cam.position.x += (mx*3.2 - cam.position.x)*0.035;
+    cam.position.y += (-my*2.2 - cam.position.y)*0.035;
+    cam.lookAt(0,0,0);
+    ren.render(esc, cam);
+  }
+  return {
+    init: init,
+    // 0.42 verde, 0.58 cian, 0.95 rojo. El fondo cuenta el resultado.
+    señal: function(pnl){
+      tono.h = pnl == null ? 0.58 : (pnl > 0 ? 0.42 : (pnl < 0 ? 0.96 : 0.58));
+    }
+  };
+})();
+
+/* ── utilidades ───────────────────────────────────────────────────── */
+function cv(v,f){try{return getComputedStyle(document.documentElement)
   .getPropertyValue(v).trim()||f}catch(e){return f}}
 function pct(v,d){return v==null||isNaN(+v)?"—":(+v>=0?"+":"")+(+v).toFixed(d==null?3:d)+"%"}
 function n4(v,d){return v==null||isNaN(+v)?"—":(+v).toFixed(d==null?4:d)}
@@ -143,12 +291,28 @@ function hora(s){var d=new Date(s);return isNaN(d.getTime())?"—":
   d.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}
 function fecha(s){var d=new Date(s);return isNaN(d.getTime())?"—":
   d.toLocaleString("es",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}
-function clase(v){return v==null?"neu":(+v>0?"sube":(+v<0?"baja":"neu"))}
+function sig(v){return v==null?"flat":(+v>0?"up":(+v<0?"down":"flat"))}
+function api(r){return fetch("/api"+r,{cache:"no-store"}).then(function(x){return x.json()})}
 
-function api(r){return fetch("/api"+r,{cache:"no-store"})
-  .then(function(x){return x.json()})}
+/* contador animado: el numero cuenta hasta su valor en vez de saltar */
+function Cifra(p){
+  var el=useRef(null), prev=useRef(null);
+  useEffect(function(){
+    var n = p.v;
+    if (n == null || isNaN(+n)) { if(el.current) el.current.textContent = "—"; return; }
+    if (!window.gsap || lento || prev.current == null){
+      if (el.current) el.current.textContent = p.fmt(+n);
+      prev.current = +n; return;
+    }
+    var o = {x: prev.current};
+    gsap.to(o, {x:+n, duration:.75, ease:"power2.out",
+      onUpdate:function(){ if(el.current) el.current.textContent = p.fmt(o.x); }});
+    prev.current = +n;
+  },[p.v]);
+  return html`<span ref=${el} class=${p.clase||""}>—</span>`;
+}
 
-function Chart(p){
+function Grafico(p){
   var el=useRef(null), inst=useRef(null);
   useEffect(function(){
     if(!el.current||!window.echarts)return;
@@ -160,260 +324,274 @@ function Chart(p){
   useEffect(function(){
     if(inst.current&&p.opcion)inst.current.setOption(p.opcion(),true);
   },[p.dep]);
-  return html`<div ref=${el} class=${p.clase||"chart"}></div>`;
+  return html`<div ref=${el} class=${p.clase||"lienzo"}></div>`;
 }
 
-function tema(){return{
-  tinta:css("--tinta","#e6e9ee"), suave:css("--suave","#8b94a3"),
-  linea:css("--linea","#242a35"), carta:css("--carta","#161a21"),
-  sube:css("--sube","#3fb37f"), baja:css("--baja","#e0605a"),
-  acento:css("--acento","#4c9eeb"), mono:"IBM Plex Mono, monospace"};}
+function paleta(){return{
+  tinta:cv("--tinta","#ededf5"), suave:cv("--suave","#8c8ca6"),
+  tenue:cv("--tenue","#56566e"), linea:"rgba(255,255,255,.07)",
+  panel:cv("--panel","#101019"), cian:cv("--cian","#4ce0e0"),
+  violeta:cv("--violeta","#8b6cf6"), verde:cv("--verde","#3fe0a0"),
+  rojo:cv("--rojo","#ff5c72"), mono:"JetBrains Mono, monospace"};}
 
-/* ── curva de PnL: la unica que decide si sirve ────────────────────── */
-function opCurva(serie){
-  var c=tema();
-  return {
-    animation:false, grid:{left:46,right:14,top:16,bottom:26},
-    tooltip:{trigger:"axis",backgroundColor:c.carta,borderColor:c.linea,
+function opCurva(s){
+  var c=paleta();
+  return {animation:false, grid:{left:52,right:16,top:22,bottom:28},
+    tooltip:{trigger:"axis",backgroundColor:"rgba(16,16,25,.95)",borderColor:c.linea,
       textStyle:{color:c.tinta,fontFamily:c.mono,fontSize:11},
-      axisPointer:{type:"cross",label:{backgroundColor:c.suave}}},
-    legend:{data:["neto","bruto"],top:0,right:0,textStyle:{color:c.suave,fontSize:10},
-      itemWidth:12,itemHeight:2},
+      axisPointer:{type:"cross",label:{backgroundColor:c.violeta}}},
+    legend:{data:["neto","bruto"],top:0,right:0,itemWidth:14,itemHeight:2,
+      textStyle:{color:c.tenue,fontSize:10,fontFamily:c.mono}},
     xAxis:{type:"time",axisLine:{lineStyle:{color:c.linea}},splitLine:{show:false},
-      axisLabel:{color:c.suave,fontFamily:c.mono,fontSize:10}},
-    yAxis:{type:"value",axisLabel:{color:c.suave,fontFamily:c.mono,fontSize:10,
+      axisLabel:{color:c.tenue,fontFamily:c.mono,fontSize:10}},
+    yAxis:{type:"value",axisLabel:{color:c.tenue,fontFamily:c.mono,fontSize:10,
         formatter:function(v){return v.toFixed(2)+"%"}},
       splitLine:{lineStyle:{color:c.linea}}},
     series:[
-      {name:"bruto",type:"line",showSymbol:false,smooth:false,
-       lineStyle:{color:c.suave,width:1.2,type:"dashed"},
-       data:serie.map(function(x){return [x.t,x.bruto]})},
-      {name:"neto",type:"line",showSymbol:false,smooth:false,
-       lineStyle:{color:c.acento,width:2},
-       areaStyle:{color:c.acento,opacity:.10},
+      {name:"bruto",type:"line",showSymbol:false,
+       lineStyle:{color:c.suave,width:1.1,type:"dashed",opacity:.8},
+       data:s.map(function(x){return [x.t,x.bruto]})},
+      {name:"neto",type:"line",showSymbol:false,smooth:.12,
+       lineStyle:{color:c.cian,width:2.4,shadowColor:c.cian,shadowBlur:14},
+       areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[
+         {offset:0,color:"rgba(76,224,224,.26)"},{offset:1,color:"rgba(76,224,224,0)"}])},
        markLine:{silent:true,symbol:"none",label:{show:false},
-         lineStyle:{color:c.suave,type:"dotted",width:1},data:[{yAxis:0}]},
-       data:serie.map(function(x){return [x.t,x.neto]})}],
-  };
+         lineStyle:{color:c.tenue,type:"dotted",width:1},data:[{yAxis:0}]},
+       data:s.map(function(x){return [x.t,x.neto]})}]};
 }
-
-function opBrier(s){
-  var c=tema();
-  var d=[["agente",s.brier_agente,c.acento],["azar",s.brier_azar,c.suave],
-         ["inercia",s.brier_inercia,c.baja]];
-  return {
-    animation:false, grid:{left:4,right:44,top:4,bottom:4,containLabel:true},
-    tooltip:{trigger:"item",backgroundColor:c.carta,borderColor:c.linea,
+function opBrier(r){
+  var c=paleta();
+  var d=[["agente",r.brier_agente,c.cian],["azar",r.brier_azar,c.suave],
+         ["inercia",r.brier_inercia,c.violeta]];
+  return {animation:false, grid:{left:4,right:50,top:6,bottom:6,containLabel:true},
+    tooltip:{trigger:"item",backgroundColor:"rgba(16,16,25,.95)",borderColor:c.linea,
       textStyle:{color:c.tinta,fontFamily:c.mono,fontSize:11}},
     xAxis:{type:"value",show:false,min:0.2,max:0.3},
     yAxis:{type:"category",inverse:true,data:d.map(function(x){return x[0]}),
       axisLine:{show:false},axisTick:{show:false},
-      axisLabel:{color:c.suave,fontSize:11}},
-    series:[{type:"bar",barWidth:"52%",itemStyle:{borderRadius:[0,3,3,0]},
-      data:d.map(function(x){return {value:x[1],itemStyle:{color:x[2]}}}),
+      axisLabel:{color:c.suave,fontSize:11,fontFamily:c.mono}},
+    series:[{type:"bar",barWidth:"46%",itemStyle:{borderRadius:[0,4,4,0]},
+      data:d.map(function(x){return {value:x[1],
+        itemStyle:{color:x[2],shadowColor:x[2],shadowBlur:12}}}),
       label:{show:true,position:"right",color:c.suave,fontFamily:c.mono,fontSize:10,
         formatter:function(p){return (+p.value).toFixed(4)}}}]};
 }
+function opChispa(vals,color){
+  return {animation:false,grid:{left:0,right:0,top:2,bottom:2},
+    xAxis:{type:"category",show:false,data:vals.map(function(_,i){return i})},
+    yAxis:{type:"value",show:false,scale:true},
+    series:[{type:"line",data:vals,showSymbol:false,smooth:.2,
+      lineStyle:{color:color,width:1.6,shadowColor:color,shadowBlur:8},
+      areaStyle:{color:color,opacity:.13}}]};
+}
 
-/* ── detalle de una prediccion ─────────────────────────────────────── */
+var FUND = {flujo_agresor:"flujo", contagio_btc:"contagio",
+  libro_con_volumen:"libro", extremo_con_volumen:"extremo", cascada:"cascada",
+  ruptura_rango:"ruptura", inercia_corto:"inercia", sin_senal:"sin señal"};
+
 function Detalle(p){
   var x=p.x, ctx=x.contexto||{};
   if(typeof ctx==="string"){try{ctx=JSON.parse(ctx)}catch(e){ctx={}}}
   var mov=(x.precio_fin&&x.precio_ini)?(x.precio_fin/x.precio_ini-1)*100:null;
-  var lado=x.p_agente>0.5?"LARGO":(x.p_agente<0.5?"CORTO":"QUIETO");
-  var campos=[["precio al decidir",x.precio_ini],["precio al vencer",x.precio_fin],
-    ["cambio 5m",ctx.cambio_5m],["cambio 1h",ctx.cambio_1h],["cambio 24h",ctx.cambio_24h],
-    ["RSI 5m",ctx.rsi_5m],["RSI 15m",ctx.rsi_15m],
-    ["EMA9 vs 21",ctx.ema9_vs_ema21],["vs EMA50",ctx.precio_vs_ema50],
-    ["volatilidad",ctx.volatilidad_pct],["volumen vs medio",ctx.volumen_vs_medio],
-    ["libro",ctx.libro_desequilibrio],["pos rango 24h",ctx.pos_en_rango_24h]];
-  var pa=(x.p_agente*100), resto=100-pa;
-  return html`<tr class="det"><td colspan="9" style="padding:0">
-    <div class="det-in">
-      <div>
-        <div class="razon"><b>Por qué dijo eso — ${x.modelo||"?"}</b>
-          ${x.razon||"(sin razón)"}</div>
-        <div class="barra" title="probabilidad que asignó">
-          <i style=${"width:"+pa.toFixed(1)+"%;background:var(--sube)"}>
-            ${pa>=18?("sube "+pa.toFixed(0)+"%"):""}</i>
-          <i style=${"width:"+resto.toFixed(1)+"%;background:var(--baja)"}>
-            ${resto>=18?("baja "+resto.toFixed(0)+"%"):""}</i>
-        </div>
-        <div class="ctx" style="margin-top:10px">
-          <div><span>decidió</span><b>${fecha(x.ts)}</b></div>
-          <div><span>venció</span><b>${fecha(x.vence)}</b></div>
-          <div><span>posición</span><b class=${x.opero?(x.p_agente>0.5?"sube":"baja"):"neu"}>${lado}</b></div>
-          <div><span>confianza</span><b>${x.confianza||"—"}</b></div>
-          <div><span>bruto</span><b class=${clase(x.pnl_bruto)}>
-            ${x.pnl_bruto==null?"—":pct(x.pnl_bruto*100)}</b></div>
-          <div><span>neto c/comisión</span><b class=${clase(x.pnl_neto)}>
-            ${x.pnl_neto==null?"—":pct(x.pnl_neto*100)}</b></div>
-        </div>
+  var campos=[["flujo agresor",ctx.flujo_agresor],["flujo reciente",ctx.flujo_reciente],
+    ["flujo previo",ctx.flujo_previo],["libro",ctx.libro_desequilibrio],
+    ["volumen vs medio",ctx.volumen_vs_medio],["cambio 5m",ctx.cambio_5m],
+    ["cambio 1h",ctx.cambio_1h],["cambio 24h",ctx.cambio_24h],
+    ["rsi 5m",ctx.rsi_5m],["rsi 15m",ctx.rsi_15m],
+    ["volatilidad",ctx.volatilidad_pct],["pos rango 24h",ctx.pos_en_rango_24h]];
+  var pa=x.p_agente*100, resto=100-pa;
+  return html`<tr class="det"><td colspan="10"><div class="det-in">
+    <div>
+      <div class="fund"><b>fundamento — ${x.modelo||"?"}</b>
+        <span class="tag t-f">${FUND[x.fundamento]||x.fundamento||"?"}</span>
+        <div style="margin-top:9px;font-size:12.5px;line-height:1.55">${x.razon||"—"}</div>
+        ${x.dato?html`<span class="dato">${x.dato}</span>`:null}
+        ${x.mov_esperado!=null?html`<span class="dato" style="color:var(--suave)">
+          esperaba ${pct(x.mov_esperado,2)} · se movió
+          <b class=${sig(mov)}>${mov==null?"—":pct(mov,3)}</b></span>`:null}
       </div>
-      <div>
-        <div class="ctx">
-          ${campos.map(function(c){
-            return html`<div key=${c[0]}><span>${c[0]}</span>
-              <b>${c[1]==null?"—":(typeof c[1]==="number"?c[1].toLocaleString("es",
-                {maximumFractionDigits:4}):c[1])}</b></div>`;
-          })}
-        </div>
-        ${mov!=null?html`<div style="margin-top:9px;font:400 12px var(--mono);color:var(--suave)">
-          el mercado se movió <b class=${clase(mov)}>${pct(mov)}</b>
-          ${x.opero?html` · la apuesta ${x.pnl_bruto>0?"acertó":"falló"}`:
-            html` · no operó, así que no costó nada`}
-        </div>`:null}
+      <div class="riel" title="probabilidad asignada">
+        <i style=${"width:"+pa.toFixed(1)+"%;background:var(--verde)"}>
+          ${pa>=20?("sube "+pa.toFixed(0)+"%"):""}</i>
+        <i style=${"width:"+resto.toFixed(1)+"%;background:var(--rojo)"}>
+          ${resto>=20?("baja "+resto.toFixed(0)+"%"):""}</i>
+      </div>
+      <div class="malla">
+        <div class="celda"><span>decidió</span><b>${fecha(x.ts)}</b></div>
+        <div class="celda"><span>venció</span><b>${fecha(x.vence)}</b></div>
+        <div class="celda"><span>bruto</span>
+          <b class=${sig(x.pnl_bruto)}>${x.pnl_bruto==null?"—":pct(x.pnl_bruto*100)}</b></div>
+        <div class="celda"><span>neto</span>
+          <b class=${sig(x.pnl_neto)}>${x.pnl_neto==null?"—":pct(x.pnl_neto*100)}</b></div>
       </div>
     </div>
-  </td></tr>`;
+    <div><div class="malla" style="margin-top:0">
+      ${campos.map(function(c){return html`<div class="celda" key=${c[0]}>
+        <span>${c[0]}</span><b class=${typeof c[1]==="number"?sig(c[1]):""}>
+        ${c[1]==null?"—":(typeof c[1]==="number"?c[1].toLocaleString("es",
+          {maximumFractionDigits:4}):c[1])}</b></div>`})}
+    </div></div>
+  </div></td></tr>`;
 }
 
 function App(){
-  var s1=useState(null), res=s1[0], setRes=s1[1];
-  var s2=useState([]), preds=s2[0], setPreds=s2[1];
-  var s3=useState([]), sims=s3[0], setSims=s3[1];
-  var s4=useState([]), ser=s4[0], setSer=s4[1];
-  var s5=useState(null), abierta=s5[0], setAbierta=s5[1];
-  var s6=useState(""), filtro=s6[0], setFiltro=s6[1];
-  var s7=useState(false), soloOp=s7[0], setSoloOp=s7[1];
-  var s8=useState(15), cuenta=s8[0], setCuenta=s8[1];
+  var a=useState(null), res=a[0], setRes=a[1];
+  var b=useState([]), preds=b[0], setPreds=b[1];
+  var c=useState([]), sims=c[0], setSims=c[1];
+  var d=useState([]), ser=d[0], setSer=d[1];
+  var e=useState(null), abre=e[0], setAbre=e[1];
+  var f=useState(""), filtro=f[0], setFiltro=f[1];
+  var g=useState(15), cta=g[0], setCta=g[1];
+  var i=useState(false), listo=i[0], setListo=i[1];
 
   var cargar=useCallback(function(){
-    api("/resumen").then(setRes).catch(function(){});
+    api("/resumen").then(function(j){ setRes(j); Cielo.señal(j&&j.pnl_neto_pct); })
+      .catch(function(){});
     api("/simbolos").then(function(j){setSims(j.items||[])}).catch(function(){});
     api("/serie").then(function(j){setSer(j.items||[])}).catch(function(){});
-    api("/predicciones?n=150"+(filtro?"&simbolo="+filtro:"")+(soloOp?"&op=1":""))
+    api("/predicciones?n=150"+(filtro?"&simbolo="+filtro:""))
       .then(function(j){setPreds(j.items||[])}).catch(function(){});
-  },[filtro,soloOp]);
+  },[filtro]);
 
   useEffect(function(){cargar()},[cargar]);
   useEffect(function(){
     var t=setInterval(function(){
-      setCuenta(function(c){if(c<=1){cargar();return 15}return c-1});
-    },1000);
+      setCta(function(x){if(x<=1){cargar();return 15}return x-1});},1000);
     return function(){clearInterval(t)};
   },[cargar]);
 
+  /* coreografía de entrada: una sola vez, escalonada */
+  useEffect(function(){
+    if(listo||!res)return;
+    setListo(true);
+    if(!window.gsap||lento){
+      document.querySelectorAll(".kpi,.panel").forEach(function(n){n.style.opacity=1});
+      return;
+    }
+    gsap.to(".kpi",{opacity:1,y:0,duration:.6,stagger:.055,ease:"power3.out",
+      startAt:{y:16}});
+    gsap.to(".panel",{opacity:1,y:0,duration:.7,stagger:.09,delay:.2,
+      ease:"power3.out",startAt:{y:22}});
+  },[res]);
+
   var r=res||{};
-  var neto=r.pnl_neto_pct, bruto=r.pnl_bruto_pct;
   var gana=r.brier_agente!=null&&r.brier_azar!=null&&r.brier_agente<r.brier_azar;
+  var curva=ser.map(function(x){return x.neto});
 
   return html`<div class="wrap">
     <header><div class="hd">
-      <h1>Banco de Pruebas<small>cripto · 15 minutos · sin dinero</small></h1>
+      <div class="marca">
+        <div class="sello"><span>BP</span></div>
+        <div><h1>Banco de Pruebas</h1><p>cripto · 15 min · sin dinero</p></div>
+      </div>
       <div class="r">
-        <span class="vivo"><span class="dot"></span>en ${cuenta}s</span>
-        <button class="btn" onClick=${function(){setCuenta(15);cargar()}}>Actualizar</button>
+        <span class="pulso"><span class="led"></span>sync ${cta}s</span>
+        <button class="btn" onClick=${function(){setCta(15);cargar()}}>Actualizar</button>
+        ${filtro?html`<button class="btn" aria-pressed="true"
+          onClick=${function(){setFiltro("")}}>${filtro} ✕</button>`:null}
       </div>
     </div></header>
 
     <div class="kpis">
-      <div class="kpi"><span class="l">PnL neto</span>
-        <span class=${"v "+clase(neto)}>${neto==null?"—":pct(neto)}</span>
-        <span class="s">${r.sobre_20==null?"con comisión 0,10%":usd(r.sobre_20)+" sobre $20"}</span></div>
-      <div class="kpi"><span class="l">PnL bruto</span>
-        <span class=${"v "+clase(bruto)}>${bruto==null?"—":pct(bruto)}</span>
+      <div class="kpi glass beam" style="--haz:var(--cian)">
+        <span class="l"><i></i>pnl neto</span>
+        <${Cifra} clase=${"v "+sig(r.pnl_neto_pct)} v=${r.pnl_neto_pct}
+          fmt=${function(x){return (x>=0?"+":"")+x.toFixed(3)+"%"}} />
+        <span class="s">${r.sobre_20==null?"comisión 0,10% incluida":usd(r.sobre_20)+" sobre $20"}</span>
+        ${curva.length>2?html`<${Grafico} clase="chispa" dep=${curva.length}
+          opcion=${function(){return opChispa(curva,
+            (r.pnl_neto_pct||0)>=0?cv("--verde","#3fe0a0"):cv("--rojo","#ff5c72"))}} />`:null}
+      </div>
+      <div class="kpi glass"><span class="l"><i></i>pnl bruto</span>
+        <${Cifra} clase=${"v "+sig(r.pnl_bruto_pct)} v=${r.pnl_bruto_pct}
+          fmt=${function(x){return (x>=0?"+":"")+x.toFixed(3)+"%"}} />
         <span class="s">sin comisión</span></div>
-      <div class="kpi"><span class="l">Brier agente</span>
-        <span class=${"v "+(gana?"sube":"baja")}>${n4(r.brier_agente)}</span>
+      <div class="kpi glass"><span class="l"><i></i>brier</span>
+        <${Cifra} clase=${"v "+(gana?"up":"down")} v=${r.brier_agente}
+          fmt=${function(x){return x.toFixed(4)}} />
         <span class="s">azar ${n4(r.brier_azar)}</span></div>
-      <div class="kpi"><span class="l">Acierto</span>
-        <span class="v">${r.acierto_pct==null?"—":r.acierto_pct+"%"}</span>
-        <span class="s">${r.acierto_operadas_pct==null?"—":
-          r.acierto_operadas_pct+"% cuando operó"}</span></div>
-      <div class="kpi"><span class="l">Resueltas</span>
-        <span class="v">${r.n==null?"—":r.n}</span>
-        <span class="s">operó en ${r.operadas||0}</span></div>
-      <div class="kpi"><span class="l">En vuelo</span>
-        <span class="v">${r.en_vuelo==null?"—":r.en_vuelo}</span>
-        <span class="s">${r.proxima_resolucion?"vence "+hora(r.proxima_resolucion):"—"}</span></div>
+      <div class="kpi glass"><span class="l"><i></i>acierto</span>
+        <${Cifra} class="v" v=${r.acierto_pct}
+          fmt=${function(x){return x.toFixed(1)+"%"}} />
+        <span class="s">${r.acierto_operadas_pct==null?"—":r.acierto_operadas_pct+"% al operar"}</span></div>
+      <div class="kpi glass"><span class="l"><i></i>resueltas</span>
+        <${Cifra} class="v" v=${r.n} fmt=${function(x){return Math.round(x)}} />
+        <span class="s">en vuelo ${r.en_vuelo==null?"—":r.en_vuelo}</span></div>
     </div>
 
-    <div class="grid2">
-      <div class="card">
-        <div class="card-h"><h2>Plata acumulada</h2>
-          <span class="sub">la línea que decide si sirve</span></div>
-        ${ser.length>1
-          ? html`<${Chart} dep=${ser.length} opcion=${function(){return opCurva(ser)}} />`
-          : html`<div class="vacio">Hacen falta al menos dos resoluciones.</div>`}
-      </div>
-      <div class="card">
-        <div class="card-h"><h2>Contra quién compite</h2>
-          <span class="sub">más bajo es mejor</span></div>
-        <div class="pad">
-          ${r.brier_agente!=null
-            ? html`<${Chart} clase="chart sm" dep=${r.n}
-                 opcion=${function(){return opBrier(r)}} />`
-            : html`<div class="vacio">Sin datos.</div>`}
-          <div style="font-size:12px;color:var(--suave);margin-top:8px">
-            ${r.brier_agente==null?"":
-              (gana?"Le gana al azar, pero mirá el PnL: acertar no es ganar."
-                  :"No le gana al azar. No hay señal.")}
-          </div>
+    <div class="rejilla">
+      <section class="panel glass">
+        <div class="panel-h"><h2>Plata acumulada</h2>
+          <span class="sub">la distancia entre las líneas es la comisión</span></div>
+        ${ser.length>1?html`<${Grafico} dep=${ser.length}
+          opcion=${function(){return opCurva(ser)}} />`
+          :html`<div class="nada">Esperando las primeras resoluciones.</div>`}
+      </section>
+      <section class="panel glass">
+        <div class="panel-h"><h2>Contra quién compite</h2>
+          <span class="sub">más bajo, mejor</span></div>
+        <div class="cuerpo">
+          ${r.brier_agente!=null?html`<${Grafico} clase="lienzo sm" dep=${r.n}
+            opcion=${function(){return opBrier(r)}} />`:html`<div class="nada">Sin datos.</div>`}
+          <p style="margin:10px 0 0;font-size:12px;color:var(--suave);line-height:1.55">
+            ${r.brier_agente==null?"":(gana
+              ?"Le gana al azar. Pero mirá el PnL: acertar no es ganar."
+              :"No le gana al azar. Todavía no hay señal.")}</p>
         </div>
-      </div>
+      </section>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <div class="card-h"><h2>Por moneda</h2>
-        <span class="sub">tocá una para filtrar</span>
-        <div class="r">${filtro?html`<button class="btn"
-          onClick=${function(){setFiltro("")}}>quitar filtro: ${filtro}</button>`:null}</div>
-      </div>
+    <section class="panel glass" style="margin-top:14px">
+      <div class="panel-h"><h2>Por moneda</h2><span class="sub">tocá para filtrar</span></div>
       <div style="overflow-x:auto"><table>
-        <thead><tr><th>moneda</th><th>predic.</th><th>operó</th><th>acierto</th>
-          <th>Brier</th><th>vs azar</th><th>PnL neto</th></tr></thead>
+        <thead><tr><th>par</th><th>n</th><th>acierto</th><th>brier</th>
+          <th>vs azar</th><th>pnl neto</th></tr></thead>
         <tbody>${sims.map(function(x){
-          var mejor=x.brier<x.brier_azar;
-          return html`<tr class="click" key=${x.simbolo}
+          var mej=x.brier<x.brier_azar;
+          return html`<tr class=${"tap"+(filtro===x.simbolo?" on":"")} key=${x.simbolo}
             onClick=${function(){setFiltro(filtro===x.simbolo?"":x.simbolo)}}>
-            <td class="sim">${x.simbolo}</td><td>${x.n}</td><td>${x.operadas}</td>
+            <td class="par">${x.simbolo.replace("USDT","")}</td><td>${x.n}</td>
             <td>${x.acierto_pct}%</td><td>${n4(x.brier)}</td>
-            <td class=${mejor?"sube":"baja"}>${mejor?"mejor":"peor"}</td>
-            <td class=${clase(x.pnl_pct)}>${pct(x.pnl_pct)}</td></tr>`;
-        })}</tbody>
+            <td><span class=${"tag "+(mej?"t-l":"t-s")}>${mej?"mejor":"peor"}</span></td>
+            <td class=${sig(x.pnl_pct)}>${pct(x.pnl_pct)}</td></tr>`})}</tbody>
       </table></div>
-      ${!sims.length?html`<div class="vacio">Todavía nada resuelto.</div>`:null}
-    </div>
+      ${!sims.length?html`<div class="nada">Todavía nada resuelto.</div>`:null}
+    </section>
 
-    <div class="card" style="margin-top:14px">
-      <div class="card-h"><h2>Cada decisión</h2>
-        <span class="sub">tocá una fila para ver todo lo que miró</span>
-        <div class="r">
-          <button class="btn" aria-pressed=${soloOp}
-            onClick=${function(){setSoloOp(!soloOp)}}>solo las que operó</button>
-        </div>
-      </div>
-      <div class="tabla-caja"><table>
-        <thead><tr><th>hora</th><th>moneda</th><th>dijo</th><th>posición</th>
-          <th>resultado</th><th>movió</th><th>bruto</th><th>neto</th><th></th></tr></thead>
+    <section class="panel glass" style="margin-top:14px">
+      <div class="panel-h"><h2>Cada decisión</h2>
+        <span class="sub">tocá una fila para ver el fundamento y las 12 variables</span></div>
+      <div class="scroll"><table>
+        <thead><tr><th>hora</th><th>par</th><th>p</th><th>lado</th><th>fundamento</th>
+          <th>esperaba</th><th>resultado</th><th>movió</th><th>neto</th><th></th></tr></thead>
         <tbody>${preds.map(function(x){
-          var ab=abierta===x.id;
+          var on=abre===x.id;
           var mov=(x.precio_fin&&x.precio_ini)?(x.precio_fin/x.precio_ini-1)*100:null;
-          var lado=!x.opero?html`<span class="pastilla p-quieto">quieto</span>`
-            :(x.p_agente>0.5?html`<span class="pastilla p-largo">largo</span>`
-                            :html`<span class="pastilla p-corto">corto</span>`);
-          var fila=[html`<tr class=${"click"+(ab?" abierta":"")} key=${x.id}
-            onClick=${function(){setAbierta(ab?null:x.id)}}>
-            <td>${hora(x.ts)}</td><td class="sim">${x.simbolo}</td>
-            <td>${(x.p_agente*100).toFixed(1)}%</td><td>${lado}</td>
-            <td>${x.subio==null?html`<span class="pastilla p-vuelo">en vuelo</span>`
-              :html`<span class=${x.subio?"sube":"baja"}>${x.subio?"subió":"bajó"}</span>`}</td>
-            <td class=${clase(mov)}>${mov==null?"—":pct(mov)}</td>
-            <td class=${clase(x.pnl_bruto)}>${x.pnl_bruto==null?"—":pct(x.pnl_bruto*100)}</td>
-            <td class=${clase(x.pnl_neto)}>${x.pnl_neto==null?"—":pct(x.pnl_neto*100)}</td>
-            <td style="color:var(--tenue)">${ab?"▾":"▸"}</td></tr>`];
-          if(ab)fila.push(html`<${Detalle} x=${x} key=${x.id+"d"} />`);
-          return fila;
-        })}</tbody>
+          var fila=[html`<tr class=${"tap"+(on?" on":"")} key=${x.id}
+            onClick=${function(){setAbre(on?null:x.id)}}>
+            <td>${hora(x.ts)}</td><td class="par">${x.simbolo.replace("USDT","")}</td>
+            <td>${(x.p_agente*100).toFixed(1)}</td>
+            <td><span class=${"tag "+(x.p_agente>0.5?"t-l":"t-s")}>
+              ${x.p_agente>0.5?"largo":"corto"}</span></td>
+            <td><span class=${"tag "+(x.fundamento&&x.fundamento!=="sin_senal"?"t-f":"t-n")}>
+              ${FUND[x.fundamento]||"—"}</span></td>
+            <td class=${sig(x.mov_esperado)}>${x.mov_esperado==null?"—":pct(x.mov_esperado,2)}</td>
+            <td>${x.subio==null?html`<span class="tag t-v">en vuelo</span>`
+              :html`<span class=${x.subio?"up":"down"}>${x.subio?"subió":"bajó"}</span>`}</td>
+            <td class=${sig(mov)}>${mov==null?"—":pct(mov)}</td>
+            <td class=${sig(x.pnl_neto)}>${x.pnl_neto==null?"—":pct(x.pnl_neto*100)}</td>
+            <td style="color:var(--tenue)">${on?"▾":"▸"}</td></tr>`];
+          if(on)fila.push(html`<${Detalle} x=${x} key=${x.id+"d"} />`);
+          return fila})}</tbody>
       </table></div>
-      ${!preds.length?html`<div class="vacio">Sin predicciones todavía.</div>`:null}
-    </div>
+      ${!preds.length?html`<div class="nada">Sin predicciones todavía.</div>`:null}
+    </section>
 
-    <footer>Plata de mentira. Comisión de futuros 0,10% ida y vuelta.
-      Se opera solo cuando se aleja más de 2 puntos de 0,50.</footer>
+    <footer>plata de mentira · futuros 0,10% ida y vuelta · entrada forzada</footer>
   </div>`;
 }
+
+Cielo.init();
 render(html`<${App} />`, document.getElementById("app"));
 </script>
 </body>
