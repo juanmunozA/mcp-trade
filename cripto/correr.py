@@ -163,9 +163,19 @@ async def resolver(pool: asyncpg.Pool) -> int:
     for r in pend:
         if r["simbolo"] not in px:
             continue
+        ini = r["precio_ini"]
+        if not ini:
+            # Un precio guardado en cero no se puede resolver. Se marca y
+            # sigue: antes una sola fila asi tumbaba toda la tanda.
+            log.warning("precio_ini en cero (%s, id %s), se descarta",
+                        r["simbolo"], r["id"])
+            await pool.execute("UPDATE cripto.predicciones SET subio=NULL, "
+                               "vence = now() + interval '100 years' WHERE id=$1",
+                               r["id"])
+            continue
         fin = px[r["simbolo"]]
-        subio = fin > r["precio_ini"]
-        mov = fin / r["precio_ini"] - 1
+        subio = fin > ini
+        mov = fin / ini - 1
         opero = abs(r["p_agente"] - 0.5) >= UMBRAL_OP if UMBRAL_OP > 0 else True
         # Largo si dijo que sube, corto si dijo que baja. Sin operar, cero:
         # no cobrar comision por quedarse quieto es parte del resultado.

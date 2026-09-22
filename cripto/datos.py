@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 
 import httpx
 
@@ -86,6 +87,20 @@ def _rsi(cierres: list[float], n: int = 14) -> float:
         return 100.0
     rs = ms / mb
     return round(100 - 100 / (1 + rs), 1)
+
+
+def sig(x: float, n: int = 6) -> float:
+    """
+    Redondea a cifras significativas, no a decimales fijos.
+
+    `round(precio, 4)` funciona con BTC y destruye PEPE: cotiza a
+    0.00000498 y redondeado a cuatro decimales queda en 0.0. Despues el
+    resolver divide por ese cero y se cae la tanda entera -- paso de
+    verdad, y se llevo ocho predicciones ya vencidas.
+    """
+    if not x:
+        return 0.0
+    return round(x, max(0, n - 1 - int(math.floor(math.log10(abs(x))))))
 
 
 def _pct(a: float, b: float) -> float:
@@ -174,7 +189,7 @@ async def foto(cli: httpx.AsyncClient, simbolo: str) -> dict | None:
 
     return {
         "simbolo": simbolo,
-        "precio": round(precio, 4),
+        "precio": sig(precio),
         # Velas recientes como texto corto: apertura, maximo, minimo, cierre
         # en variacion porcentual contra la apertura, que es lo que importa
         # para la forma, no el nivel absoluto.
