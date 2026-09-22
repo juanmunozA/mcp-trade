@@ -76,6 +76,20 @@ alla) y `JP` en cualquier otro lado. Con `CRIPTO_ORIGEN` cada uno pone
 la suya, que es lo que hace falta cuando los locales son mas de uno.
 """
 
+SABER_TOPE = int(os.getenv("CRIPTO_SABER_TOPE", "4500"))
+"""
+Cuantos caracteres de notas entran en cada prediccion.
+
+No es una preferencia de estilo: el tier gratuito de Groq admite 8.000
+tokens por minuto y las notas completas ya son 10.145 tokens. Con todo
+puesto la llamada devuelve 413 y el ciclo se pierde entero.
+
+Y el limite cuenta el `max_tokens` pedido ANTES de generar: con 7.000
+caracteres de notas el request entra en ~5.700 tokens y deja lugar para
+los 1.800 de respuesta. En 0 se manda todo, que sirve con un proveedor
+sin este techo.
+"""
+
 SOLO_REGRESION = os.getenv("CRIPTO_SOLO_REGRESION", "").strip().lower() in ("1", "true", "si")
 """
 Correr sin modelo de lenguaje: la regresion decide sola.
@@ -180,7 +194,7 @@ async def ciclo(pool: asyncpg.Pool, modelo: Modelo) -> int:
         # asi que si nadie le muestra la cuenta, repite el error toda la noche.
         preds = await predecir(fs, historial=await tablero(pool), referencia=ref,
                                base=base, nota_base=modelo.resumen(),
-                               saber_texto=await saber.texto(pool))
+                               saber_texto=await saber.texto(pool, SABER_TOPE))
     except ErrorIA as exc:
         log.warning("el modelo no respondió: %s", exc)
         return 0

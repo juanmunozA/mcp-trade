@@ -161,6 +161,8 @@ async def _con_gemini(instruccion: str, cuerpo: str) -> str:
 
 
 DEEPSEEK = "https://api.deepseek.com/anthropic"
+GROQ = "https://api.groq.com/openai/v1/chat/completions"
+MISTRAL = "https://api.mistral.ai/v1/chat/completions"
 
 
 async def _con_mistral(instruccion: str, cuerpo: str, llave: str,
@@ -169,14 +171,14 @@ async def _con_mistral(instruccion: str, cuerpo: str, llave: str,
     import httpx
 
     async with httpx.AsyncClient(timeout=600) as c:
-        r = await c.post("https://api.mistral.ai/v1/chat/completions",
+        r = await c.post(url,
             headers={"Authorization": f"Bearer {llave}"},
             json={"model": modelo, "max_tokens": 32000, "temperature": 0.3,
                   "response_format": {"type": "json_object"},
                   "messages": [{"role": "system", "content": instruccion},
                                {"role": "user", "content": cuerpo}]})
     if r.status_code != 200:
-        raise SinLlave(f"mistral HTTP {r.status_code}: {r.text[:160]}")
+        raise SinLlave(f"HTTP {r.status_code}: {r.text[:160]}")
     return r.json()["choices"][0]["message"]["content"]
 
 
@@ -195,11 +197,12 @@ async def _pensar(instruccion: str, cuerpo: str) -> str:
     if k := os.getenv("DEEPSEEK_API_KEY", "").strip():
         return await _con_anthropic(instruccion, cuerpo, k,
                                     m or "deepseek-v4-pro", DEEPSEEK)
+    if k := os.getenv("GROQ_API_KEY", "").strip():
+        return await _con_openai(instruccion, cuerpo, k,
+                                 m or "openai/gpt-oss-120b", GROQ)
     if k := os.getenv("MISTRAL_API_KEY", "").strip():
-        # `magistral` razona antes de responder, que es lo que pide decidir
-        # si una regla dejo de sostenerse.
-        return await _con_mistral(instruccion, cuerpo, k,
-                                  m or "magistral-medium-latest")
+        return await _con_openai(instruccion, cuerpo, k,
+                                 m or "ministral-14b-latest", MISTRAL)
     if os.getenv("GEMINI_API_KEY", "").strip():
         return await _con_gemini(instruccion, cuerpo)
     raise SinLlave("no hay llave de ningún proveedor")

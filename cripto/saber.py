@@ -106,14 +106,63 @@ async def guardar(pool, nombre: str, cuerpo: str, apoyo: int,
     return v
 
 
-async def texto(pool) -> str:
-    """Todo el conocimiento vigente, listo para inyectar en una llamada."""
+OPERATIVAS = [
+    "la-tabla-condicional",     # la consulta que decide el lado
+    "elegir-lado",              # el procedimiento
+    "la-matematica-del-peaje",  # el umbral de rentabilidad
+    "cuanto-se-va-a-mover",     # el tamano esperado
+    "ocho-apuestas-son-una",    # el riesgo de bloque
+    "quien-decide-que",         # su rol frente a la regresion
+]
+"""
+Que notas entran primero cuando no cabe todo.
+
+Estas seis son las que se usan PARA DECIDIR AHORA. Las demas -- por que
+fracasan las estrategias, cuanto se puede confiar, la autopsia de la
+primera noche -- son metodologia: importan cuando el agente reescribe lo
+que cree saber, no cuando tiene que elegir un lado en este ciclo.
+
+El orden es el de arriba; lo que no este en la lista va despues,
+alfabetico. Una nota nueva que invente el agente cae en ese resto, que
+es lo correcto: todavia no se gano el lugar.
+"""
+
+
+async def texto(pool, tope: int = 0) -> str:
+    """
+    El conocimiento vigente, listo para inyectar.
+
+    `tope` es un limite en CARACTERES, y existe por una razon concreta y
+    medida: el tier gratuito de Groq admite 8.000 tokens por minuto, y
+    las notas solas ya van por 10.145. Sin presupuesto, la llamada
+    devuelve 413 y el ciclo no predice nada.
+
+    Se recorta por notas enteras, nunca a mitad de una: media nota es
+    peor que ninguna porque deja una afirmacion sin su numero.
+    """
     n = await vigentes(pool)
     if not n:
         return ""
-    trozos = [f"### {k}" + chr(10) + v for k, v in sorted(n.items())]
-    return ("LO QUE SE SABE DE ESTE MERCADO" + chr(10) + chr(10)
-            + (chr(10) + chr(10)).join(trozos))
+    orden = sorted(n, key=lambda k: (OPERATIVAS.index(k)
+                                     if k in OPERATIVAS else len(OPERATIVAS), k))
+    cab = "LO QUE SE SABE DE ESTE MERCADO" + chr(10) + chr(10)
+    trozos, usado, fuera = [], len(cab), []
+    for k in orden:
+        pieza = f"### {k}" + chr(10) + n[k]
+        if tope and usado + len(pieza) + 2 > tope:
+            fuera.append(k)
+            continue
+        trozos.append(pieza)
+        usado += len(pieza) + 2
+    if not trozos:
+        return ""
+    salida = cab + (chr(10) + chr(10)).join(trozos)
+    if fuera:
+        # Decirlo explicitamente: el modelo tiene que saber que no vio
+        # todo, para no afirmar que algo "no esta medido" cuando si lo esta.
+        salida += (chr(10) + chr(10) + "(no entraron por espacio, existen y "
+                   "estan medidas: " + ", ".join(fuera) + ")")
+    return salida
 
 
 async def historial(pool, nombre: str) -> list[dict]:
