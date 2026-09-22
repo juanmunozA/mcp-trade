@@ -33,6 +33,8 @@ from dotenv import load_dotenv
 
 from cripto.datos import fotos, precios
 from cripto.modelo import Modelo
+from cripto import aprender as ap
+from cripto import saber
 from cripto.predecir import ErrorIA, predecir
 
 load_dotenv()
@@ -177,7 +179,8 @@ async def ciclo(pool: asyncpg.Pool, modelo: Modelo) -> int:
         # Se le pasa su propio resultado: cada llamada arranca sin memoria,
         # asi que si nadie le muestra la cuenta, repite el error toda la noche.
         preds = await predecir(fs, historial=await tablero(pool), referencia=ref,
-                               base=base, nota_base=modelo.resumen())
+                               base=base, nota_base=modelo.resumen(),
+                               saber_texto=await saber.texto(pool))
     except ErrorIA as exc:
         log.warning("el modelo no respondió: %s", exc)
         return 0
@@ -341,6 +344,7 @@ async def main() -> None:
     pool = await asyncpg.create_pool(dsn, min_size=1, max_size=3)
     async with pool.acquire() as c:
         await c.execute(ESQUEMA)
+    await saber.preparar(pool)
 
     await _servidor(pool)
     modelo = Modelo()
@@ -362,6 +366,11 @@ async def main() -> None:
             break
         try:
             await resolver(pool)
+            # Aprender antes de predecir: si toca reescribir las notas, que
+            # la tanda de este ciclo ya use lo aprendido y no lo anterior.
+            if await ap.toca(pool):
+                log.info("hay material nuevo: reescribiendo las notas…")
+                log.info("aprendizaje: %s", await ap.aprender(pool))
             n += await ciclo(pool, modelo)
             t = await tablero(pool)
             if t["n"]:

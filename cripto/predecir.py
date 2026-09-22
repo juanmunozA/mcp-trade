@@ -341,7 +341,8 @@ async def predecir(fotos: list[dict], modelo: str = "",
                    historial: dict | None = None,
                    referencia: dict | None = None,
                    base: dict[str, float] | None = None,
-                   nota_base: str = "") -> list[dict]:
+                   nota_base: str = "",
+                   saber_texto: str = "") -> list[dict]:
     llave = os.getenv("GEMINI_API_KEY", "").strip()
     if not llave:
         raise ErrorIA("falta GEMINI_API_KEY")
@@ -350,7 +351,10 @@ async def predecir(fotos: list[dict], modelo: str = "",
     cuerpo = {
         "contents": [{"parts": [
             {"text": PROMPT},
-            *([{"text": notas}] if (notas := _notas()) else []),
+            # Lo aprendido gana sobre lo sembrado: `saber_texto` viene de la
+            # base, donde el propio agente reescribe sus notas. `_notas()`
+            # queda para correr suelto, sin base de conocimiento todavia.
+            *([{"text": notas}] if (notas := saber_texto or _notas()) else []),
             *([{"text": boletin}] if (boletin := _boletin(historial)) else []),
             *([{"text": "BTC COMO REFERENCIA (no se opera, es para el contagio):"
                 + chr(10) + json.dumps(referencia, ensure_ascii=False)}]

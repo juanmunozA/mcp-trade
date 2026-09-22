@@ -189,6 +189,21 @@ async def servir(pool: asyncpg.Pool, puerto: int) -> None:
                 cuerpo = _json({"items": await predicciones(
                     pool, int(q.get("n", 120)), q.get("simbolo", ""),
                     q.get("op") == "1", q.get("origen", ""))})
+            elif camino == "/api/saber":
+                # Que cree saber y como llego a creerlo. Sin esto el
+                # aprendizaje es una caja negra: se ve que las notas
+                # cambian pero no cuando ni contra cuantos datos.
+                filas = await pool.fetch(
+                    "SELECT DISTINCT ON (nombre) nombre, version, ts, apoyo,"
+                    " motivo, length(cuerpo) largo FROM cripto.notas"
+                    " ORDER BY nombre, version DESC")
+                cuerpo = _json({"items": [dict(f) for f in filas]})
+            elif camino == "/api/nota":
+                n = q.get("nombre", "")
+                filas = await pool.fetch(
+                    "SELECT version, ts, apoyo, motivo, cuerpo FROM cripto.notas"
+                    " WHERE nombre = $1 ORDER BY version DESC", n)
+                cuerpo = _json({"nombre": n, "versiones": [dict(f) for f in filas]})
             elif camino == "/api/simbolos":
                 cuerpo = _json({"items": await por_simbolo(pool)})
             elif camino == "/api/serie":
@@ -199,6 +214,7 @@ async def servir(pool: asyncpg.Pool, puerto: int) -> None:
             else:
                 cuerpo = _json({"error": "no existe", "rutas": [
                     "/ui", "/api/resumen", "/api/predicciones", "/api/simbolos",
+                    "/api/saber", "/api/nota?nombre=",
                     "/api/serie", "/salud"]})
 
             cab = (f"HTTP/1.1 200 OK{NL}Content-Type: {tipo}{NL}"
