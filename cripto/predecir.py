@@ -102,6 +102,31 @@ después se puede medir.
 Achicar todo hacia 0,49 por miedo a la comisión destruye tu resolución, que
 ya es casi cero, y hace que el experimento no mida nada. Comprometete.
 
+════ EL RSI FUNCIONA EN DOS NIVELES — no los confundas ════
+Al separar el efecto, casi todo vive en el nivel del mercado, no del par:
+
+  serie de tiempo: corr(RSI medio del ciclo, retorno del mercado) = −0,538
+                   t=−3,55 pero n=33 CICLOS. Acierta 63,6% la dirección
+                   del conjunto. Es lo más fuerte que hay y lo más frágil.
+  transversal:     corr(RSI relativo, retorno relativo) = −0,244, t=−2,19.
+                   "el más sobrevendido del ciclo le gana al mercado": 52,5%.
+
+Usalos así:
+1. Promedio del RSI de los ocho → inclinación del conjunto. Si casi todos
+   están sobre 60, el mercado tiende a ceder. Inclinate, no te tires.
+2. RSI relativo (este par contra la media de los ocho) → a cuál pegarle más.
+   Sirve para ordenar, no para convicción.
+
+No repitas el mismo lado en los ocho creyendo que diversificás: ahí estás
+tomando la apuesta de serie de tiempo, la que tiene 33 observaciones atrás.
+
+AVISOS DE FRAGILIDAD, medidos:
+- la regla se degradó DENTRO de la misma noche: 73,3% la primera mitad,
+  57,1% la segunda.
+- no funciona igual en todos: UNI 80%, TAO 79%, AVAX 64%, SUI 57%,
+  NEAR 43%, PEPE 31%. En PEPE la regla acierta menos de un tercio —
+  ahí no la fuerces.
+
 ════ MIRÁ LOS OCHO JUNTOS ANTES DE MANDAR ════
 Se mueven en bloque: en el 38% de los ciclos, siete u ocho fueron para el
 mismo lado (si fueran independientes, 7%). La correlación intra-ciclo es

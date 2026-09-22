@@ -283,11 +283,65 @@ def informe(d: list[dict]) -> str:
             t(f"   {k:26} n={len(idx):3}  acierto {100 * ac / len(idx):5.1f}% "
               f"[{100 * max(0, a):4.1f},{100 * min(1, bq):5.1f}]  neto {neto:+7.2f}%")
 
+    t()
+    t("9. ¿MERCADO O PAR? la prueba que decide cuanta evidencia hay")
+    merc = np.array([float(r[cl == c].mean()) for c in cl])
+    rsim = np.array([float(rsi[cl == c].mean()) for c in cl])
+    u = sorted(set(cl))
+    Xc = np.array([float(rsi[cl == c].mean()) for c in u])
+    Yc = np.array([float(r[cl == c].mean()) for c in u])
+    if len(u) > 4 and Xc.std() and Yc.std():
+        ro = float(np.corrcoef(Xc, Yc)[0, 1])
+        nn = len(u)
+        tt = ro * math.sqrt(nn - 2) / math.sqrt(max(1e-9, 1 - ro * ro))
+        t(f"   serie de tiempo: corr(rsi medio del ciclo, retorno del mercado)"
+          f" = {ro:+.3f}  t={tt:+.2f}  n={nn} CICLOS")
+    rel, rrel = r - merc, rsi - rsim
+    if rel.std() and rrel.std():
+        ro2 = float(np.corrcoef(rrel, rel)[0, 1])
+        z = (rrel / rrel.std()) * (rel / rel.std())
+        gs = collections.defaultdict(float)
+        for i, c in enumerate(cl):
+            gs[c] += z[i]
+        se2 = math.sqrt(sum(a * a for a in gs.values())) / N
+        ac2 = sum(1 for i in range(N) if (rrel[i] < 0) == (rel[i] > 0))
+        t(f"   transversal:     corr(rsi relativo, retorno relativo)"
+          f" = {ro2:+.3f}  t={ro2 / se2 if se2 else 0:+.2f}  n={N}")
+        t(f"   'el mas sobrevendido del ciclo le gana al mercado': "
+          f"{100 * ac2 / N:.1f}%")
+    t("   Un efecto transversal se diversifica entre pares. Uno de serie de")
+    t("   tiempo es UNA apuesta repetida por ciclo: ahi el n real es el de ciclos.")
+
+    t()
+    t("10. FRAGILIDAD: ¿aguanta partido en dos, y en todos los pares?")
+    orden = np.argsort([x["ts"] for x in d])
+    for lab, ix in [("primera mitad", orden[:N // 2]), ("segunda mitad", orden[N // 2:])]:
+        s = [i for i in ix if rsi[i] < 40 or rsi[i] > 60]
+        if len(s) < 10:
+            continue
+        ok = sum(1 for i in s if (rsi[i] < 40) == (y[i] > 0.5))
+        t(f"   {lab:16} n={len(s):3}  RSI acierta {100 * ok / len(s):5.1f}%")
+    sim = np.array([x["simbolo"] for x in d])
+    peor = None
+    ext = [i for i in range(N) if rsi[i] < 40 or rsi[i] > 60]
+    for s in sorted(set(sim)):
+        ix = [i for i in ext if sim[i] == s]
+        if len(ix) < 6:
+            continue
+        ok = sum(1 for i in ix if (rsi[i] < 40) == (y[i] > 0.5))
+        a = 100 * ok / len(ix)
+        t(f"   {s:12} n={len(ix):3}  acierta {a:5.1f}%")
+        if peor is None or a < peor[1]:
+            peor = (s, a)
+    if peor:
+        t(f"   el peor es {peor[0]} con {peor[1]:.1f}%. Una regla general no deberia")
+        t("   tener esta dispersion entre pares.")
+
     esp = np.array([abs(float(x["mov_esperado"] or 0)) for x in d])
     v = esp > 0
     if v.sum() > 10:
         t()
-        t("9. CALIBRACION DEL TAMANO")
+        t("11. CALIBRACION DEL TAMANO")
         t(f"   dijo {esp[v].mean():.3f}%  |  real mediano {med:.3f}%  "
           f"->  se queda corto {med / max(1e-9, esp[v].mean()):.2f}x")
 
