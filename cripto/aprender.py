@@ -107,9 +107,19 @@ class SinLlave(Exception):
     """No hay con que pensar. No es un error: es una configuracion."""
 
 
-async def _con_claude(instruccion: str, cuerpo: str) -> str:
+async def _con_anthropic(instruccion: str, cuerpo: str, llave: str,
+                         modelo: str, base: str = "") -> str:
     """
-    El SDK oficial de Anthropic.
+    El SDK oficial de Anthropic, que tambien habla con DeepSeek.
+
+    DeepSeek expone un endpoint compatible con el formato de Anthropic en
+    `/anthropic`, asi que el mismo cliente sirve para los dos cambiando
+    `base_url`. Es preferible a escribir un segundo camino HTTP: un solo
+    lugar donde equivocarse.
+
+    Lo que NO se comparte son los parametros propios de Anthropic --
+    pensamiento adaptativo y nivel de esfuerzo -- que DeepSeek rechaza.
+    Por eso van solo cuando se habla con Anthropic de verdad.
 
     Se usa streaming porque reescribir varias notas son decenas de miles
     de tokens de salida y una llamada sin stream se come el tiempo de
@@ -117,14 +127,13 @@ async def _con_claude(instruccion: str, cuerpo: str) -> str:
     """
     import anthropic
 
-    cli = anthropic.AsyncAnthropic()
+    cli = anthropic.AsyncAnthropic(api_key=llave,
+                                   **({"base_url": base} if base else {}))
+    extra = {} if base else {"thinking": {"type": "adaptive"},
+                             "output_config": {"effort": "high"}}
     async with cli.messages.stream(
-        model=os.getenv("CRIPTO_MODELO_APRENDER", "claude-opus-5"),
-        max_tokens=64000,
-        thinking={"type": "adaptive"},
-        output_config={"effort": "high"},
-        system=instruccion,
-        messages=[{"role": "user", "content": cuerpo}],
+        model=modelo, max_tokens=32000, system=instruccion,
+        messages=[{"role": "user", "content": cuerpo}], **extra,
     ) as flujo:
         msg = await flujo.get_final_message()
     if msg.stop_reason == "refusal":
@@ -151,16 +160,27 @@ async def _con_gemini(instruccion: str, cuerpo: str) -> str:
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
+DEEPSEEK = "https://api.deepseek.com/anthropic"
+
+
 async def _pensar(instruccion: str, cuerpo: str) -> str:
     """
-    El que este disponible. Anthropic primero porque razona mejor sobre
-    evidencia estadistica, que es todo lo que hace esta tarea.
+    El primero que tenga llave.
+
+    El orden no es por preferencia sino por costo de equivocarse: esta
+    tarea es juicio sobre evidencia estadistica, y ahi un modelo mas
+    capaz se equivoca menos al decidir que regla ya no se sostiene.
+    Cualquiera de los tres sirve; el experimento sigue igual.
     """
-    if os.getenv("ANTHROPIC_API_KEY", "").strip():
-        return await _con_claude(instruccion, cuerpo)
+    m = os.getenv("CRIPTO_MODELO_APRENDER", "").strip()
+    if k := os.getenv("ANTHROPIC_API_KEY", "").strip():
+        return await _con_anthropic(instruccion, cuerpo, k, m or "claude-opus-5")
+    if k := os.getenv("DEEPSEEK_API_KEY", "").strip():
+        return await _con_anthropic(instruccion, cuerpo, k,
+                                    m or "deepseek-v4-pro", DEEPSEEK)
     if os.getenv("GEMINI_API_KEY", "").strip():
         return await _con_gemini(instruccion, cuerpo)
-    raise SinLlave("no hay ANTHROPIC_API_KEY ni GEMINI_API_KEY")
+    raise SinLlave("no hay ANTHROPIC_API_KEY, DEEPSEEK_API_KEY ni GEMINI_API_KEY")
 
 
 def _json(texto: str) -> dict:
