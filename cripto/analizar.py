@@ -39,9 +39,17 @@ async def traer() -> list[dict]:
     dsn = os.environ["DATABASE_URL"].replace("-pooler", "")
     c = await asyncpg.connect(dsn)
     try:
+        # `p_base` aparece recien cuando `correr` aplica la migracion. El
+        # analizador solo lee, asi que se adapta en vez de exigirla: tiene que
+        # poder correr contra una base vieja sin tocarla.
+        hay = await c.fetchval(
+            "SELECT 1 FROM information_schema.columns WHERE table_schema='cripto'"
+            " AND table_name='predicciones' AND column_name='p_base'")
+        col = "p_base" if hay else "NULL::double precision AS p_base"
         filas = await c.fetch(
             "SELECT ts, simbolo, precio_ini, precio_fin, p_agente, p_inercia,"
-            " subio, fundamento, mov_esperado, contexto FROM cripto.predicciones"
+            f" subio, fundamento, mov_esperado, {col}, contexto"
+            " FROM cripto.predicciones"
             " WHERE subio IS NOT NULL AND precio_ini > 0 ORDER BY ts, simbolo")
     finally:
         await c.close()
@@ -344,6 +352,35 @@ def informe(d: list[dict]) -> str:
         t("11. CALIBRACION DEL TAMANO")
         t(f"   dijo {esp[v].mean():.3f}%  |  real mediano {med:.3f}%  "
           f"->  se queda corto {med / max(1e-9, esp[v].mean()):.2f}x")
+
+    pb = np.array([float(x["p_base"]) if x.get("p_base") is not None else np.nan
+                   for x in d])
+    hay = ~np.isnan(pb)
+    if hay.sum() >= 30:
+        t()
+        t("12. ¿EL MODELO DE LENGUAJE APORTA O ESTORBA?")
+        yy, pp, bb = y[hay], p[hay], pb[hay]
+        rr = r[hay]
+        for lab, q in (("regresion sola", bb), ("con el ajuste del LLM", pp)):
+            ac = float(((q > 0.5) == (yy > 0.5)).mean())
+            neto = sum((rr[i] if q[i] > 0.5 else -rr[i]) - COSTO
+                       for i in range(len(q)))
+            t(f"   {lab:24} acierto {100 * ac:5.1f}%  "
+              f"Brier {((q - yy) ** 2).mean():.4f}  neto {neto:+7.2f}%")
+        dif = pp - bb
+        movio = np.abs(dif) > 0.005
+        if movio.sum():
+            gano = sum(1 for i in range(len(dif)) if movio[i]
+                       and ((pp[i] > 0.5) == (yy[i] > 0.5))
+                       and ((bb[i] > 0.5) != (yy[i] > 0.5)))
+            perdio = sum(1 for i in range(len(dif)) if movio[i]
+                         and ((pp[i] > 0.5) != (yy[i] > 0.5))
+                         and ((bb[i] > 0.5) == (yy[i] > 0.5)))
+            t(f"   se aparto en {int(movio.sum())}/{int(hay.sum())} casos "
+              f"(media {np.abs(dif[movio]).mean():.3f})")
+            t(f"   cambio el lado y acerto: {gano} | lo cambio y erro: {perdio}")
+            t("   si 'erro' le gana a 'acerto' de forma sostenida, el ajuste sobra")
+            t("   y conviene bajar MARGEN en predecir.py hacia cero.")
 
     t()
     t("Ninguna cifra de aqui autoriza conviccion por si sola. Mira el intervalo,")

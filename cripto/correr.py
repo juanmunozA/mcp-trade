@@ -32,6 +32,7 @@ import asyncpg
 from dotenv import load_dotenv
 
 from cripto.datos import fotos, precios
+from cripto.modelo import Modelo
 from cripto.predecir import ErrorIA, predecir
 
 load_dotenv()
@@ -94,6 +95,9 @@ ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS pnl_neto DOUBLE PRECISI
 ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS fundamento TEXT;
 ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS dato TEXT;
 ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS mov_esperado DOUBLE PRECISION;
+-- La probabilidad de la regresion, aparte de la del modelo de lenguaje.
+-- Guardar las dos es lo unico que despues contesta si el LLM aporta o estorba.
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS p_base DOUBLE PRECISION;
 CREATE INDEX IF NOT EXISTS idx_cp_pend ON cripto.predicciones (vence)
     WHERE subio IS NULL;
 """
@@ -110,15 +114,20 @@ def inercia(f: dict) -> float:
     return round(p, 4)
 
 
-async def ciclo(pool: asyncpg.Pool) -> int:
+async def ciclo(pool: asyncpg.Pool, modelo: Modelo) -> int:
     fs, ref = await fotos(PARES)
     if not fs:
         log.warning("sin datos de mercado")
         return 0
+    # La regresion primero. El modelo de lenguaje la recibe hecha en vez de
+    # tener que interpolar una tabla de cabeza, que es lo que peor hace.
+    await modelo.aprender(pool)
+    base = modelo.p_base(fs)
     try:
         # Se le pasa su propio resultado: cada llamada arranca sin memoria,
         # asi que si nadie le muestra la cuenta, repite el error toda la noche.
-        preds = await predecir(fs, historial=await tablero(pool), referencia=ref)
+        preds = await predecir(fs, historial=await tablero(pool), referencia=ref,
+                               base=base, nota_base=modelo.resumen())
     except ErrorIA as exc:
         log.warning("el modelo no respondió: %s", exc)
         return 0
@@ -135,16 +144,19 @@ async def ciclo(pool: asyncpg.Pool) -> int:
                       p["confianza"], p["razon"], p["modelo"],
                       __import__("json").dumps(f, ensure_ascii=False),
                       p.get("fundamento", "sin_senal"), p.get("dato", ""),
-                      p.get("mov_esperado", 0.0)))
+                      p.get("mov_esperado", 0.0),
+                      (base or {}).get(p["simbolo"])))
     if filas:
         await pool.executemany(
             "INSERT INTO cripto.predicciones (vence,simbolo,precio_ini,p_agente,"
-            "p_inercia,confianza,razon,modelo,contexto,fundamento,dato,mov_esperado) "
-            "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12)", filas)
+            "p_inercia,confianza,razon,modelo,contexto,fundamento,dato,mov_esperado,"
+            "p_base) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13)", filas)
     media = sum(p["p_sube"] for p in preds) / len(preds)
     con = sum(1 for p in preds if p.get("fundamento", "sin_senal") != "sin_senal")
-    log.info("%d predicciones | media %.3f | %d con fundamento | %s",
-             len(filas), media, con,
+    desvio = (sum(abs(p["p_sube"] - base[p["simbolo"]])
+                  for p in preds if p["simbolo"] in base) / len(preds)) if base else 0.0
+    log.info("%d predicciones | media %.3f | %d con fundamento | se aparto %.3f "
+             "de la regresion | %s", len(filas), media, con, desvio,
              ", ".join(sorted({p.get("fundamento", "?") for p in preds})))
     return len(filas)
 
@@ -273,6 +285,7 @@ async def main() -> None:
         await c.execute(ESQUEMA)
 
     await _servidor(pool)
+    modelo = Modelo()
     fin = datetime.fromisoformat(HASTA) if HASTA else None
     parar = asyncio.Event()
     for s in (signal.SIGINT, signal.SIGTERM):
@@ -291,7 +304,7 @@ async def main() -> None:
             break
         try:
             await resolver(pool)
-            n += await ciclo(pool)
+            n += await ciclo(pool, modelo)
             t = await tablero(pool)
             if t["n"]:
                 log.info("acumulado: %d resueltas | agente %.4f | azar %.4f | "

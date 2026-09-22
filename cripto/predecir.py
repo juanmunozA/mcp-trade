@@ -30,6 +30,31 @@ mercado AHORA y decís la probabilidad de que el precio esté MÁS ALTO dentro d
 DIRECTRIZ: SIEMPRE SE ENTRA. No existe quedarse afuera. Tu número decide de
 qué LADO y con cuánta convicción, nunca si se opera o no. Nunca 0.500 exacto.
 
+════ TU PUNTO DE PARTIDA NO SOS VOS ════
+Recibís `PROBABILIDAD DE LA REGRESION`: una logística ajustada sobre todas
+las operaciones ya resueltas, con rsi_5m, rsi_relativo, cambio_1h,
+flujo_agresor y volumen_vs_medio, penalizada y contraída hacia 0,50 según
+cuántos datos hay.
+
+Esa es tu base. No la ignores, y sobre todo no la recalcules a mano: medido
+sobre las mismas 261 operaciones, la regresión sacó 54,4% de acierto y
++17,02% neto, y vos leyendo estas mismas tablas sacaste 47,1% y −62,15%.
+
+TU TRABAJO ES AJUSTARLA, NO REEMPLAZARLA. Solo podés moverla ±0,06, y el
+recorte se aplica en código aunque mandes otra cosa. Movela cuando veas algo
+que esas cinco variables NO codifican:
+
+  - cascada: RSI>75 con volumen sobre 3x. La regresión lee "RSI alto =
+    reversión" y ahí se equivoca, porque el movimiento continúa.
+  - ruptura de rango con volumen que la regresión no mira
+  - un par que se resiste mientras los otros siete caen
+  - contexto que el número no puede ver
+
+Si no ves nada de eso, repetí la base tal cual. Repetirla no es pereza: es
+la respuesta correcta la mayoría de las veces, y desviarse sin motivo es
+exactamente lo que costó la primera noche. Decí en `razon` por qué te
+apartaste, o que no te apartaste.
+
 ════ LA CUENTA QUE DECIDE TODO ════
     EV = m·(2p − 1) − c          p* = 0,5 + c/(2m)
 m = movimiento esperado en %, c = 0,10% de comisión, p* = acierto que hace falta.
@@ -231,6 +256,22 @@ def _notas() -> str:
         return ""
 
 
+MARGEN = 0.06
+"""
+Cuanto puede apartarse el modelo de lenguaje de la regresion.
+
+No es desconfianza gratuita: medido sobre las mismas 261 operaciones, la
+regresion fuera de muestra saco 54,4% de acierto y +17,02% neto, y el
+modelo leyendo las mismas tablas saco 47,1% y -62,15%. La cuenta la hace
+mejor la cuenta.
+
+Le queda el trabajo donde si puede aportar -- ver algo que las cinco
+variables no codifican -- y 0.06 alcanza para eso sin permitirle deshacer
+lo unico que midio ganancia. Se recorta en codigo: pedirlo en el prompt
+seria confiar en que obedezca.
+"""
+
+
 class ErrorIA(Exception):
     pass
 
@@ -298,7 +339,9 @@ def _boletin(h: dict | None) -> str:
 
 async def predecir(fotos: list[dict], modelo: str = "",
                    historial: dict | None = None,
-                   referencia: dict | None = None) -> list[dict]:
+                   referencia: dict | None = None,
+                   base: dict[str, float] | None = None,
+                   nota_base: str = "") -> list[dict]:
     llave = os.getenv("GEMINI_API_KEY", "").strip()
     if not llave:
         raise ErrorIA("falta GEMINI_API_KEY")
@@ -312,6 +355,9 @@ async def predecir(fotos: list[dict], modelo: str = "",
             *([{"text": "BTC COMO REFERENCIA (no se opera, es para el contagio):"
                 + chr(10) + json.dumps(referencia, ensure_ascii=False)}]
               if referencia else []),
+            *([{"text": "PROBABILIDAD DE LA REGRESION (tu punto de partida):"
+                + chr(10) + json.dumps(base, ensure_ascii=False)
+                + chr(10) + nota_base}] if base else []),
             {"text": "MERCADO AHORA:" + chr(10) + json.dumps(fotos, ensure_ascii=False)},
         ]}],
         "generationConfig": {
@@ -363,6 +409,12 @@ async def predecir(fotos: list[dict], modelo: str = "",
         # creerle: la etiqueta es para medir despues cual sirve de verdad.
         if fund != "sin_senal" and abs(esp) < 0.10:
             fund = "sin_senal"
+        # El margen se recorta aca y no se le pide de favor al prompt. Un
+        # modelo que ignora la instruccion no deberia poder tirar por la
+        # borda la unica parte del sistema que midio ganancia.
+        if base and s in base:
+            b = base[s]
+            p = min(b + MARGEN, max(b - MARGEN, p))
         validas.append({
             "simbolo": s, "p_sube": round(p, 4),
             "razon": str(it.get("razon", ""))[:160],
