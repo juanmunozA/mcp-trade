@@ -59,6 +59,21 @@ cada fila -- asi que en doscientas operaciones la curva lo confirma o
 lo desmiente con datos propios en vez de con un calculo.
 """
 HORIZONTE_MIN = int(os.getenv("CRIPTO_HORIZONTE_MIN", "15"))
+ORIGEN = (os.getenv("CRIPTO_ORIGEN", "").strip()
+          or ("JJ" if os.getenv("RENDER_EXTERNAL_URL") else "JP"))
+"""
+Quien escribio esta fila.
+
+Varias personas corren el experimento a la vez contra la MISMA base, asi
+que sin esto no hay forma de saber si una tanda salio del contenedor o
+del portatil de alguien -- y dos tandas pueden caer en el mismo segundo,
+que ya paso.
+
+Por defecto `JJ` en Render (la variable RENDER_EXTERNAL_URL solo existe
+alla) y `JP` en cualquier otro lado. Con `CRIPTO_ORIGEN` cada uno pone
+la suya, que es lo que hace falta cuando los locales son mas de uno.
+"""
+
 SOLO_REGRESION = os.getenv("CRIPTO_SOLO_REGRESION", "").strip().lower() in ("1", "true", "si")
 """
 Correr sin modelo de lenguaje: la regresion decide sola.
@@ -110,6 +125,8 @@ ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS mov_esperado DOUBLE PRE
 -- La probabilidad de la regresion, aparte de la del modelo de lenguaje.
 -- Guardar las dos es lo unico que despues contesta si el LLM aporta o estorba.
 ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS p_base DOUBLE PRECISION;
+-- De donde salio la fila. Ver el comentario de ORIGEN.
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS origen TEXT;
 CREATE INDEX IF NOT EXISTS idx_cp_pend ON cripto.predicciones (vence)
     WHERE subio IS NULL;
 """
@@ -185,12 +202,13 @@ async def _guardar(pool: asyncpg.Pool, preds: list[dict], fs: list[dict],
                       __import__("json").dumps(f, ensure_ascii=False),
                       p.get("fundamento", "sin_senal"), p.get("dato", ""),
                       p.get("mov_esperado", 0.0),
-                      (base or {}).get(p["simbolo"])))
+                      (base or {}).get(p["simbolo"]), ORIGEN))
     if filas:
         await pool.executemany(
             "INSERT INTO cripto.predicciones (vence,simbolo,precio_ini,p_agente,"
             "p_inercia,confianza,razon,modelo,contexto,fundamento,dato,mov_esperado,"
-            "p_base) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13)", filas)
+            "p_base,origen) "
+            "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,$14)", filas)
     media = sum(p["p_sube"] for p in preds) / len(preds)
     con = sum(1 for p in preds if p.get("fundamento", "sin_senal") != "sin_senal")
     desvio = (sum(abs(p["p_sube"] - base[p["simbolo"]])
@@ -334,8 +352,8 @@ async def main() -> None:
         except NotImplementedError:
             pass  # Windows
 
-    log.info("arranca | %d pares | cada %ds | horizonte %dmin%s",
-             len(PARES), CADA_S, HORIZONTE_MIN,
+    log.info("arranca [%s] | %d pares | cada %ds | horizonte %dmin%s",
+             ORIGEN, len(PARES), CADA_S, HORIZONTE_MIN,
              f" | hasta {fin:%H:%M}" if fin else "")
     n = 0
     while not parar.is_set():

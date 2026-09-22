@@ -88,16 +88,31 @@ async def resumen(pool: asyncpg.Pool) -> dict:
         # Sobre 20 dolares, que es el capital del que hablamos. Un
         # porcentaje suelto no dice nada; los centavos si.
         d["sobre_20"] = round(20 * float(d["pnl_neto"]), 4)
+    # Quien escribio que. Varias personas corren contra la misma base, y
+    # sin esto un promedio global mezcla el contenedor con los portatiles.
+    d["origenes"] = [dict(x) for x in await pool.fetch(
+        "SELECT coalesce(origen, '?') origen, coalesce(modelo, '-') modelo,"
+        " count(*) n,"
+        " count(*) FILTER (WHERE subio IS NULL) en_vuelo,"
+        " round((100.0 * count(*) FILTER (WHERE (p_agente > 0.5) = subio)"
+        "   / nullif(count(*) FILTER (WHERE subio IS NOT NULL), 0))::numeric, 1) acierto_pct,"
+        " round((coalesce(sum(pnl_neto), 0) * 100)::numeric, 3) neto_pct,"
+        " max(ts) ultima"
+        " FROM cripto.predicciones WHERE " + cond +
+        " GROUP BY 1, 2 ORDER BY max(ts) DESC", *args)]
     return d
 
 
-async def predicciones(pool: asyncpg.Pool, n: int = 120,
-                       simbolo: str = "", solo_op: bool = False) -> list[dict]:
+async def predicciones(pool: asyncpg.Pool, n: int = 120, simbolo: str = "",
+                       solo_op: bool = False, origen: str = "") -> list[dict]:
     c0, args = _corte()
     cond = [c0]
     if simbolo:
         args.append(simbolo)
         cond.append(f"simbolo = ${len(args)}")
+    if origen:
+        args.append(origen)
+        cond.append(f"origen = ${len(args)}")
     if solo_op:
         cond.append("opero")
     filas = await pool.fetch(
@@ -173,7 +188,7 @@ async def servir(pool: asyncpg.Pool, puerto: int) -> None:
             elif camino == "/api/predicciones":
                 cuerpo = _json({"items": await predicciones(
                     pool, int(q.get("n", 120)), q.get("simbolo", ""),
-                    q.get("op") == "1")})
+                    q.get("op") == "1", q.get("origen", ""))})
             elif camino == "/api/simbolos":
                 cuerpo = _json({"items": await por_simbolo(pool)})
             elif camino == "/api/serie":
