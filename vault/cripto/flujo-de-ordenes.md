@@ -76,3 +76,12 @@ El pseudo-R² de McFadden de toda la regresión es **0,059**. El modelo entero,
 con las seis variables, explica el 6% de lo que pasa. Un z de +2,96 sobre
 n efectivo de 77 y con doce hipótesis probadas encima no es un
 descubrimiento: es una pista que hay que volver a medir.
+
+**Y se volvió a medir.** Con 24 operaciones más, el mismo coeficiente cayó de
+z = +2,96 a **z = +1,46**: dejó de ser significativo. El del RSI se mantuvo
+en −2,16.
+
+Guardá ese episodio, porque es la lección entera de este proyecto en un solo
+número. Un hallazgo que se evapora al agregar el 10% de datos nunca fue un
+hallazgo. **El flujo agresor sigue sin justificar nada por sí solo; el ajuste
+de ±0,02 se queda porque es inofensivo, no porque esté probado.**
