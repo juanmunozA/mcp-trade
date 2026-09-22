@@ -107,6 +107,34 @@ header{position:sticky;top:0;z-index:40;margin:0 -18px;padding:16px 18px 13px;
 .kpi .s{display:block;font:400 10.5px var(--mono);color:var(--tenue);margin-top:8px}
 .chispa{height:30px;margin-top:9px;opacity:.85}
 
+/* ── caja fuerte: la plata primero ─────────────────────────────────── */
+.caja{margin-top:16px;padding:20px 22px 21px;opacity:0;
+  display:grid;gap:18px;align-items:center;
+  grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) auto}
+@media (max-width:820px){.caja{grid-template-columns:1fr;gap:15px}}
+.caja .et{display:flex;align-items:center;gap:7px;font:500 9.5px var(--mono);
+  letter-spacing:.19em;text-transform:uppercase;color:var(--tenue);margin-bottom:9px}
+.plata{display:block;font:600 46px/1 var(--mono);letter-spacing:-.05em}
+@media (max-width:520px){.plata{font-size:36px}}
+.plata.up{text-shadow:0 0 34px rgba(63,224,160,.42)}
+.plata.down{text-shadow:0 0 34px rgba(255,92,114,.40)}
+.sub-plata{display:block;font:400 11.5px var(--mono);color:var(--suave);margin-top:9px}
+.balance{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.bal{background:rgba(255,255,255,.035);border:1px solid var(--line);
+  border-radius:11px;padding:11px 13px}
+.bal span{display:block;font:500 8.5px var(--mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--tenue);margin-bottom:4px}
+.bal b{font:500 17px var(--mono);letter-spacing:-.03em}
+.montos{display:flex;flex-direction:column;gap:6px}
+.montos .et{margin-bottom:2px}
+.mrow{display:flex;gap:6px}
+.mbtn{font:500 12px var(--mono);color:var(--suave);cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid var(--line2);
+  border-radius:9px;padding:7px 12px;transition:.18s;min-width:52px}
+.mbtn:hover{border-color:var(--cian);color:var(--cian)}
+.mbtn[aria-pressed=true]{background:linear-gradient(140deg,var(--violeta),var(--cian));
+  color:#07070C;border-color:transparent;font-weight:600}
+
 /* ── paneles ───────────────────────────────────────────────────────── */
 .rejilla{display:grid;gap:14px;margin-top:14px;
   grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
@@ -334,30 +362,32 @@ function paleta(){return{
   violeta:cv("--violeta","#8b6cf6"), verde:cv("--verde","#3fe0a0"),
   rojo:cv("--rojo","#ff5c72"), mono:"JetBrains Mono, monospace"};}
 
-function opCurva(s){
+function opCurva(s, cap){
   var c=paleta();
+  var d$ = function(v){ return v/100*cap; };
   return {animation:false, grid:{left:52,right:16,top:22,bottom:28},
     tooltip:{trigger:"axis",backgroundColor:"rgba(16,16,25,.95)",borderColor:c.linea,
       textStyle:{color:c.tinta,fontFamily:c.mono,fontSize:11},
+      valueFormatter:function(v){return (v>=0?"+$":"-$")+Math.abs(v).toFixed(4)},
       axisPointer:{type:"cross",label:{backgroundColor:c.violeta}}},
     legend:{data:["neto","bruto"],top:0,right:0,itemWidth:14,itemHeight:2,
       textStyle:{color:c.tenue,fontSize:10,fontFamily:c.mono}},
     xAxis:{type:"time",axisLine:{lineStyle:{color:c.linea}},splitLine:{show:false},
       axisLabel:{color:c.tenue,fontFamily:c.mono,fontSize:10}},
     yAxis:{type:"value",axisLabel:{color:c.tenue,fontFamily:c.mono,fontSize:10,
-        formatter:function(v){return v.toFixed(2)+"%"}},
+        formatter:function(v){return (v>=0?"$":"-$")+Math.abs(v).toFixed(2)}},
       splitLine:{lineStyle:{color:c.linea}}},
     series:[
       {name:"bruto",type:"line",showSymbol:false,
        lineStyle:{color:c.suave,width:1.1,type:"dashed",opacity:.8},
-       data:s.map(function(x){return [x.t,x.bruto]})},
+       data:s.map(function(x){return [x.t,d$(x.bruto)]})},
       {name:"neto",type:"line",showSymbol:false,smooth:.12,
        lineStyle:{color:c.cian,width:2.4,shadowColor:c.cian,shadowBlur:14},
        areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[
          {offset:0,color:"rgba(76,224,224,.26)"},{offset:1,color:"rgba(76,224,224,0)"}])},
        markLine:{silent:true,symbol:"none",label:{show:false},
          lineStyle:{color:c.tenue,type:"dotted",width:1},data:[{yAxis:0}]},
-       data:s.map(function(x){return [x.t,x.neto]})}]};
+       data:s.map(function(x){return [x.t,d$(x.neto)]})}]};
 }
 function opBrier(r){
   var c=paleta();
@@ -443,6 +473,10 @@ function App(){
   var f=useState(""), filtro=f[0], setFiltro=f[1];
   var g=useState(15), cta=g[0], setCta=g[1];
   var i=useState(false), listo=i[0], setListo=i[1];
+  var k=useState((function(){
+    try{return Number(localStorage.getItem("bp_monto"))||3}catch(e){return 3}
+  })()), monto=k[0], setMonto=k[1];
+  useEffect(function(){try{localStorage.setItem("bp_monto",monto)}catch(e){}},[monto]);
 
   var cargar=useCallback(function(){
     api("/resumen").then(function(j){ setRes(j); Cielo.señal(j&&j.pnl_neto_pct); })
@@ -465,11 +499,12 @@ function App(){
     if(listo||!res)return;
     setListo(true);
     if(!window.gsap||lento){
-      document.querySelectorAll(".kpi,.panel").forEach(function(n){n.style.opacity=1});
+      document.querySelectorAll(".caja,.kpi,.panel").forEach(function(n){n.style.opacity=1});
       return;
     }
-    gsap.to(".kpi",{opacity:1,y:0,duration:.6,stagger:.055,ease:"power3.out",
-      startAt:{y:16}});
+    gsap.to(".caja",{opacity:1,y:0,duration:.7,ease:"power3.out",startAt:{y:18}});
+    gsap.to(".kpi",{opacity:1,y:0,duration:.6,stagger:.055,delay:.12,
+      ease:"power3.out",startAt:{y:16}});
     gsap.to(".panel",{opacity:1,y:0,duration:.7,stagger:.09,delay:.2,
       ease:"power3.out",startAt:{y:22}});
   },[res]);
@@ -492,8 +527,49 @@ function App(){
       </div>
     </div></header>
 
+    <section class="caja glass beam" style=${"--haz:"+((r.pnl_neto_pct||0)>=0?"var(--verde)":"var(--rojo)")}>
+      <div>
+        <div class="et"><i style="width:4px;height:4px;border-radius:50%;
+          background:var(--cian);box-shadow:0 0 8px var(--cian)"></i>
+          ganancia · ${r.operadas||0} operaciones de $${monto}</div>
+        <${Cifra} clase=${"plata "+sig(r.pnl_neto_pct)}
+          v=${r.pnl_neto_pct==null?null:r.pnl_neto_pct/100*monto*(r.operadas||0)}
+          fmt=${function(x){return (x>=0?"+$":"−$")+Math.abs(x).toFixed(4)}} />
+        <span class="sub-plata">
+          ${r.pnl_neto_pct==null?"esperando resultados"
+            :((r.pnl_bruto_pct>=0?"ganó ":"perdió ")
+              + "$" + Math.abs(r.pnl_bruto_pct/100*monto*(r.operadas||0)).toFixed(4)
+              + " y pagó $" + Math.abs((r.pnl_bruto_pct-r.pnl_neto_pct)/100*monto*(r.operadas||0)).toFixed(4)
+              + " de comisión")}</span>
+      </div>
+      <div class="balance">
+        <div class="bal"><span>puso en juego</span>
+          <b>$${((r.operadas||0)*monto).toFixed(2)}</b></div>
+        <div class="bal"><span>le quedan</span>
+          <b class=${sig(r.pnl_neto_pct)}>$${((r.operadas||0)*monto +
+            (r.pnl_neto_pct||0)/100*monto*(r.operadas||0)).toFixed(4)}</b></div>
+        <div class="bal"><span>por operación</span>
+          <b class=${sig(r.pnl_neto_pct)}>${r.operadas
+            ? ((r.pnl_neto_pct/100*monto>=0?"+$":"−$") +
+               Math.abs(r.pnl_neto_pct/100*monto).toFixed(4)) : "—"}</b></div>
+        <div class="bal"><span>rinde</span>
+          <b class=${sig(r.pnl_neto_pct)}>${pct(r.pnl_neto_pct,3)}</b></div>
+      </div>
+      <div class="montos">
+        <div class="et">apuesta por operación</div>
+        <div class="mrow">
+          ${[1,3,10].map(function(m){return html`<button class="mbtn" key=${m}
+            aria-pressed=${monto===m} onClick=${function(){setMonto(m)}}>$${m}</button>`})}
+        </div>
+        <div class="mrow">
+          ${[50,100,500].map(function(m){return html`<button class="mbtn" key=${m}
+            aria-pressed=${monto===m} onClick=${function(){setMonto(m)}}>$${m}</button>`})}
+        </div>
+      </div>
+    </section>
+
     <div class="kpis">
-      <div class="kpi glass beam" style="--haz:var(--cian)">
+      <div class="kpi glass">
         <span class="l"><i></i>pnl neto</span>
         <${Cifra} clase=${"v "+sig(r.pnl_neto_pct)} v=${r.pnl_neto_pct}
           fmt=${function(x){return (x>=0?"+":"")+x.toFixed(3)+"%"}} />
@@ -522,9 +598,9 @@ function App(){
     <div class="rejilla">
       <section class="panel glass">
         <div class="panel-h"><h2>Plata acumulada</h2>
-          <span class="sub">la distancia entre las líneas es la comisión</span></div>
-        ${ser.length>1?html`<${Grafico} dep=${ser.length}
-          opcion=${function(){return opCurva(ser)}} />`
+          <span class="sub">en dólares · la distancia entre las líneas es la comisión</span></div>
+        ${ser.length>1?html`<${Grafico} dep=${ser.length+":"+monto}
+          opcion=${function(){return opCurva(ser, monto*(r.operadas||1))}} />`
           :html`<div class="nada">Esperando las primeras resoluciones.</div>`}
       </section>
       <section class="panel glass">
