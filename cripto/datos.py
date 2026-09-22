@@ -99,15 +99,56 @@ async def _velas(cli: httpx.AsyncClient, simbolo: str, intervalo: str,
     return r.json() if r.status_code == 200 else []
 
 
+async def _flujo(cli: httpx.AsyncClient, simbolo: str) -> dict:
+    """
+    Quien EJECUTO, no quien esta esperando.
+
+    Es la distincion que decide: una orden limite en el libro no cuesta
+    nada de poner y se cancela sola, pero una operacion agredida es
+    dinero que ya se movio. Por eso el flujo agresor es el predictor mas
+    solido a horizonte corto y la profundidad del libro es su version
+    debil.
+
+    `m` marca si el comprador era el pasivo: True significa que agredio
+    un vendedor.
+    """
+    try:
+        r = await cli.get(f"{SPOT}/aggTrades",
+                          params={"symbol": simbolo, "limit": 1000})
+        if r.status_code != 200:
+            return {}
+        ops = r.json()
+    except Exception:  # noqa: BLE001
+        return {}
+    if not ops:
+        return {}
+
+    compra = sum(float(t["p"]) * float(t["q"]) for t in ops if not t["m"])
+    venta = sum(float(t["p"]) * float(t["q"]) for t in ops if t["m"])
+    total = compra + venta
+    mitad = len(ops) // 2
+    def _dsq(sub):
+        c = sum(float(t["p"]) * float(t["q"]) for t in sub if not t["m"])
+        v = sum(float(t["p"]) * float(t["q"]) for t in sub if t["m"])
+        return round((c - v) / (c + v), 3) if c + v else 0.0
+    return {
+        "flujo_agresor": round((compra - venta) / total, 3) if total else 0.0,
+        "flujo_reciente": _dsq(ops[mitad:]),
+        "flujo_previo": _dsq(ops[:mitad]),
+        "operaciones": len(ops),
+    }
+
+
 async def foto(cli: httpx.AsyncClient, simbolo: str) -> dict | None:
     """Todo lo que se sabe de un par en este instante."""
     try:
-        v5, v15, v1h, libro, t24 = await asyncio.gather(
+        v5, v15, v1h, libro, t24, flujo = await asyncio.gather(
             _velas(cli, simbolo, "5m", 60),
             _velas(cli, simbolo, "15m", 32),
             _velas(cli, simbolo, "1h", 24),
             cli.get(f"{SPOT}/depth", params={"symbol": simbolo, "limit": 50}),
             cli.get(f"{SPOT}/ticker/24hr", params={"symbol": simbolo}),
+            _flujo(cli, simbolo),
         )
     except Exception:  # noqa: BLE001
         return None
@@ -157,14 +198,28 @@ async def foto(cli: httpx.AsyncClient, simbolo: str) -> dict | None:
         "pos_en_rango_24h": round(
             (precio - float(t["lowPrice"])) /
             max(1e-9, float(t["highPrice"]) - float(t["lowPrice"])), 3),
+        **flujo,
     }
 
 
-async def fotos(simbolos: list[str]) -> list[dict]:
-    async with httpx.AsyncClient(timeout=25) as cli:
+REFERENCIA = "BTCUSDT"
+
+
+async def fotos(simbolos: list[str]) -> tuple[list[dict], dict]:
+    """
+    Las fotos de los pares, mas la de BTC como referencia.
+
+    BTC va aunque no se opere: la regla de contagio -- si el grande se
+    movio y el chico todavia no, el chico sigue -- no se puede aplicar
+    sin saber que hizo el grande.
+    """
+    pedir = list(dict.fromkeys([*simbolos, REFERENCIA]))
+    async with httpx.AsyncClient(timeout=30) as cli:
         await elegir_espejo(cli)
-        res = await asyncio.gather(*[foto(cli, s) for s in simbolos])
-    return [r for r in res if r]
+        res = await asyncio.gather(*[foto(cli, s) for s in pedir])
+    porf = {r["simbolo"]: r for r in res if r}
+    ref = porf.get(REFERENCIA, {})
+    return [porf[s] for s in simbolos if s in porf], ref
 
 
 async def precios(simbolos: list[str]) -> dict[str, float]:

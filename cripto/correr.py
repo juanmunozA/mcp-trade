@@ -81,11 +81,19 @@ CREATE TABLE IF NOT EXISTS cripto.predicciones (
     -- y de hecho es lo normal: el peaje se cobra igual.
     opero       BOOLEAN,
     pnl_bruto   DOUBLE PRECISION,
-    pnl_neto    DOUBLE PRECISION
+    pnl_neto    DOUBLE PRECISION,
+    -- Con que justifico el lado. Guardarlo por separado permite medir
+    -- DESPUES cual fundamento acierta y cual es cuento.
+    fundamento  TEXT,
+    dato        TEXT,
+    mov_esperado DOUBLE PRECISION
 );
 ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS opero BOOLEAN;
 ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS pnl_bruto DOUBLE PRECISION;
 ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS pnl_neto DOUBLE PRECISION;
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS fundamento TEXT;
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS dato TEXT;
+ALTER TABLE cripto.predicciones ADD COLUMN IF NOT EXISTS mov_esperado DOUBLE PRECISION;
 CREATE INDEX IF NOT EXISTS idx_cp_pend ON cripto.predicciones (vence)
     WHERE subio IS NULL;
 """
@@ -103,14 +111,14 @@ def inercia(f: dict) -> float:
 
 
 async def ciclo(pool: asyncpg.Pool) -> int:
-    fs = await fotos(PARES)
+    fs, ref = await fotos(PARES)
     if not fs:
         log.warning("sin datos de mercado")
         return 0
     try:
         # Se le pasa su propio resultado: cada llamada arranca sin memoria,
         # asi que si nadie le muestra la cuenta, repite el error toda la noche.
-        preds = await predecir(fs, historial=await tablero(pool))
+        preds = await predecir(fs, historial=await tablero(pool), referencia=ref)
     except ErrorIA as exc:
         log.warning("el modelo no respondió: %s", exc)
         return 0
@@ -125,16 +133,19 @@ async def ciclo(pool: asyncpg.Pool) -> int:
             continue
         filas.append((vence, p["simbolo"], f["precio"], p["p_sube"], inercia(f),
                       p["confianza"], p["razon"], p["modelo"],
-                      __import__("json").dumps(f, ensure_ascii=False)))
+                      __import__("json").dumps(f, ensure_ascii=False),
+                      p.get("fundamento", "sin_senal"), p.get("dato", ""),
+                      p.get("mov_esperado", 0.0)))
     if filas:
         await pool.executemany(
             "INSERT INTO cripto.predicciones (vence,simbolo,precio_ini,p_agente,"
-            "p_inercia,confianza,razon,modelo,contexto) "
-            "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)", filas)
+            "p_inercia,confianza,razon,modelo,contexto,fundamento,dato,mov_esperado) "
+            "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12)", filas)
     media = sum(p["p_sube"] for p in preds) / len(preds)
-    fuera = sum(1 for p in preds if abs(p["p_sube"] - 0.5) > 0.1)
-    log.info("%d predicciones | media %.3f | %d se alejan de 0.50",
-             len(filas), media, fuera)
+    con = sum(1 for p in preds if p.get("fundamento", "sin_senal") != "sin_senal")
+    log.info("%d predicciones | media %.3f | %d con fundamento | %s",
+             len(filas), media, con,
+             ", ".join(sorted({p.get("fundamento", "?") for p in preds})))
     return len(filas)
 
 

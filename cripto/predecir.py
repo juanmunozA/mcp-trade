@@ -42,14 +42,31 @@ trabajo es doble: elegir el lado menos malo cuando no hay nada, y reconocer
 los pocos momentos donde el movimiento sí supera el peaje.
 
 CÓMO ELEGIR (del más fuerte al más débil)
-1. Contagio: si BTC se movió fuerte y una moneda chica no reaccionó todavía,
-   seguí a BTC. Es lo más confiable a este horizonte.
-2. Libro CON volumen: un desequilibrio grande respaldado por volumen alto es
-   dinero real. Sin volumen es una pared que se cancela sola.
-3. Extremos con volumen: RSI 5m bajo 25 o sobre 75 más volumen alto suele
-   revertir. Sin volumen, no.
-4. Si no ves nada: seguí el movimiento de las últimas dos velas de 5m. Es
-   apenas mejor que una moneda, y mejor que inventar una razón.
+
+1. FLUJO AGRESOR — el más sólido que tenés
+   `flujo_agresor` va de -1 a 1 y mide quién EJECUTÓ en las últimas ~1000
+   operaciones: positivo = compradores agrediendo el libro. Es dinero que ya
+   se movió, no promesas.
+   `flujo_reciente` contra `flujo_previo` te dice si está acelerando: si
+   reciente es mucho mayor que previo, la presión está creciendo AHORA.
+   Señal fuerte: |flujo_reciente| sobre 0,25 y creciendo contra el previo.
+
+2. CONTAGIO CON BTC
+   Te doy la foto de BTC aparte, como referencia. Si BTC se movió más de
+   0,3% en 5-15 min y la moneda chica no reaccionó todavía, la chica lo
+   sigue. El precio se descubre donde hay liquidez y tarda en propagarse.
+
+3. LIBRO CON VOLUMEN
+   `libro_desequilibrio` solo vale si `volumen_vs_medio` lo respalda. Sin
+   volumen es una pared que se cancela sola — es la versión débil del punto 1.
+
+4. EXTREMO CON VOLUMEN
+   RSI 5m bajo 25 o sobre 75 MÁS volumen alto suele revertir. Sin volumen, no.
+
+5. SIN SEÑAL
+   Si ninguno de los anteriores aplica, seguí las últimas dos velas de 5m y
+   marcá `fundamento: "sin_senal"`. Decir la verdad vale más que inventar:
+   inventar te vuelve sobreconfiado y agranda la apuesta.
 
 CUÁNDO SÍ HAY ALGO GRANDE (ahí vale 0.65 o 0.35)
 - volumen sobre 3x el promedio con movimiento de 5m mayor a 0,3% (cascada)
@@ -80,10 +97,22 @@ ESQUEMA = {
                     "simbolo": {"type": "string"},
                     "p_sube": {"type": "number",
                                "description": "Probabilidad de estar más alto en 15 min, 0 a 1"},
+                    "fundamento": {
+                        "type": "string",
+                        "enum": ["flujo_agresor", "contagio_btc", "libro_con_volumen",
+                                 "extremo_con_volumen", "cascada", "ruptura_rango",
+                                 "inercia_corto", "sin_senal"],
+                        "description": "Qué variable concreta justifica el lado elegido"},
+                    "dato": {"type": "string",
+                             "description": "El número que lo respalda, ej: flujo_reciente=0.42"},
+                    "movimiento_esperado_pct": {
+                        "type": "number",
+                        "description": "Cuánto esperás que se mueva en 15 min, en %"},
                     "razon": {"type": "string", "description": "Máximo 90 caracteres"},
                     "confianza": {"type": "string", "enum": ["alta", "media", "baja"]},
                 },
-                "required": ["simbolo", "p_sube", "razon", "confianza"],
+                "required": ["simbolo", "p_sube", "fundamento", "dato",
+                             "movimiento_esperado_pct", "razon", "confianza"],
             },
         }
     },
@@ -148,7 +177,8 @@ def _boletin(h: dict | None) -> str:
 
 
 async def predecir(fotos: list[dict], modelo: str = "",
-                   historial: dict | None = None) -> list[dict]:
+                   historial: dict | None = None,
+                   referencia: dict | None = None) -> list[dict]:
     llave = os.getenv("GEMINI_API_KEY", "").strip()
     if not llave:
         raise ErrorIA("falta GEMINI_API_KEY")
@@ -159,6 +189,9 @@ async def predecir(fotos: list[dict], modelo: str = "",
             {"text": PROMPT},
             *([{"text": notas}] if (notas := _notas()) else []),
             *([{"text": boletin}] if (boletin := _boletin(historial)) else []),
+            *([{"text": "BTC COMO REFERENCIA (no se opera, es para el contagio):"
+                + chr(10) + json.dumps(referencia, ensure_ascii=False)}]
+              if referencia else []),
             {"text": "MERCADO AHORA:" + chr(10) + json.dumps(fotos, ensure_ascii=False)},
         ]}],
         "generationConfig": {
@@ -200,10 +233,23 @@ async def predecir(fotos: list[dict], modelo: str = "",
         if abs(p - 0.5) < 1e-9:
             f = next((x for x in fotos if x["simbolo"] == s), None)
             p = 0.52 if (f or {}).get("cambio_5m", 0) >= 0 else 0.48
+        try:
+            esp = float(it.get("movimiento_esperado_pct") or 0)
+        except (TypeError, ValueError):
+            esp = 0.0
+        fund = it.get("fundamento") or "sin_senal"
+        # Si dice tener fundamento pero espera un movimiento que no paga la
+        # comision, el fundamento no existe. Se marca como tal en vez de
+        # creerle: la etiqueta es para medir despues cual sirve de verdad.
+        if fund != "sin_senal" and abs(esp) < 0.10:
+            fund = "sin_senal"
         validas.append({
             "simbolo": s, "p_sube": round(p, 4),
             "razon": str(it.get("razon", ""))[:160],
             "confianza": it.get("confianza", "media"),
+            "fundamento": fund,
+            "dato": str(it.get("dato", ""))[:120],
+            "mov_esperado": round(esp, 3),
             "modelo": modelo,
         })
     if not validas:
