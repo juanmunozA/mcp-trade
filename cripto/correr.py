@@ -370,6 +370,22 @@ async def main() -> None:
         except NotImplementedError:
             pass  # Windows
 
+    # Que proveedor va a usar y por que, dicho una sola vez al arrancar.
+    # Un cambio de variable de entorno en Render actualiza la configuracion
+    # guardada pero NO mata el proceso corriendo -- eso paso de verdad, un
+    # `restart` respondio sano en 12 segundos, demasiado rapido para haber
+    # reconstruido nada, y el proceso viejo siguio leyendo su copia vieja
+    # de SOLO_REGRESION media hora despues de haberla borrado. Sin esta
+    # linea, esa clase de desfasaje solo se ve mirando el comportamiento,
+    # nunca los logs.
+    _prov = ("config: solo regresion" if SOLO_REGRESION else
+             "ANTHROPIC" if os.getenv("ANTHROPIC_API_KEY", "").strip() else
+             "DEEPSEEK" if os.getenv("DEEPSEEK_API_KEY", "").strip() else
+             "GROQ" if os.getenv("GROQ_API_KEY", "").strip() else
+             "MISTRAL" if os.getenv("MISTRAL_API_KEY", "").strip() else
+             "GEMINI" if os.getenv("GEMINI_API_KEY", "").strip() else
+             "ninguno -- solo regresion por falta de llave")
+    log.info("proveedor de este arranque: %s", _prov)
     log.info("arranca [%s] | %d pares | cada %ds | horizonte %dmin%s",
              ORIGEN, len(PARES), CADA_S, HORIZONTE_MIN,
              f" | hasta {fin:%H:%M}" if fin else "")
