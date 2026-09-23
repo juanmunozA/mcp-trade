@@ -34,6 +34,7 @@ from dotenv import load_dotenv
 from cripto.datos import fotos, precios
 from cripto.modelo import Modelo
 from cripto import aprender as ap
+from cripto import experiencia as exp
 from cripto import saber
 from cripto.predecir import ErrorIA, predecir
 
@@ -194,7 +195,8 @@ async def ciclo(pool: asyncpg.Pool, modelo: Modelo) -> int:
         # asi que si nadie le muestra la cuenta, repite el error toda la noche.
         preds = await predecir(fs, historial=await tablero(pool), referencia=ref,
                                base=base, nota_base=modelo.resumen(),
-                               saber_texto=await saber.texto(pool, SABER_TOPE))
+                               saber_texto=await saber.texto(pool, SABER_TOPE),
+                               experiencia=await exp.resumen(pool, COSTO * 100))
     except ErrorIA as exc:
         log.warning("el modelo no respondió: %s", exc)
         return 0

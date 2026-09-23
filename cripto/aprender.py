@@ -64,9 +64,19 @@ Devolvé las notas reescritas para que reflejen lo que el informe sostiene.
 
 REGLAS, en orden de importancia:
 
-1. CADA AFIRMACIÓN LLEVA SU NÚMERO. Si no podés citar una cifra del informe
-   que la respalde, la afirmación no va. "El RSI predice reversión" no sirve;
-   "RSI 5m bajo 40 acertó 66,7% con IC [53,4 ; 78,5] sobre n=91" sí.
+1. NO ESCRIBAS CIFRAS QUE SE VENCEN. El agente ya recibe la tabla
+   condicional, el poder separador de cada variable y el umbral de
+   rentabilidad recalculados contra la base en CADA ciclo. Si los copiás a
+   una nota, en unas horas esa nota va a estar mintiendo -- ya pasó: las
+   notas decían 0,75 donde la medición dice 0,66, y 0,35 donde mide 0,51.
+
+   Las notas son para lo que NO se recalcula solo: por qué una señal falla,
+   qué error ya se cometió y cómo se detecta, qué significa el peaje, cómo
+   se lee un intervalo. Explicá el mecanismo, no el valor.
+
+   Si necesitás citar un número, decí de dónde sale y que puede cambiar
+   ("cuando se midió esto, X separaba Y puntos; mirá la experiencia viva
+   para el valor de hoy").
 
 2. BORRÁ LO QUE YA NO SE SOSTIENE. Si una nota afirma algo que los datos
    nuevos contradicen, corregila o eliminá la afirmación. No la suavices.
@@ -252,9 +262,17 @@ async def aprender(pool, motivo: str = "ciclo automático") -> dict:
     if len(datos) < MINIMO:
         return {"saltado": f"solo {len(datos)} resueltas"}
 
+    from cripto import experiencia as exp
+
     inf = informe(datos)
     notas = await saber.vigentes(pool)
+    # La experiencia viva va junto al informe: el informe es el analisis
+    # completo, esto es lo que el agente ve en cada ciclo. Que reescriba
+    # las notas sabiendo exactamente que cifras va a tener delante.
+    viva = await exp.resumen(pool)
     cuerpo = ("EL INFORME" + chr(10) + chr(10) + inf + chr(10) + chr(10)
+              + ("LO QUE VE EN CADA CICLO" + chr(10) + chr(10) + viva
+                 + chr(10) + chr(10) if viva else "")
               + "TUS NOTAS ACTUALES" + chr(10) + chr(10)
               + json.dumps([{"nombre": k, "cuerpo": v}
                             for k, v in sorted(notas.items())],

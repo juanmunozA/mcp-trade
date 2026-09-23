@@ -34,41 +34,63 @@ mercado AHORA y decís la probabilidad de que el precio esté MÁS ALTO dentro d
 DIRECTRIZ: SIEMPRE SE ENTRA. No existe quedarse afuera. Tu número decide de
 qué LADO y con cuánta convicción, nunca si se opera o no. Nunca 0.500 exacto.
 
-TU PUNTO DE PARTIDA NO SOS VOS
+════ DE DÓNDE SACÁS LAS REGLAS ════
+Recibís TU EXPERIENCIA MEDIDA: la tabla condicional, qué variables separan y
+cuánto, el régimen reciente contra el histórico, y el desempeño por par. Todo
+eso se recalcula contra la base en CADA ciclo, con intervalos de confianza.
+
+Esa es tu única fuente de números. Las notas explican por qué pasan las cosas
+y qué errores ya cometiste; los números vienen de la experiencia. Si una nota
+dice 0,75 y la experiencia mide 0,66, **la nota está vencida y gana la
+experiencia**. No memorices cifras: leelas cada vez.
+
+════ CÓMO SE LEE UN INTERVALO ════
+Una celda que dice 0,46 con IC [0,32 ; 0,60] NO distingue nada: el intervalo
+cruza 0,50, así que el verdadero valor podría estar de cualquier lado. Tratala
+como 0,50 aunque el punto central diga otra cosa.
+
+Solo las celdas cuyo intervalo queda ENTERO de un lado de 0,50 te autorizan a
+alejarte. Si la experiencia te dice cuántas celdas separan de verdad y son
+pocas, esa es la respuesta honesta: la mayoría de los momentos no tienen señal.
+
+════ TU PUNTO DE PARTIDA NO SOS VOS ════
 Recibís `PROBABILIDAD DE LA REGRESION`: una logística ajustada sobre todas las
-operaciones ya resueltas. Medido sobre las mismas 261 operaciones, la
-regresión sacó 54,4% de acierto y +17,02% neto; un modelo de lenguaje leyendo
-las mismas tablas sacó 47,1% y −62,15%. La cuenta la hace mejor la cuenta.
+operaciones resueltas, que se reentrena sola. Tu trabajo es AJUSTARLA, no
+reemplazarla. Solo podés moverla ±0,06, y el recorte se aplica en código
+aunque mandes otra cosa.
 
-TU TRABAJO ES AJUSTARLA, NO REEMPLAZARLA. Solo podés moverla ±0,06, y el
-recorte se aplica en código aunque mandes otra cosa. Movela cuando veas algo
-que sus cinco variables NO codifican:
-  - cascada: RSI>75 con volumen sobre 3x. La regresión lee "RSI alto =
-    reversión" y ahí se equivoca, porque el movimiento continúa.
-  - ruptura de rango con volumen, que no está entre sus variables
-  - un par que se resiste mientras los otros siete caen
-Si no ves nada de eso, repetí la base tal cual. Repetirla es la respuesta
-correcta la mayoría de las veces; desviarse sin motivo es lo que costó la
-primera noche.
+Movela cuando veas algo que sus variables no codifican: una cascada, una
+ruptura de rango, un par que se resiste mientras los otros caen, o una
+contradicción entre lo que dice el régimen reciente y lo que dice el
+histórico. Si no ves nada de eso, repetí la base. Repetirla es la respuesta
+correcta la mayoría de las veces.
 
-DE DÓNDE SALEN LAS REGLAS
-Todo lo medido está en LO QUE SE SABE DE ESTE MERCADO, arriba: la tabla de
-probabilidad condicional, el umbral de rentabilidad, cómo estimar el tamaño
-del movimiento, qué señales midieron cero. Esas notas las mantiene el propio
-sistema con sus datos y se reescriben cuando la evidencia cambia — son la
-fuente, no este texto. Si una nota contradice algo que creías, gana la nota.
+════ EL RÉGIMEN CAMBIA, Y ESO ES INFORMACIÓN ════
+La experiencia te muestra lo reciente al lado del histórico. Cuando difieren,
+el mercado cambió de comportamiento: lo que funcionaba dejó de funcionar. Eso
+ya pasó acá — una variable que separaba con fuerza quedó en nada unas horas
+después. Cuando veas esa divergencia, bajá la convicción en vez de insistir.
 
-Si el bloque dice que algunas notas no entraron por espacio, tenelas por
-existentes y medidas: no afirmes que algo "no está medido" porque no lo viste.
+════ EL LISTÓN ════
+La experiencia te dice qué acierto hace falta para no perder, calculado con el
+movimiento de HOY. Es bastante más que 50%. Si tu señal no te acerca a ese
+número, no estás ante una oportunidad: estás ante un momento sin señal, y el
+número honesto es cerca de 0,50.
 
-CÓMO RESPONDER
-Elegí el lado y contraé la convicción hacia 0,50 según lo que diga la tabla.
-Nunca más allá de 0,30-0,70. Etiquetá el fundamento por lo que de verdad
-usaste, y en `dato` poné el número concreto que lo respalda.
+════ MIRÁ LOS OCHO JUNTOS ════
+Se mueven en bloque más de lo que parece. Si vas a decir lo mismo en siete de
+ocho, eso no es diversificar: es una sola apuesta grande a la dirección del
+mercado. Sin lectura clara del conjunto, repartí.
 
-La razón dice QUÉ esperás y de qué tamaño, no qué indicador miraste. "EMA9
-sobre EMA21" no es una razón; "RSI 5m en 71 con 1h subiendo, celda 0,35,
-m=0,6%, voy 0,44" sí."""
+════ CÓMO RESPONDER ════
+`fundamento` va con UNA etiqueta del enum, nada más. El razonamiento completo
+va en `razon`, que para eso está — si escribís el análisis dentro de
+`fundamento` se vuelve imposible medir después qué tipo de razonamiento
+funciona, y esa medición es la que te deja mejorar.
+
+En `dato` poné el número concreto que sostiene tu lado, con su n si viene de
+la experiencia. La razón dice QUÉ esperás y de qué tamaño, no qué indicador
+miraste."""
 
 ESQUEMA = {
     "type": "object",
@@ -105,6 +127,12 @@ ESQUEMA = {
     },
     "required": ["predicciones"],
 }
+
+
+FUNDAMENTOS = frozenset(
+    ESQUEMA["properties"]["predicciones"]["items"]["properties"]
+    ["fundamento"]["enum"])
+"""Los unicos valores aceptados. Sale del esquema para no tener dos listas."""
 
 
 _AQUI = pathlib.Path(__file__).parent
@@ -261,7 +289,11 @@ async def _gemini(cuerpo: dict, llave: str, modelo: str):
             if r.status_code == 200:
                 if modelo_actual != modelo:
                     log.warning("%s saturado, respondio %s", modelo, modelo_actual)
-                return r
+                # Se devuelve cual contesto, no cual se pidio: si se guarda
+                # el pedido, una fila respondida por el respaldo queda
+                # atribuida al modelo principal y la comparacion entre
+                # modelos mide cualquier cosa.
+                return r, modelo_actual
             if r.status_code not in (429, 503):
                 raise ErrorIA(f"HTTP {r.status_code}: {r.text[:400]}")
             if intento < 2:
@@ -275,12 +307,14 @@ async def predecir(fotos: list[dict], modelo: str = "",
                    referencia: dict | None = None,
                    base: dict[str, float] | None = None,
                    nota_base: str = "",
-                   saber_texto: str = "") -> list[dict]:
+                   saber_texto: str = "",
+                   experiencia: str = "") -> list[dict]:
     # Quien razona este ciclo. El primero que tenga llave; el experimento
     # mide igual con cualquiera, y `modelo` queda grabado en cada fila para
     # poder comparar despues proveedor contra proveedor.
     pedido = modelo or os.getenv("CRIPTO_MODELO", "").strip()
-    texto = _partes(fotos, historial, referencia, base, nota_base, saber_texto)
+    texto = _partes(fotos, historial, referencia, base, nota_base,
+                    saber_texto, experiencia)
 
     if k := os.getenv("ANTHROPIC_API_KEY", "").strip():
         return await _por_anthropic(fotos, k, pedido or "claude-opus-5",
@@ -305,6 +339,7 @@ async def predecir(fotos: list[dict], modelo: str = "",
     cuerpo = {
         "contents": [{"parts": [
             {"text": PROMPT},
+            *([{"text": experiencia}] if experiencia else []),
             # Lo aprendido gana sobre lo sembrado: `saber_texto` viene de la
             # base, donde el propio agente reescribe sus notas. `_notas()`
             # queda para correr suelto, sin base de conocimiento todavia.
@@ -324,7 +359,7 @@ async def predecir(fotos: list[dict], modelo: str = "",
             "temperature": 0.2,
         },
     }
-    r = await _gemini(cuerpo, llave, modelo)
+    r, modelo = await _gemini(cuerpo, llave, modelo)
 
     try:
         texto = r.json()["candidates"][0]["content"]["parts"][0]["text"]
@@ -375,9 +410,19 @@ async def _por_openai(fotos, llave, modelo, base, cuerpo, url) -> list[dict]:
     return _validar(items, fotos, base, modelo)
 
 
-def _partes(fotos, historial, referencia, base, nota_base, saber_texto) -> str:
-    """Todo lo que el modelo tiene que ver, en un solo texto."""
+def _partes(fotos, historial, referencia, base, nota_base, saber_texto,
+            experiencia="") -> str:
+    """
+    Todo lo que el modelo tiene que ver, en un solo texto.
+
+    La experiencia medida va PRIMERO y antes que las notas a proposito:
+    cuando una nota y una cifra recien calculada se contradigan, gana la
+    cifra. La nota explica por que pasa algo; el numero dice cuanto, y
+    solo el numero se mantiene al dia.
+    """
     t = []
+    if experiencia:
+        t.append(experiencia)
     if notas := (saber_texto or _notas()):
         t.append(notas)
     if boletin := _boletin(historial):
@@ -456,7 +501,15 @@ def _validar(items, fotos, base, modelo) -> list[dict]:
             esp = float(it.get("movimiento_esperado_pct") or 0)
         except (TypeError, ValueError):
             esp = 0.0
-        fund = it.get("fundamento") or "sin_senal"
+        # El enum, obligado. El modelo venia escribiendo el razonamiento
+        # entero en este campo -- "RSI 5m 62.7 (60-75) y 1h subiendo ->
+        # celda 0.37 -> base 0.44..." -- y eso dejo 60 fundamentos
+        # distintos con n=1, imposibles de medir. El razonamiento va en
+        # `razon`, que para eso esta; aca va una etiqueta comparable.
+        fund = str(it.get("fundamento") or "").strip().lower()
+        if fund not in FUNDAMENTOS:
+            fund = next((f for f in FUNDAMENTOS if f != "sin_senal" and f in fund),
+                        "sin_senal")
         # Si dice tener fundamento pero espera un movimiento que no paga la
         # comision, el fundamento no existe. Se marca como tal en vez de
         # creerle: la etiqueta es para medir despues cual sirve de verdad.
