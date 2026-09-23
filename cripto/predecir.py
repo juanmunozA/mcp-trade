@@ -425,6 +425,23 @@ def _validar(items, fotos, base, modelo) -> list[dict]:
         if base and s in base:
             b = base[s]
             p = min(b + MARGEN, max(b - MARGEN, p))
+        # El tamano esperado lo calcula el codigo, no el modelo.
+        #
+        # Medido en produccion: gpt-oss devolvia 0.484 para los ocho pares,
+        # identico, aunque la volatilidad de NEAR (1,250) sea mas del doble
+        # que la de SUI (0,583). Estaba loreando la mediana global que sale
+        # en las notas en vez de aplicar la formula que esas mismas notas
+        # dan. Tampoco aplicaba el signo: un corto salia con esperado
+        # positivo.
+        #
+        # `|mov| ~ volatilidad_pct x 0,83` es una regresion medida, o sea
+        # aritmetica. Lo mismo que con la p_base: la cuenta la hace mejor
+        # la cuenta. Se conserva lo que dijo el modelo solo para el chequeo
+        # de fundamento, que es donde su opinion importaba.
+        vol = next((f.get("volatilidad_pct") for f in fotos
+                    if f["simbolo"] == s), None)
+        esp_calc = (round(float(vol) * 0.83 * (1 if p > 0.5 else -1), 3)
+                    if vol else round(abs(esp) * (1 if p > 0.5 else -1), 3))
         validas.append({
             "simbolo": s, "p_sube": round(p, 4),
             "razon": str(it.get("razon", ""))[:160],
@@ -436,7 +453,7 @@ def _validar(items, fotos, base, modelo) -> list[dict]:
                           ("alta", "media", "baja") else "media"),
             "fundamento": fund,
             "dato": str(it.get("dato", ""))[:120],
-            "mov_esperado": round(esp, 3),
+            "mov_esperado": esp_calc,
             "modelo": modelo,
         })
     if not validas:
