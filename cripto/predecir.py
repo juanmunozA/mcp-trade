@@ -294,12 +294,24 @@ async def _gemini(cuerpo: dict, llave: str, modelo: str):
                 # atribuida al modelo principal y la comparacion entre
                 # modelos mide cualquier cosa.
                 return r, modelo_actual
-            if r.status_code not in (429, 503):
+            # 429 y 503 se parecen y hay que tratarlos al reves.
+            #
+            # 503 es saturacion pasajera del servidor: esperar unos
+            # segundos suele alcanzar.
+            #
+            # 429 en el plan gratuito es la cuota DIARIA agotada, y no
+            # vuelve por esperar. Reintentarlo no recupera nada y consume
+            # mas: medido en produccion, un ciclo sin cuota gastaba cinco
+            # llamadas -- tres al modelo y dos al respaldo -- acelerando
+            # justo lo que lo dejo sin cuota. Se corta de una.
+            if r.status_code == 429:
+                raise ErrorIA(f"cuota agotada ({modelo_actual}): {r.text[:200]}")
+            if r.status_code != 503:
                 raise ErrorIA(f"HTTP {r.status_code}: {r.text[:400]}")
             if intento < 2:
                 await asyncio.sleep(espera)
                 espera *= 2
-    raise ErrorIA(f"{modelo} y {RESPALDO} saturados (429/503)")
+    raise ErrorIA(f"{modelo} y {RESPALDO} saturados (503)")
 
 
 async def predecir(fotos: list[dict], modelo: str = "",
@@ -316,25 +328,79 @@ async def predecir(fotos: list[dict], modelo: str = "",
     texto = _partes(fotos, historial, referencia, base, nota_base,
                     saber_texto, experiencia)
 
-    if k := os.getenv("ANTHROPIC_API_KEY", "").strip():
-        return await _por_anthropic(fotos, k, pedido or "claude-opus-5",
-                                    base, texto)
-    if k := os.getenv("DEEPSEEK_API_KEY", "").strip():
-        return await _por_anthropic(fotos, k, pedido or "deepseek-flash",
-                                    base, texto, DEEPSEEK)
-    # Groq antes que Mistral: su tier gratuito sirve modelos de 120B, y
-    # el de Mistral solo los chicos, que leen mal la tabla condicional.
-    if k := os.getenv("GROQ_API_KEY", "").strip():
-        return await _por_openai(fotos, k, pedido or "openai/gpt-oss-120b",
-                                 base, texto, GROQ)
-    if k := os.getenv("MISTRAL_API_KEY", "").strip():
-        return await _por_openai(fotos, k, pedido or "ministral-14b-latest",
-                                 base, texto, MISTRAL)
+    # La cadena se recorre entera: quedarse sin cuota en uno NO termina el
+    # ciclo, pasa al siguiente.
+    #
+    # Medido: Gemini gratuito da unas 250 llamadas por dia y a cinco
+    # minutos hacen falta 288. Se agotaba a media tarde y el agente dejaba
+    # de predecir hasta el otro dia. Groq da 1.000, asi que encadenados
+    # cubren la jornada completa.
+    #
+    # El orden lo fija CRIPTO_PROVEEDORES para poder elegir cual manda sin
+    # tocar codigo; por defecto Gemini primero, que es el que tiene el
+    # contexto grande y aguanta las notas enteras.
+    crudo = saber_texto
+    orden = [x.strip().lower() for x in
+             os.getenv("CRIPTO_PROVEEDORES", "gemini,groq,mistral,anthropic,deepseek")
+             .split(",") if x.strip()]
+    ultimo = None
+    for prov in orden:
+        # El texto se rearma por proveedor: cada uno tiene su techo.
+        saber_texto = _recortar(crudo, TOPE_CONTEXTO.get(prov, 0))
+        texto = _partes(fotos, historial, referencia, base, nota_base,
+                        saber_texto, experiencia)
+        try:
+            if prov == "anthropic" and (k := os.getenv("ANTHROPIC_API_KEY", "").strip()):
+                return await _por_anthropic(fotos, k, pedido or "claude-opus-5",
+                                            base, texto)
+            if prov == "deepseek" and (k := os.getenv("DEEPSEEK_API_KEY", "").strip()):
+                return await _por_anthropic(fotos, k, pedido or "deepseek-flash",
+                                            base, texto, DEEPSEEK)
+            if prov == "groq" and (k := os.getenv("GROQ_API_KEY", "").strip()):
+                return await _por_openai(fotos, k, _para(prov, pedido),
+                                         base, texto, GROQ)
+            if prov == "mistral" and (k := os.getenv("MISTRAL_API_KEY", "").strip()):
+                return await _por_openai(fotos, k, _para(prov, pedido),
+                                         base, texto, MISTRAL)
+            if prov == "gemini" and os.getenv("GEMINI_API_KEY", "").strip():
+                return await _por_gemini(fotos, pedido, base, texto,
+                                         historial, referencia, nota_base,
+                                         saber_texto, experiencia)
+        except ErrorIA as exc:
+            # Sin cuota o saturado: se anota y se sigue. Cualquier otro
+            # error tambien, porque un proveedor roto no deberia arrastrar
+            # a los que si funcionan.
+            log.warning("proveedor %s no sirvio: %s", prov, str(exc)[:120])
+            ultimo = exc
+            continue
+    raise ultimo or ErrorIA("no hay llave de ningún proveedor")
 
+
+def _para(prov: str, pedido: str) -> str:
+    """
+    El modelo pedido solo aplica a su proveedor.
+
+    Sin esto, con CRIPTO_MODELO=gemini-3.5-flash la cadena le pedia ese
+    modelo a Groq, que devuelve "Invalid model" -- y la caida en cascada
+    fallaba por una razon que no tenia nada que ver con la cuota.
+    """
+    # Se reconoce por prefijo a quien pertenece cada nombre, en vez de
+    # descartar los ajenos uno por uno: asi un proveedor nuevo no hereda
+    # silenciosamente el modelo de otro.
+    duenos = {"groq": ("openai/", "qwen/", "llama", "meta-llama/"),
+              "mistral": ("ministral", "mistral", "magistral", "codestral")}
+    por_defecto = {"groq": "openai/gpt-oss-120b",
+                   "mistral": "ministral-14b-latest"}
+    if pedido and pedido.lower().startswith(duenos.get(prov, ())):
+        return pedido
+    return por_defecto[prov]
+
+
+async def _por_gemini(fotos, pedido, base, texto, historial, referencia,
+                      nota_base, saber_texto, experiencia) -> list[dict]:
+    """El camino de Gemini, que arma su cuerpo aparte por el responseSchema."""
     llave = os.getenv("GEMINI_API_KEY", "").strip()
-    if not llave:
-        raise ErrorIA("no hay llave de ningún proveedor")
-    modelo = pedido or "gemini-3.5-flash"
+    modelo = pedido if (pedido or "").startswith("gemini") else "gemini-3.5-flash"
 
     cuerpo = {
         "contents": [{"parts": [
@@ -369,6 +435,54 @@ async def predecir(fotos: list[dict], modelo: str = "",
     return _validar(items, fotos, base, modelo)
 
 
+TOPE_CONTEXTO = {"gemini": 0, "anthropic": 0, "deepseek": 0,
+                 "groq": 2000, "mistral": 12000}
+"""
+Cuantos caracteres de notas aguanta cada proveedor. 0 = sin limite.
+
+No es preferencia: es el techo real de cada uno. El tier gratuito de Groq
+admite 8.000 tokens por minuto contando el max_tokens pedido, y las notas
+completas son 10.144, asi que mandarselas enteras devuelve 413 sin haber
+empezado. El presupuesto de Groq quedo en 2.000 y no en 4.500 porque
+contar caracteres sobre cuatro subestima la tokenizacion real un ~22%:
+con 4.500 el calculo daba 7.390 y la API igual respondia 413. Medido
+despues sobre una llamada real: 16.452 caracteres son 7.174 tokens, o sea
+2,3 caracteres por token y no 4 -- el espanol con JSON y numeros es mucho
+mas denso de lo que sugiere la regla habitual. Paso de verdad al
+probar la cadena -- Gemini cedia bien por cuota y Groq rechazaba el
+relevo por tamano, dejando el ciclo sin nadie.
+
+Gemini y los de formato Anthropic tienen contexto de sobra y reciben todo.
+"""
+
+
+def _recortar(texto: str, tope: int) -> str:
+    """
+    Recorta las notas a un presupuesto, por notas ENTERAS.
+
+    Cortar a mitad de una nota es peor que omitirla: deja una afirmacion
+    sin el numero que la sostiene. Se corta en los separadores y se avisa
+    que quedo afuera, para que el modelo no concluya que algo no esta
+    medido solo porque no lo vio.
+    """
+    if not tope or len(texto) <= tope:
+        return texto
+    partes = texto.split(chr(10) + "### ")
+    salida, fuera = [partes[0]], []
+    usado = len(partes[0])
+    for x in partes[1:]:
+        if usado + len(x) + 5 > tope:
+            fuera.append(x.split(chr(10), 1)[0])
+            continue
+        salida.append(x)
+        usado += len(x) + 5
+    r = (chr(10) + "### ").join(salida)
+    if fuera:
+        r += (chr(10) + chr(10) + "(no entraron por espacio, existen y estan "
+              "medidas: " + ", ".join(fuera) + ")")
+    return r
+
+
 DEEPSEEK = "https://api.deepseek.com/anthropic"
 MISTRAL = "https://api.mistral.ai/v1/chat/completions"
 GROQ = "https://api.groq.com/openai/v1/chat/completions"
@@ -387,10 +501,10 @@ async def _por_openai(fotos, llave, modelo, base, cuerpo, url) -> list[dict]:
         r = await cli.post(url,
             headers={"Authorization": f"Bearer {llave}"},
             # `max_tokens` se SUMA al input para el limite por minuto del
-            # proveedor -- Groq lo cobra antes de generar nada. Ocho
-            # predicciones con su razon entran en 1.800 de sobra; pedir mas
-            # solo hace que la llamada se rechace sin haber empezado.
-            json={"model": modelo, "max_tokens": 2600, "temperature": 0.2,
+            # proveedor: Groq lo cobra antes de generar nada. Medido en una
+            # tanda real de ocho pares, la salida uso 1.385 tokens, asi que
+            # 1.800 alcanza con margen y pedir mas solo acerca el rechazo.
+            json={"model": modelo, "max_tokens": 1800, "temperature": 0.2,
                   "response_format": {"type": "json_object"},
                   # Los gpt-oss razonan antes de contestar y ese razonamiento
                   # sale del mismo `max_tokens`. En "high" se lo gasta entero
