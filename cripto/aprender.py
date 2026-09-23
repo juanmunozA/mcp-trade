@@ -146,7 +146,7 @@ async def _con_gemini(instruccion: str, cuerpo: str) -> str:
     import httpx
 
     llave = os.getenv("GEMINI_API_KEY", "").strip()
-    modelo = os.getenv("CRIPTO_MODELO_APRENDER", "gemini-2.5-flash")
+    modelo = os.getenv("CRIPTO_MODELO_APRENDER", "gemini-3.5-flash")
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
            f"{modelo}:generateContent")
     async with httpx.AsyncClient(timeout=300) as c:

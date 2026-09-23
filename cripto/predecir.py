@@ -251,7 +251,7 @@ async def predecir(fotos: list[dict], modelo: str = "",
     llave = os.getenv("GEMINI_API_KEY", "").strip()
     if not llave:
         raise ErrorIA("no hay llave de ningún proveedor")
-    modelo = pedido or "gemini-2.5-flash"
+    modelo = pedido or "gemini-3.5-flash"
 
     cuerpo = {
         "contents": [{"parts": [
