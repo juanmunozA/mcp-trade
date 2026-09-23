@@ -277,7 +277,23 @@ class AgentAPI:
         if method == "OPTIONS":
             return 204, {}
 
-        if path == "/ui" and method == "GET":
+        # ── El tablero ────────────────────────────────────────────────
+        #
+        # `/ui` es ahora el de materias primas y metales. El de Polymarket
+        # sigue vivo en `/ui/polymarket`: no se borra nada, cambia cual es
+        # la portada.
+        #
+        # Estas rutas van ANTES del token, igual que ya iba `/ui`. La
+        # razon es la misma: son datos de precios publicos, sin claves, sin
+        # dinero y sin nada que se pueda disparar desde fuera -- el sistema
+        # de materias no envia ordenes. Pedir token obligaria a manejarlo
+        # en el navegador para ver una tabla.
+        if method == "GET" and (path == "/ui" or path.startswith("/api/")):
+            res = _materias(path, query)
+            if res is not None:
+                return res
+
+        if path == "/ui/polymarket" and method == "GET":
             return 200, {"_html": _tablero()}
 
         if path in ("/", "/health", "/healthz"):
@@ -423,6 +439,64 @@ class AgentAPI:
 
 
 _UI = pathlib.Path(__file__).with_name("ui.html")
+
+
+def _materias(path: str, query: dict) -> tuple[int, dict] | None:
+    """
+    Sirve el tablero de materias primas y sus datos.
+
+    Devuelve None si la ruta no es suya, para que el enrutador siga
+    buscando. Se importa aqui dentro y no arriba porque el modulo abre
+    SQLite al primer uso, y este servicio tiene que arrancar aunque el
+    diario todavia no exista.
+    """
+    try:
+        from materias import api as MAPI
+    except Exception as exc:  # noqa: BLE001
+        return 200, {"_html": f"<!doctype html><p>materias no disponible: {exc}"}
+
+    if path == "/ui":
+        try:
+            return 200, {"_html": MAPI.UI.read_text(encoding="utf-8")}
+        except OSError as exc:
+            return 200, {"_html": f"<!doctype html><p>sin tablero: {exc}"}
+
+    # `_limpio` cambia inf y NaN por None. Hace falta porque `_respond`
+    # usa json.dumps sin `allow_nan=False`, y un profit factor infinito
+    # -- lo que da un grupo sin operaciones perdedoras -- sale como
+    # `Infinity`, que NO es JSON valido: el navegador no lo parsea y el
+    # tablero entero se queda en blanco con un 200 en el log.
+    def ok(d):
+        return 200, MAPI._limpio(d)
+
+    try:
+        if path == "/api/estado":
+            return ok(MAPI.estado_actual())
+        if path == "/api/corrida":
+            return ok(MAPI.corrida())
+        if path == "/api/listones":
+            return ok({"items": MAPI.listones()})
+        if path == "/api/concentracion":
+            return ok(MAPI.concentracion())
+        if path == "/api/historial":
+            return ok({"items": MAPI.historial()})
+        if path == "/api/operaciones":
+            return ok({"items": MAPI.operaciones(
+                int(query.get("n", 200)), query.get("origen", ""),
+                query.get("setup", ""), query.get("simbolo", ""),
+                query.get("ventana", ""))})
+        if path == "/api/vivo":
+            return ok(MAPI.en_vivo())
+        if path == "/api/planes":
+            return ok({"items": MAPI.planes(query.get("fecha", ""))})
+        if path == "/api/dias":
+            return ok({"items": MAPI.dia_a_dia()})
+        if path == "/api/informe":
+            return ok({"texto": MAPI.informe()})
+    except Exception as exc:  # noqa: BLE001
+        log.warning("materias %s fallo: %r", path, exc)
+        return 500, {"error": repr(exc)[:200]}
+    return None
 
 
 def _tablero() -> str:
