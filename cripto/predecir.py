@@ -14,11 +14,15 @@ forma de saberlo es que se comprometa con un numero antes, no despues.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import os
 import pathlib
 
 import httpx
+
+log = logging.getLogger("cripto.predecir")
 
 URL = ("https://generativelanguage.googleapis.com/v1beta/models/"
        "{m}:generateContent")
@@ -221,6 +225,51 @@ def _boletin(h: dict | None) -> str:
     return chr(10).join(l)
 
 
+RESPALDO = os.getenv("CRIPTO_MODELO_RESPALDO", "gemini-2.5-flash")
+"""
+A quien recurrir cuando el modelo elegido esta saturado.
+
+Medido: gemini-3.5-flash devolvio 503 seis de seis veces mientras
+2.5-flash respondia dos de tres. Es congestion del lado de Google, no un
+problema de la llave -- el mensaje lo dice: "experiencing high demand".
+
+Sin respaldo, un rato de saturacion deja al experimento sin predecir
+nada, que es peor que predecir con el modelo de la generacion anterior.
+Se intenta primero el elegido; solo si insiste en fallar se baja.
+"""
+
+
+async def _gemini(cuerpo: dict, llave: str, modelo: str):
+    """
+    Llama a Gemini reintentando lo que es transitorio.
+
+    503 es saturacion y 429 es cuota: los dos se arreglan esperando, asi
+    que no tiene sentido perder el ciclo entero por ellos. Un 400 en
+    cambio es culpa nuestra y corta de una.
+    """
+    espera = 4
+    for modelo_actual in (modelo, RESPALDO if RESPALDO != modelo else None):
+        if modelo_actual is None:
+            break
+        for intento in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=120) as cli:
+                    r = await cli.post(URL.format(m=modelo_actual),
+                                       params={"key": llave}, json=cuerpo)
+            except httpx.HTTPError as exc:
+                raise ErrorIA(f"red: {exc}") from exc
+            if r.status_code == 200:
+                if modelo_actual != modelo:
+                    log.warning("%s saturado, respondio %s", modelo, modelo_actual)
+                return r
+            if r.status_code not in (429, 503):
+                raise ErrorIA(f"HTTP {r.status_code}: {r.text[:400]}")
+            if intento < 2:
+                await asyncio.sleep(espera)
+                espera *= 2
+    raise ErrorIA(f"{modelo} y {RESPALDO} saturados (429/503)")
+
+
 async def predecir(fotos: list[dict], modelo: str = "",
                    historial: dict | None = None,
                    referencia: dict | None = None,
@@ -275,13 +324,7 @@ async def predecir(fotos: list[dict], modelo: str = "",
             "temperature": 0.2,
         },
     }
-    try:
-        async with httpx.AsyncClient(timeout=120) as cli:
-            r = await cli.post(URL.format(m=modelo), params={"key": llave}, json=cuerpo)
-    except httpx.HTTPError as exc:
-        raise ErrorIA(f"red: {exc}") from exc
-    if r.status_code != 200:
-        raise ErrorIA(f"HTTP {r.status_code}: {r.text[:400]}")
+    r = await _gemini(cuerpo, llave, modelo)
 
     try:
         texto = r.json()["candidates"][0]["content"]["parts"][0]["text"]
