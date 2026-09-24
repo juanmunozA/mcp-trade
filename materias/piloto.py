@@ -1043,7 +1043,13 @@ async def ciclo(capital: float) -> None:
         return
 
     ctx = D.contexto(s, d, ahora)
-    entrar(s, ctx, capital, saber.leer())
+    # En un hilo, no aqui. `entrar` habla con el agente por HTTP de
+    # forma sincrona, con reintentos y esperas entre medias; llamandola
+    # directa bloquea el bucle de eventos entero. Mientras tanto no
+    # corre `resolver` -- o sea que una posicion puede pasarse su
+    # horizonte sin que nadie la cierre -- y el tablero deja de
+    # responder, que es justo cuando uno quiere mirarlo.
+    await asyncio_to_thread(entrar, s, ctx, capital, saber.leer())
 
     # Cada tanto el agente relee sus propios resultados y reescribe sus
     # notas (cap. 20.1, paso 8). Va despues de entrar y no antes: si

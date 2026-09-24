@@ -432,6 +432,18 @@ def _esquema_gemini() -> dict:
     return e
 
 
+ESPERA_S = float(os.getenv("MATERIAS_ESPERA_S", "60"))
+"""
+Cuanto se espera una respuesta del agente antes de darla por perdida.
+
+Estaba en 240 segundos, que con dos claves, dos modelos y tres
+reintentos son 48 minutos de espera en el peor caso. Con una cadencia de
+15 minutos y un horizonte de 12 eso no es un plazo: es una parada.
+
+60 deja sitio de sobra -- las respuestas buenas del dia tardaron entre
+20 y 50 segundos -- y hace que el peor caso quepa en un ciclo.
+"""
+
 GEMINI_RESPALDO = os.getenv("MATERIAS_MODELO_GEMINI_RESPALDO",
                             "gemini-3.5-flash-lite")
 """
@@ -521,7 +533,8 @@ def _gemini(sistema: list, mensaje: str) -> tuple[dict, dict]:
                 r = httpx.post(
                     f"https://generativelanguage.googleapis.com/v1beta/"
                     f"models/{modelo}:generateContent",
-                    headers={"x-goog-api-key": llave}, json=cuerpo, timeout=240)
+                    headers={"x-goog-api-key": llave}, json=cuerpo,
+                    timeout=ESPERA_S)
             except httpx.HTTPError as exc:
                 motivo = f"red: {exc}"
                 time.sleep(2 * (intento + 1))
@@ -577,7 +590,7 @@ def _mistral(sistema: list, mensaje: str) -> tuple[dict, dict]:
               "response_format": {"type": "json_object"},
               "messages": [{"role": "system", "content": _plano(sistema)},
                            {"role": "user", "content": mensaje}]},
-        timeout=240)
+        timeout=ESPERA_S)
     if r.status_code != 200:
         raise ErrorIA(f"mistral HTTP {r.status_code}: {r.text[:200]}")
     d = r.json()
