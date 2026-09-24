@@ -72,8 +72,9 @@ Render. Quedan dos procesos:
 
 | dónde | qué corre | qué hace |
 |---|---|---|
-| Render | `materias.correr` | papel sobre GC=F + el tablero, 24/5, sin depender de tu PC |
-| tu PC Windows | `materias.operar` | órdenes reales sobre XAUUSD en Tickmill, con MT5 abierto |
+| Render | `materias.piloto` | el agente sobre GC=F, en papel + el tablero, 24/5 |
+| tu PC Windows | `PILOTO_BROKER=1 materias.piloto` | el agente sobre XAUUSD, órdenes a tu cuenta |
+| tu PC Windows | `materias.operar` | los nueve modelos deterministas sobre XAUUSD |
 
 Los dos escriben en la misma base de Neon, así que el tablero muestra ambos
 y los separa: una operación del broker vale más como evidencia que una de
@@ -160,11 +161,7 @@ python -m materias.operar
 
 Los dos **por defecto no mandan nada**. Analizan, calculan el lote,
 deciden la orden y la registran con el motivo. Deja uno corriendo al
-menos una sesion entera y mira en el tablero que habria hecho.
-
-**Por defecto no manda nada.** Analiza, calcula el lote, decide la orden y
-la registra como `no_enviada`, con el motivo. Déjalo así al menos una sesión
-de Londres y otra de NY, y mira en el tablero qué habría mandado.
+menos una sesión entera y mira en el tablero qué habría hecho.
 
 Ahí es donde se ven los problemas que sólo aparecen en vivo: un stop más
 cerca del mínimo del broker, un lote por debajo del mínimo, un símbolo que
