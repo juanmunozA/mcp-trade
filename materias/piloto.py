@@ -836,8 +836,16 @@ def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
         "rr_objetivo": round(abs(e.tp - e.entrada) / dist, 2) if dist else 0,
         "lotes": lotes, "riesgo_pct": riesgo_real, "costo_r": costo_r,
         "confluencias": e.citas,
-        # Si el broker la rechazo no se marca como abierta: no existe.
-        "estado": ("abierta" if (not USA_BROKER or envio.get("enviada"))
+        # Si el broker la RECHAZO no se marca como abierta: no existe.
+        #
+        # Pero «no enviada» y «rechazada» no son lo mismo, y confundirlas
+        # anulaba las tandas en papel. En modo seco la decision es valida
+        # -- nadie la rechazo, es que elegimos no mandarla -- y tiene que
+        # medirse igual: si se marca `no_enviada`, `resolver` no la mira
+        # nunca y la tanda entera termina sin un solo dato.
+        "estado": ("abierta"
+                   if (not USA_BROKER or envio.get("enviada")
+                       or envio.get("motivo") == "modo seco")
                    else "no_enviada"),
         "esquema": "todo_en_tp", "origen": ORIGEN,
         "nota": json.dumps({"confianza": e.confianza,
