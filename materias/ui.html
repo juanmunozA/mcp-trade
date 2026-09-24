@@ -695,6 +695,25 @@ function pintarPapel(v, backtest) {
           <div class="est"><b class="num">${cerradas}</b><span>cerradas</span></div>
           <div class="est"><b class="num flat">${r.expiradas || 0}</b><span>expiradas</span></div>
         </div>
+        ${(() => {
+          /* Papel y broker no valen lo mismo como evidencia: una del
+             broker pago spread de verdad y se lleno a un precio de
+             verdad. Se muestran separadas para que no se confundan. */
+          const o = r.por_origen || {};
+          const filas = [["papel", "GC=F simulado", o.papel],
+                         ["broker", "XAUUSD en Tickmill", o.broker]]
+            .filter(([, , d]) => d && (d.cerradas || d.vivas));
+          if (filas.length < 2) return "";
+          return `<div style="margin-top:12px">
+            ${filas.map(([k, desc, d]) => `<div class="vs" style="margin-top:6px">
+              <div class="lado" style="text-align:left">
+                <small>${esc(k)}</small>
+                <span style="font:400 10.5px var(--mono);color:var(--tenue)">${esc(desc)}</span></div>
+              <div class="sep">${d.vivas} viva${d.vivas === 1 ? "" : "s"}</div>
+              <div class="lado"><small>${d.cerradas} cerradas</small>
+                <b class="num ${cls(d.r_total)}">${sg(d.r_total)}R</b></div>
+            </div>`).join("")}</div>`;
+        })()}
       </div>
       <div>
         <div class="et"><i></i>Papel contra backtest</div>

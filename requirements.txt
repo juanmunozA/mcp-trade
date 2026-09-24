@@ -27,6 +27,13 @@ anthropic>=0.40.0
 # los CFD porque traen volumen real de contratos (cap. 9.1 de la guía).
 yfinance>=1.7.0
 pandas>=2.2.0
+
+# --- broker (solo Windows) ---
+# El puente con MetaTrader 5. El paquete solo publica ruedas de Windows
+# x86-64: no hay version para Linux ni macOS. Por eso `materias.operar`
+# corre en la maquina que tenga la terminal abierta y NO en Render, que es
+# Linux. El marcador evita que el despliegue falle intentando instalarlo.
+MetaTrader5>=5.0.45 ; sys_platform == "win32"
 numpy>=1.26.0
 pyarrow>=17.0.0
 

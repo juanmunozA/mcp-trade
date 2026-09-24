@@ -107,18 +107,38 @@ def en_vivo() -> dict:
     comparacion que pide el paso 7 del capitulo 20.1.
     """
     from materias import papel as PA
-    todas = DI.leer_estado(None, origen="papel")
+    # Las dos fuentes conviven y hay que verlas juntas pero distinguidas:
+    #   papel    GC=F por Yahoo, simulado. Corre en Render 24/5.
+    #   broker   XAUUSD en Tickmill por MT5, ordenes de verdad. Corre en
+    #            la maquina Windows que tenga la terminal abierta.
+    # El MetaTrader5 de Python es solo Windows, asi que el segundo no
+    # puede correr en Render. Comparten base, y por eso comparten tablero.
+    todas = [o for o in DI.leer_estado(None) if o.get("origen") in ("papel", "broker")]
     vivas = [o for o in todas if o["estado"] in ("pendiente", "abierta")]
     cerradas = [o for o in todas
                 if o["estado"] in ("ganancia", "perdida", "be")][-60:]
-    vetadas = DI.leer_estado(("vetada",), origen="sistema")[-40:]
+    vetadas = [o for o in DI.leer_estado(("vetada",))
+               if o.get("origen") in ("sistema", "broker")][-40:]
     motivos = defaultdict(int)
     for v in vetadas:
         motivos[v.get("nota") or "?"] += 1
     res = PA.resumen()
-    cerr_r = [o["r"] for o in todas
-              if o["estado"] in ("ganancia", "perdida", "be") and o.get("r") is not None]
-    res["metricas"] = M.calcular(cerr_r, G.RIESGO_POR_OPERACION).dict() if cerr_r else None
+    cerr = [o for o in todas
+            if o["estado"] in ("ganancia", "perdida", "be") and o.get("r") is not None]
+    res["metricas"] = (M.calcular([o["r"] for o in cerr],
+                                  G.RIESGO_POR_OPERACION).dict() if cerr else None)
+    # El desglose importa: una operacion del broker vale mas como
+    # evidencia que una de papel, porque pago spread de verdad y se lleno
+    # a un precio de verdad. Contarlas juntas sin decirlo las igualaria.
+    res["por_origen"] = {}
+    for og in ("papel", "broker"):
+        suyas = [o["r"] for o in cerr if o.get("origen") == og]
+        res["por_origen"][og] = {
+            "cerradas": len(suyas),
+            "vivas": sum(1 for o in todas if o.get("origen") == og
+                         and o["estado"] in ("pendiente", "abierta")),
+            "r_total": round(sum(suyas), 3),
+        }
     return {
         "resumen": res,
         "vivas": list(reversed(vivas)),
