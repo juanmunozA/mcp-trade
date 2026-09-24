@@ -1072,11 +1072,6 @@ async def main() -> None:
     await asyncio.gather(API.servir(puerto), bucle())
 
 
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
-
-
 def _ticket_broker(o: dict) -> int | None:
     """El ticket de MT5 que quedo guardado en la nota al abrir."""
     try:
@@ -1084,3 +1079,8 @@ def _ticket_broker(o: dict) -> int | None:
         return (n.get("broker") or {}).get("ticket")
     except (ValueError, TypeError):
         return None
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
