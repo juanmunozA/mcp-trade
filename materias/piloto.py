@@ -46,6 +46,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -83,6 +84,15 @@ de como parte de una serie solapada.
 
 ANALISIS_MIN = round((CADA_HORAS - HORIZONTE_HORAS) * 60)
 HORIZONTE_MIN = HORIZONTE_HORAS * 60
+
+TARDE_MAX_MIN = float(os.getenv("PILOTO_TARDE_MAX_MIN", "2"))
+"""
+Cuanto puede retrasarse un cierre antes de que su precio deje de valer.
+
+El ciclo revisa cada `PILOTO_REVISAR_S`, asi que un cierre siempre llega
+un poco tarde: con la reticula de 30 minutos, hasta un minuto. Dos da
+margen sin dejar pasar un retraso de verdad.
+"""
 
 # Cuanto dura una vela de cada temporalidad, en minutos.
 _DURACION = {"5M": 5, "15M": 15, "1H": 60, "4H": 240, "diario": 1440}
@@ -607,15 +617,39 @@ def resolver(m5: list[dict], sim: str = "") -> list[dict]:
             # posiciones abiertas en tres horas, cada una arriesgando lo
             # suyo a la vez. Y el diario diria que estan cerradas.
             cierre = tramo[-1]["c"]
+            tarde = 0.0
             if USA_BROKER:
                 from materias import broker as B
                 tk = _ticket_broker(o)
                 if tk:
                     res = B.cerrar_posicion(tk, "fin de horizonte")
-                    if res.get("precio"):
+                    # Cuanto se ha pasado del horizonte al cerrar. En
+                    # marcha normal son segundos.
+                    tarde = max(0.0, (m5[-1]["dt"] - limite).total_seconds() / 60)
+                    if res.get("precio") and tarde <= TARDE_MAX_MIN:
                         # El precio al que se cerro DE VERDAD, no el de la
                         # ultima vela: entre uno y otro hay spread.
                         cierre = res["precio"]
+                    elif res.get("precio"):
+                        # Se cerro, pero tarde. El precio de ese cierre no
+                        # sirve para medir: el experimento pregunta a donde
+                        # fue el precio EN EL HORIZONTE, y entre el minuto
+                        # 25 y el cierre real hay un trozo de mercado que no
+                        # formaba parte de la pregunta.
+                        #
+                        # Paso de verdad: la maquina se suspendio con una
+                        # posicion de 25 minutos abierta y volvio hora y
+                        # media despues. Tomar ese precio habria apuntado
+                        # como resultado del agente un movimiento que ocurrio
+                        # cuando ya no habia nadie midiendo.
+                        #
+                        # Se mide contra la vela del horizonte, que es la
+                        # respuesta correcta, y se deja anotado el retraso
+                        # para poder descartar la operacion despues.
+                        log.warning("la posicion %s se cerro %.0f min tarde "
+                                    "(@%s); se mide contra la vela del "
+                                    "horizonte, no contra ese precio",
+                                    tk, tarde, res["precio"])
                     elif not res.get("cerrada"):
                         log.warning("no se cerro la posicion %s: %s", tk,
                                     res.get("motivo"))
@@ -625,6 +659,9 @@ def resolver(m5: list[dict], sim: str = "") -> list[dict]:
                       "perdida" if bruto < -0.02 else "be")
             salida = str(tramo[-1]["dt"])
         else:
+            # Salio por SL o por TP dentro del horizonte: el broker la
+            # cerro solo, a su precio y a su hora. No hay retraso posible.
+            tarde = 0.0
             bruto, estado, salida = r["r"], r["estado"], r.get("salida")
         neto = round(bruto - (o.get("costo_r") or 0), 4)
 
@@ -648,6 +685,8 @@ def resolver(m5: list[dict], sim: str = "") -> list[dict]:
             "movimiento": round(mov, 4),
             "precio_horizonte": round(cierre_h, 4),
             "horas": HORIZONTE_HORAS,
+            "tarde_min": round(tarde, 1),
+            "limpia": tarde <= TARDE_MAX_MIN,
         })
         DI.actualizar(o["id"], {"estado": estado, "r_bruto": bruto,
                                 "r": neto, "salida": salida, "nota": nota})
@@ -900,6 +939,42 @@ async def ciclo(capital: float) -> None:
         log.exception("no se pudieron reescribir las notas")
 
 
+def _no_dormir() -> None:
+    """
+    Pide a Windows que no suspenda la maquina mientras el piloto corre.
+
+    POR QUE HACE FALTA
+    El piloto mide direccion a un horizonte fijo, y eso solo significa
+    algo si la posicion se cierra CUANDO toca. Con el portatil delante
+    esto se dio por hecho; la primera tanda contra el broker lo
+    desmintio: la maquina se suspendio a las 05:12 y volvio a las 06:44,
+    con una posicion de 25 minutos viva hora y media y sin nadie
+    mirandola. El dato de esa operacion no vale, y el dinero estuvo
+    expuesto todo ese rato.
+
+    ES_SYSTEM_REQUIRED impide la suspension por inactividad; no impide
+    que alguien cierre la tapa ni que se acabe la bateria, asi que no
+    sustituye a dejar el equipo enchufado. ES_CONTINUOUS hace que valga
+    hasta que el proceso muera, en vez de un solo aplazamiento.
+
+    No se toca la pantalla (ES_DISPLAY_REQUIRED): apagarla no interrumpe
+    nada y mantenerla encendida toda la noche no hace falta.
+    """
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        ES_CONTINUOUS, ES_SYSTEM_REQUIRED = 0x80000000, 0x00000001
+        if ctypes.windll.kernel32.SetThreadExecutionState(
+                ES_CONTINUOUS | ES_SYSTEM_REQUIRED):
+            log.info("la maquina no se suspendera mientras el piloto corra")
+        else:
+            log.warning("no se pudo evitar la suspension; si el equipo se "
+                        "duerme, las posiciones se quedan abiertas")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("no se pudo evitar la suspension (%s)", exc)
+
+
 async def main() -> None:
     import asyncio
     import signal
@@ -932,6 +1007,8 @@ async def main() -> None:
             signal.signal(sig, _fin)
         except (ValueError, AttributeError):
             pass
+
+    _no_dormir()
 
     capital = float(os.getenv("MATERIAS_CAPITAL", "10000"))
     if USA_BROKER:

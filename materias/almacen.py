@@ -37,6 +37,8 @@ cinco minutos, no una por peticion.
 from __future__ import annotations
 
 import contextlib
+import functools
+import logging
 import os
 import re
 import sqlite3
@@ -46,6 +48,7 @@ from pathlib import Path
 RUTA_SQLITE = Path(__file__).resolve().parent.parent / "state" / "diario_materias.db"
 ESQUEMA_PG = os.getenv("MATERIAS_ESQUEMA", "materias")
 
+log = logging.getLogger("materias.almacen")
 _local = threading.local()
 
 
@@ -213,6 +216,81 @@ def _traducir(sql: str) -> str:
     return sql.replace("?", "%s") if usa_postgres() else sql
 
 
+def _tirar_conexion() -> None:
+    """Olvida la conexion de este hilo para que la siguiente sea nueva."""
+    c = getattr(_local, "con", None)
+    _local.con = None
+    if c is not None:
+        with contextlib.suppress(Exception):
+            c.close()
+
+
+def reconectando(fn):
+    """
+    Reintenta una vez cuando la conexion se murio entre dos consultas.
+
+    POR QUE HACE FALTA
+    La conexion a Postgres se guarda por hilo y se reutiliza, que es lo
+    correcto: abrir una por consulta contra Neon cuesta mas que la
+    consulta. Pero una conexion guardada se muere sola por dos motivos
+    que aqui pasan todos los dias:
+
+      - el portatil se suspende. El piloto vuelve en si una hora y media
+        despues y el socket lleva rato cerrado del otro lado
+      - Neon apaga el compute cuando no lo usan, y al apagarlo corta las
+        conexiones abiertas
+
+    En los dos casos la primera consulta al volver revienta con
+    `OperationalError: server closed the connection unexpectedly`. El
+    bucle del piloto lo cazaba y decia «se reintenta en el siguiente»,
+    pero el siguiente usaba la misma conexion muerta: el ciclo quedaba
+    fallando en bucle sin cerrar posiciones ni abrir nuevas, con dinero
+    expuesto en el broker.
+
+    Se reintenta UNA vez y solo despues de tirar la conexion, para que
+    `_conexion` abra otra. Si el segundo intento tambien falla, el error
+    es de verdad y sube: no interesa disimular una base caida.
+    """
+    @functools.wraps(fn)
+    def envoltura(*a, **k):
+        try:
+            return fn(*a, **k)
+        except Exception as exc:  # noqa: BLE001
+            if not _es_conexion_rota(exc):
+                raise
+            log.warning("la conexion se habia caido (%s); reconectando",
+                        type(exc).__name__)
+            _tirar_conexion()
+            return fn(*a, **k)
+    return envoltura
+
+
+def _es_conexion_rota(exc: Exception) -> bool:
+    """
+    ¿Es «se cayo el cable» o es «tu SQL esta mal»?
+
+    Se mira el nombre de la clase y no la clase misma para no importar
+    psycopg aqui: este modulo funciona con sqlite a secas y la
+    dependencia es opcional. `OperationalError` e `InterfaceError` son
+    los dos que la DB-API reserva para problemas de transporte.
+    """
+    if type(exc).__name__ not in ("OperationalError", "InterfaceError"):
+        return False
+    m = str(exc).lower()
+    return any(s in m for s in (
+        "server closed the connection",
+        "connection is closed",
+        "connection already closed",
+        "consuming input failed",
+        "ssl connection has been closed",
+        "terminating connection",
+        "bad connection",
+        "could not connect",
+        "eof detected",
+    ))
+
+
+@reconectando
 def consultar(sql: str, args: list | tuple = ()) -> list[dict]:
     """Devuelve filas como diccionarios, en los dos motores."""
     c = _conexion()
@@ -222,6 +300,7 @@ def consultar(sql: str, args: list | tuple = ()) -> list[dict]:
         return [dict(zip(cols, f, strict=False)) for f in cur.fetchall()]
 
 
+@reconectando
 def ejecutar(sql: str, args: list | tuple = ()) -> int:
     """Para UPDATE y DELETE. Devuelve cuantas filas cambiaron."""
     c = _conexion()
@@ -233,6 +312,7 @@ def ejecutar(sql: str, args: list | tuple = ()) -> int:
     return n
 
 
+@reconectando
 def insertar(nombre: str, campos: tuple[str, ...], valores: list) -> int:
     """
     Inserta una fila y devuelve su id.
