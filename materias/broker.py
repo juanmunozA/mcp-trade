@@ -539,9 +539,23 @@ def comprobar(simbolo: str = "") -> str:
     L.append(f"  cuenta       {cta.get('login')}  "
              f"{'DEMO' if cta['es_demo'] else '*** REAL ***'}")
     L.append(f"  balance      {cta.get('balance', 0):,.2f} {cta.get('currency')}")
-    L.append(f"  trading algo {'permitido' if cta.get('trade_allowed') else 'BLOQUEADO'}")
-    if not cta.get("trade_allowed"):
-        L.append("               -> Herramientas > Opciones > Asesores Expertos")
+    # ── Los DOS permisos, que son distintos ──────────────────────────
+    #
+    # `account_info().trade_allowed` es lo que el BROKER permite a la
+    # cuenta. `terminal_info().trade_allowed` es el boton «Trading
+    # algoritmico» de la barra del MT5. Hacen falta los dos, y mirar solo
+    # el primero es lo que hizo que esta comprobacion dijera «permitido»
+    # mientras el broker rechazaba con 10027 «AutoTrading disabled by
+    # client». Medido en vivo: cuenta True, terminal False.
+    term = _api().terminal_info()
+    t_ok = bool(term and term.trade_allowed)
+    c_ok = bool(cta.get("trade_allowed"))
+    L.append(f"  cuenta       {'permite operar' if c_ok else 'BLOQUEADA por el broker'}")
+    L.append(f"  terminal     {'AutoTrading activo' if t_ok else 'AutoTrading APAGADO'}")
+    if not t_ok:
+        L.append("               -> pulsa «Trading algoritmico» en la barra del MT5")
+        L.append("                  (o Herramientas > Opciones > Asesores Expertos)")
+        L.append("               Sin esto el broker rechaza con 10027.")
 
     try:
         esp = especificacion(simbolo)
@@ -628,6 +642,10 @@ def enviar_mercado(lado: str, lotes: float, sl: float, tp: float,
     sl, tp = round(sl, dig), round(tp, dig)
 
     problemas = []
+    term = mt5.terminal_info()
+    if term is not None and not term.trade_allowed:
+        problemas.append("el AutoTrading de la terminal esta apagado: pulsa "
+                         "«Trading algoritmico» en la barra del MT5")
     minimo = esp["stops_min"]
     if minimo > 0:
         if abs(precio - sl) < minimo:

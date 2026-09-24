@@ -199,8 +199,36 @@ def piloto() -> dict:
     de "baja".
     """
     from materias import piloto as P
-    r = P.resumen()
-    filas = DI.leer_estado(None, origen=P.ORIGEN)
+    # Puede haber dos pilotos vivos -- GC=F en Render y XAUUSD contra el
+    # broker -- y mezclarlos daria un acierto de direccion que no es de
+    # ninguno de los dos. Manda el que tenga entradas mas recientes, y el
+    # otro se lista aparte.
+    todas_filas = DI.leer_estado(None, origen=P.ORIGEN)
+    simbolos = sorted({o.get("simbolo") for o in todas_filas if o.get("simbolo")})
+    # Manda el que tiene ordenes de verdad en un broker, no el mas
+    # reciente: una entrada que se lleno a un precio real y pago spread
+    # vale mas como evidencia que una simulada, aunque sea de hace horas.
+    # Sin esta regla el tablero cambiaba de instrumento cada vez que el
+    # piloto de papel entraba unos minutos despues.
+    def _con_ticket(o) -> bool:
+        try:
+            n = json.loads(o.get("nota") or "{}")
+            return bool((n.get("broker") or {}).get("ticket"))
+        except (ValueError, TypeError):
+            return False
+
+    reales = [o for o in todas_filas if _con_ticket(o)]
+    principal = ""
+    if reales:
+        principal = max(reales, key=lambda o: str(o.get("ts") or "")).get("simbolo") or ""
+    elif todas_filas:
+        principal = max(todas_filas,
+                        key=lambda o: str(o.get("ts") or "")).get("simbolo") or ""
+    r = P.resumen(principal) if principal else P.resumen()
+    r["simbolo"] = principal
+    r["con_broker"] = bool(reales) and principal in {o["simbolo"] for o in reales}
+    r["otros_simbolos"] = [s for s in simbolos if s != principal]
+    filas = [o for o in todas_filas if not principal or o.get("simbolo") == principal]
     filas.sort(key=lambda o: str(o.get("ts") or ""), reverse=True)
     out = []
     for o in filas[:40]:

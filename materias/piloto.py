@@ -490,13 +490,35 @@ async def asyncio_to_thread(fn, *a, **k):
     return await asyncio.to_thread(fn, *a, **k)
 
 
-def vivas() -> list[dict]:
-    return DI.leer_estado(("abierta",), origen=ORIGEN)
+def _suyas(filas: list[dict], sim: str = "") -> list[dict]:
+    """
+    Solo las entradas de ESTE instrumento.
+
+    POR QUE HACE FALTA
+    Pueden correr dos pilotos a la vez contra la misma base: el de Render
+    sobre GC=F en papel, y el de la maquina con MT5 sobre XAUUSD contra el
+    broker. Los dos escriben con origen `piloto`.
+
+    Sin separar por simbolo pasan dos cosas, las dos silenciosas:
+      - el temporizador de las cuatro horas se comparte, asi que una
+        entrada de Render bloquea la siguiente del broker
+      - `resolver` intenta cerrar una posicion de XAUUSD reproduciendola
+        contra velas del futuro de COMEX, que cotiza 40 dolares mas
+        arriba: todas saldrian tocando el stop
+
+    El simbolo ya estaba guardado en cada fila. Solo faltaba usarlo.
+    """
+    sim = sim or simbolo()
+    return [o for o in filas if o.get("simbolo") == sim]
 
 
-def toca_entrar(ahora: datetime) -> bool:
-    """¿Han pasado ya las cuatro horas desde la ultima entrada?"""
-    todas = DI.leer_estado(None, origen=ORIGEN)
+def vivas(sim: str = "") -> list[dict]:
+    return _suyas(DI.leer_estado(("abierta",), origen=ORIGEN), sim)
+
+
+def toca_entrar(ahora: datetime, sim: str = "") -> bool:
+    """¿Han pasado ya las cuatro horas desde la ultima entrada de este activo?"""
+    todas = _suyas(DI.leer_estado(None, origen=ORIGEN), sim)
     if not todas:
         return True
     ultima = max(todas, key=lambda o: str(o.get("ts") or ""))
@@ -510,7 +532,7 @@ def toca_entrar(ahora: datetime) -> bool:
     return (ahora - t) >= timedelta(hours=CADA_HORAS)
 
 
-def resolver(m5: list[dict]) -> list[dict]:
+def resolver(m5: list[dict], sim: str = "") -> list[dict]:
     """
     Cierra las entradas vivas contra el precio: por SL, por TP o por tiempo.
 
@@ -524,7 +546,7 @@ def resolver(m5: list[dict]) -> list[dict]:
         return []
     cambios = []
     esq = next(e for e in G.ESQUEMAS if e.nombre == "todo_en_tp")
-    for o in vivas():
+    for o in vivas(sim):
         try:
             t0 = datetime.fromisoformat(str(o["ts"]))
         except (ValueError, TypeError):
@@ -675,10 +697,10 @@ def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
     return {"entro": True, "id": nid, "entrada": e.dict()}
 
 
-def resumen() -> dict:
-    """Como va el piloto. Es lo que pinta el tablero."""
+def resumen(sim: str = "") -> dict:
+    """Como va el piloto de un instrumento. Es lo que pinta el tablero."""
     from materias import metricas as M
-    todas = DI.leer_estado(None, origen=ORIGEN)
+    todas = _suyas(DI.leer_estado(None, origen=ORIGEN), sim)
     cerradas = [o for o in todas
                 if o.get("r") is not None and o["estado"] in
                 ("ganancia", "perdida", "be")]
@@ -790,13 +812,13 @@ async def ciclo(capital: float) -> None:
     if not d or not d.get("m5"):
         log.warning("sin velas de %s", s)
         return
-    resolver(d["m5"])
+    resolver(d["m5"], s)
 
     ahora = datetime.now(NY)
-    if not toca_entrar(ahora):
-        r = resumen()
+    if not toca_entrar(ahora, s):
+        r = resumen(s)
         prox = ""
-        todas = DI.leer_estado(None, origen=ORIGEN)
+        todas = _suyas(DI.leer_estado(None, origen=ORIGEN), s)
         if todas:
             try:
                 ult = datetime.fromisoformat(
