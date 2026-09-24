@@ -82,6 +82,42 @@ de como parte de una serie solapada.
 """
 
 ANALISIS_MIN = round((CADA_HORAS - HORIZONTE_HORAS) * 60)
+HORIZONTE_MIN = HORIZONTE_HORAS * 60
+
+# Cuanto dura una vela de cada temporalidad, en minutos.
+_DURACION = {"5M": 5, "15M": 15, "1H": 60, "4H": 240, "diario": 1440}
+_CLAVE_CTX = {"5M": "m5", "15M": "m15", "1H": "h1", "4H": "h4", "diario": "diario"}
+
+
+def atr_del_horizonte(ctx: dict) -> tuple[str, float]:
+    """
+    El ATR de la temporalidad que corresponde a cuanto dura la posicion.
+
+    POR QUE NO VALE UNO FIJO
+    El stop tiene que sobrevivir el horizonte sin dejar de caber en lo que
+    el precio puede recorrer en el. Esas dos cosas dependen del TIEMPO, y
+    un yardstick fijo se rompe en cuanto cambia la cadencia.
+
+    Ya se rompio dos veces en vivo, en las dos direcciones:
+      - midiendo contra el ATR de 15M para una posicion de 4 horas, el
+        agente puso el stop a 2,30 con el ATR en 4,8: lo barre el ruido
+      - dandole el recorrido de 4 horas se fue a 55,60 y el 2R ya no cabia
+
+    Con la cadencia de 30 minutos el problema vuelve: exigir 1x el ATR de
+    1H -- unos 14 dolares -- para una posicion de 25 minutos es pedir un
+    stop tres veces mayor que el recorrido esperado.
+
+    LA REGLA
+    Se toma la temporalidad cuya vela dura mas o menos un cuarto del
+    horizonte. Con 25 minutos sale 5M; con 3h50m sale 1H, que es
+    exactamente lo que estaba puesto a mano. Un cuarto porque la posicion
+    tiene que poder respirar varias velas antes de que el stop signifique
+    algo: con una sola vela de margen, cualquier mecha lo toca.
+    """
+    objetivo = max(1.0, HORIZONTE_MIN / 4)
+    tf = min(_DURACION, key=lambda k: abs(_DURACION[k] - objetivo))
+    velas = ctx.get(_CLAVE_CTX[tf]) or []
+    return tf, E.atr(E.velas(velas)) if len(velas) > 15 else 0.0
 
 ORIGEN = "piloto"
 RIESGO_PCT = float(os.getenv("PILOTO_RIESGO_PCT", "0.5"))
@@ -213,22 +249,23 @@ LO QUE SI DECIDES TU
 La direccion, el stop y el objetivo.
 
 DONDE VA EL STOP: ENTRE DOS PAREDES
-La posicion vive hasta cuatro horas, o hasta que toque stop u objetivo.
-Eso pone el stop entre dos limites, y los dos importan:
+La posicion vive lo que diga el retrato -- ahi tienes el horizonte exacto
+y contra que ATR se mide -- o hasta que toque stop u objetivo. Eso pone el
+stop entre dos limites, y los dos importan:
 
-  - demasiado cerca (menos de 1x el ATR de 1H) y lo barre el ruido de la
-    primera media hora, pase lo que pase con la direccion
-  - demasiado lejos (mas de 3x el ATR de 1H) y ya no cabe un objetivo a
-    2R dentro de lo que el precio puede recorrer en cuatro horas
+  - demasiado cerca (menos de 1x ese ATR) y lo barre el ruido de los
+    primeros minutos, pase lo que pase con la direccion
+  - demasiado lejos (mas de 3x) y ya no cabe un objetivo alcanzable en el
+    tiempo que dura la posicion
 
-El punto dulce suele estar entre 1x y 2x el ATR de 1H, y SIEMPRE detras
-de una estructura: el minimo del rango, el extremo de la sesion, el borde
-del Order Block. Nunca a una distancia redonda ni a media vela.
+El punto dulce suele estar entre 1x y 2x, y SIEMPRE detras de una
+estructura: el minimo del rango, el extremo de la sesion, el borde del
+Order Block. Nunca a una distancia redonda ni a media vela.
 
-El objetivo, en liquidez identificable (cap. 6.1) y alcanzable en cuatro
-horas. Si con un stop estructural el 2R no cabe en ese recorrido, pon el
-objetivo donde de verdad esta la liquidez y deja el R:R que salga: es
-preferible un objetivo honesto a 1,5R que uno inventado a 2R.
+El objetivo, en liquidez identificable (cap. 6.1) y alcanzable en ese
+tiempo. Si con un stop estructural el 2R no cabe, pon el objetivo donde
+de verdad esta la liquidez y deja el R:R que salga: es preferible un
+objetivo honesto a 1,5R que uno inventado a 2R.
 
 LO QUE NO DECIDES
 El tamano. El capitulo 14 lo fija en numeros y lo aplica el sistema.
@@ -438,21 +475,15 @@ def revisar(e: Entrada, ctx: dict) -> str:
     # agente puso el stop a 2,30 con el ATR de 15M en 4,8 -- paso el
     # filtro de 15M y aun asi lo habria barrido el ruido de la primera
     # media hora. El yardstick tiene que ser el horizonte, no la vela.
-    # El stop se mide contra el ATR de 1H, no de 15M, porque la posicion
-    # vive hasta cuatro horas. Los dos limites salieron de ejecuciones
-    # reales: con el yardstick de 15M el agente puso el stop a 2,30 (medio
-    # ATR de 15M) y lo habria barrido el ruido; al darle el recorrido de
-    # cuatro horas se fue a 55,60 y el 2R ya no cabia. La banda de 1x a 3x
-    # es donde las dos cosas son posibles a la vez.
     dist = abs(p - e.sl)
-    a1 = E.atr(E.velas(ctx.get("h1", [])))
-    if a1 > 0:
-        if dist < 1.0 * a1:
-            return (f"stop de {dist:.4f} por debajo del ATR de 1H ({a1:.4f}): "
-                    f"lo barre el ruido antes de las {HORIZONTE_HORAS:.0f} horas")
-        if dist > 3 * a1:
-            return (f"stop de {dist:.4f} sobre 3x ATR de 1H ({a1:.4f}): "
-                    f"no deja sitio para un objetivo alcanzable")
+    tf, atr = atr_del_horizonte(ctx)
+    if atr > 0:
+        if dist < 1.0 * atr:
+            return (f"stop de {dist:.4f} por debajo del ATR de {tf} ({atr:.4f}): "
+                    f"lo barre el ruido antes de los {HORIZONTE_MIN:.0f} min")
+        if dist > 3 * atr:
+            return (f"stop de {dist:.4f} sobre 3x ATR de {tf} ({atr:.4f}): "
+                    f"no deja sitio para un objetivo alcanzable en ese tiempo")
     return ""
 
 
@@ -566,8 +597,28 @@ def resolver(m5: list[dict], sim: str = "") -> list[dict]:
         if r["estado"] == "abierta":
             if m5[-1]["dt"] < limite:
                 continue          # todavia le queda tiempo
-            # Se acabo el horizonte sin tocar nada: se cierra a mercado.
+            # ── Se acabo el horizonte sin tocar nada ──────────────────
+            #
+            # Con broker hay que cerrarla DE VERDAD, no solo anotarlo. La
+            # primera version escribia la fila y dejaba la posicion viva
+            # en MT5 con su SL y su TP. Con entradas cada cuatro horas
+            # casi no se notaba, porque el stop o el objetivo acababan
+            # tocando; con entradas cada 30 minutos se acumulan seis
+            # posiciones abiertas en tres horas, cada una arriesgando lo
+            # suyo a la vez. Y el diario diria que estan cerradas.
             cierre = tramo[-1]["c"]
+            if USA_BROKER:
+                from materias import broker as B
+                tk = _ticket_broker(o)
+                if tk:
+                    res = B.cerrar_posicion(tk, "fin de horizonte")
+                    if res.get("precio"):
+                        # El precio al que se cerro DE VERDAD, no el de la
+                        # ultima vela: entre uno y otro hay spread.
+                        cierre = res["precio"]
+                    elif not res.get("cerrada"):
+                        log.warning("no se cerro la posicion %s: %s", tk,
+                                    res.get("motivo"))
             signo = 1 if o["lado"] == "compra" else -1
             bruto = round(signo * (cierre - o["entrada"]) / dist, 4)
             estado = ("ganancia" if bruto > 0.02 else
@@ -943,3 +994,12 @@ async def main() -> None:
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
+
+
+def _ticket_broker(o: dict) -> int | None:
+    """El ticket de MT5 que quedo guardado en la nota al abrir."""
+    try:
+        n = json.loads(o.get("nota") or "{}")
+        return (n.get("broker") or {}).get("ticket")
+    except (ValueError, TypeError):
+        return None

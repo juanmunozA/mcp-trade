@@ -698,3 +698,55 @@ def enviar_mercado(lado: str, lotes: float, sl: float, tp: float,
     return {"enviada": ok, "ticket": getattr(res, "order", None),
             "precio": getattr(res, "price", precio), "retcode": res.retcode,
             "comentario": res.comment, "peticion": peticion}
+
+
+def cerrar_posicion(ticket: int, comentario: str = "") -> dict:
+    """
+    Cierra una posicion a mercado. La que abre el horizonte del piloto.
+
+    POR QUE HACE FALTA
+    `piloto.resolver` daba la operacion por cerrada en el diario cuando se
+    cumplia el horizonte, pero eso solo escribia una fila: en el broker la
+    posicion seguia viva con su SL y su TP. Con entradas cada cuatro horas
+    casi no se notaba -- el SL o el TP acababan tocando -- pero con
+    entradas cada 30 minutos se acumulan seis posiciones abiertas en tres
+    horas, cada una arriesgando su 11 % de la cuenta a la vez.
+
+    Cerrar es abrir la contraria por el mismo volumen, indicando que
+    posicion se cancela. MT5 no tiene una accion «cerrar»: tiene
+    `position` dentro de un DEAL normal.
+    """
+    mt5 = _api()
+    pos = mt5.positions_get(ticket=ticket)
+    if not pos:
+        return {"cerrada": False, "motivo": "la posicion ya no existe"}
+    p = pos[0]
+    esp = especificacion(p.symbol)
+    # Al reves que la posicion: una compra se cierra vendiendo.
+    compra = p.type == mt5.POSITION_TYPE_SELL
+    precio = esp["ask"] if compra else esp["bid"]
+    peticion = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": p.symbol,
+        "volume": p.volume,
+        "type": mt5.ORDER_TYPE_BUY if compra else mt5.ORDER_TYPE_SELL,
+        "position": ticket,
+        "price": precio,
+        "deviation": int(os.getenv("MT5_SLIPPAGE_PUNTOS", "20")),
+        "type_filling": _modo_llenado(esp),
+        "magic": p.magic,
+        "comment": (comentario or "fin de horizonte")[:31],
+    }
+    if not ENVIAR_DE_VERDAD:
+        return {"cerrada": False, "motivo": "modo seco", "peticion": peticion}
+    res = mt5.order_send(peticion)
+    if res is None:
+        code, msg = mt5.last_error()
+        return {"cerrada": False, "motivo": f"order_send None ({code}): {msg}"}
+    ok = res.retcode == mt5.TRADE_RETCODE_DONE
+    if ok:
+        log.info("CERRADA posicion %s @ %s", ticket, res.price)
+    else:
+        log.warning("no se pudo cerrar %s (%s): %s", ticket, res.retcode, res.comment)
+    return {"cerrada": ok, "precio": getattr(res, "price", precio),
+            "retcode": res.retcode, "comentario": res.comment}
