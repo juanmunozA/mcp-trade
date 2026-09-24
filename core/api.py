@@ -288,7 +288,8 @@ class AgentAPI:
         # dinero y sin nada que se pueda disparar desde fuera -- el sistema
         # de materias no envia ordenes. Pedir token obligaria a manejarlo
         # en el navegador para ver una tabla.
-        if method == "GET" and (path == "/ui" or path.startswith("/api/")):
+        if method == "GET" and (path == "/ui" or path == "/ui/completo"
+                                or path.startswith("/api/")):
             res = _materias(path, query)
             if res is not None:
                 return res
@@ -455,9 +456,10 @@ def _materias(path: str, query: dict) -> tuple[int, dict] | None:
     except Exception as exc:  # noqa: BLE001
         return 200, {"_html": f"<!doctype html><p>materias no disponible: {exc}"}
 
-    if path == "/ui":
+    if path in ("/ui", "/ui/completo"):
+        archivo = MAPI.UI if path == "/ui" else MAPI.UI_COMPLETO
         try:
-            return 200, {"_html": MAPI.UI.read_text(encoding="utf-8")}
+            return 200, {"_html": archivo.read_text(encoding="utf-8")}
         except OSError as exc:
             return 200, {"_html": f"<!doctype html><p>sin tablero: {exc}"}
 
@@ -476,6 +478,10 @@ def _materias(path: str, query: dict) -> tuple[int, dict] | None:
             return ok(MAPI.corrida())
         if path == "/api/listones":
             return ok({"items": MAPI.listones()})
+        if path == "/api/piloto":
+            return ok(MAPI.piloto())
+        if path == "/api/notas":
+            return ok(MAPI.notas())
         if path == "/api/concentracion":
             return ok(MAPI.concentracion())
         if path == "/api/historial":

@@ -959,10 +959,14 @@ async def main() -> None:
                         "ninguna orden. Pone MATERIAS_ENVIAR=1 para operar.")
     revisar_s = int(os.getenv("PILOTO_REVISAR_S", "300"))
     r = resumen()
-    log.info("PILOTO de entrada forzada · entra cada %.0f h · la posicion vive "
-             "%dh%02dm · %d min de analisis entre una y otra",
-             CADA_HORAS, int(HORIZONTE_HORAS),
-             round((HORIZONTE_HORAS % 1) * 60), ANALISIS_MIN)
+    def _dur(min_: float) -> str:
+        """En minutos si es corto, en horas y minutos si no."""
+        m = round(min_)
+        return f"{m} min" if m < 60 else f"{m // 60}h{m % 60:02d}m"
+
+    log.info("PILOTO de entrada forzada · entra cada %s · la posicion vive %s "
+             "· %d min de analisis entre una y otra",
+             _dur(CADA_HORAS * 60), _dur(HORIZONTE_MIN), ANALISIS_MIN)
     if LOTE_FIJO:
         log.info("%s · LOTE FIJO %s (el riesgo por operacion lo fija el stop, "
                  "no el %.2f%% del cap. 14.1)", simbolo(), LOTE_FIJO, RIESGO_PCT)
