@@ -972,6 +972,21 @@ def _rancias(m5: list[dict]) -> bool:
     return True
 
 
+def _dur_seg(seg: float) -> str:
+    """
+    Una cuenta atras legible, que no miente cuando ya ha pasado.
+
+    `timedelta.seconds` ignora el signo: un retraso de 59 minutos se
+    guarda como «-1 dia, 23:01:00» y ese campo vale 23 horas. El tablero
+    llego a anunciar «proxima en 23h02m» cuando faltaban dos minutos.
+    Por eso se trabaja en segundos totales y se mira el signo.
+    """
+    if seg <= 0:
+        return "ya"
+    m = int(seg // 60)
+    return f"{m} min" if m < 60 else f"{m // 60}h{m % 60:02d}m"
+
+
 async def ciclo(capital: float) -> None:
     """
     Un paso: resolver lo abierto y, si toca, entrar.
@@ -995,18 +1010,16 @@ async def ciclo(capital: float) -> None:
     ahora = datetime.now(NY)
     if not toca_entrar(ahora, s):
         r = resumen(s)
+        # Con `_cuando` y no ordenando texto, por lo mismo que
+        # `toca_entrar`: aqui habia quedado una copia del mismo fallo y
+        # elegia una fila rechazada de una hora antes.
         prox = ""
-        todas = _suyas(DI.leer_estado(None, origen=ORIGEN), s)
-        if todas:
-            try:
-                ult = datetime.fromisoformat(
-                    str(max(todas, key=lambda o: str(o.get("ts") or ""))["ts"]))
-                if ult.tzinfo is None:
-                    ult = ult.replace(tzinfo=NY)
-                falta = (ult + timedelta(hours=CADA_HORAS) - ahora)
-                prox = f" · proxima en {falta.seconds // 3600}h{falta.seconds % 3600 // 60:02d}m"
-            except (ValueError, TypeError):
-                pass
+        fechas = [f for f in
+                  map(_cuando, _suyas(DI.leer_estado(None, origen=ORIGEN), s))
+                  if f]
+        if fechas:
+            falta = max(fechas) + timedelta(hours=CADA_HORAS) - ahora
+            prox = f" · proxima en {_dur_seg(falta.total_seconds())}"
         log.info("%s ET · %d entradas, %d abiertas, %d cerradas (%+.2fR)%s",
                  ahora.strftime("%H:%M"), r["entradas"], r["abiertas"],
                  r["cerradas"], (r.get("metricas") or {}).get("r_total", 0), prox)
