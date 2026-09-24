@@ -207,7 +207,13 @@ def contexto(simbolo: str, d: dict, ahora: datetime) -> dict:
     londres = ({"alto": max(v["h"] for v in lon), "bajo": min(v["l"] for v in lon)}
                if lon else {})
     v5 = E.velas(m5)
-    eq = E.equal_levels(E.swings(v5), E.atr(v5) * 0.25)
+    # Los maximos y minimos iguales se buscan solo en lo RECIENTE. Sobre
+    # el mes entero devolvia niveles de hace semanas -- con el oro en
+    # 4.327 aparecian EQH en 4.691 -- y eso no es liquidez: es historia.
+    # El capitulo 6.1 habla de extremos de sesion, del dia y de la
+    # semana, no del mes pasado. Tres dias de velas de 5M.
+    v5_reciente = v5[-850:]
+    eq = E.equal_levels(E.swings(v5_reciente), E.atr(v5) * 0.25)
     return {
         "ahora": ahora, "m5": m5, "m15": d.get("m15", []),
         "h1": d.get("h1", []), "h4": d.get("h4", []), "diario": d.get("diario", []),
@@ -220,5 +226,10 @@ def contexto(simbolo: str, d: dict, ahora: datetime) -> dict:
         # El colchon de spread del stop, escalado a este activo.
         "margen_sl": ACTIVOS.get(simbolo, {}).get("margen_sl", 0.30),
         "contrato": ACTIVOS.get(simbolo, {}).get("contrato", 1),
+        # El coste, que el agente necesita para juzgar si un objetivo
+        # cercano paga. El capitulo 20.4 pone ignorarlo entre los errores
+        # del principiante, el numero 9.
+        "spread": ACTIVOS.get(simbolo, {}).get("spread", 0.0),
+        "costo": costo(simbolo),
         "precio": m5[-1]["c"] if m5 else 0.0,
     }
