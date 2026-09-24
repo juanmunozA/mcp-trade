@@ -85,6 +85,21 @@ de como parte de una serie solapada.
 ANALISIS_MIN = round((CADA_HORAS - HORIZONTE_HORAS) * 60)
 HORIZONTE_MIN = HORIZONTE_HORAS * 60
 
+MAX_ENTRADAS = int(os.getenv("PILOTO_MAX_ENTRADAS", "0") or 0)
+"""
+Cuantas ordenes enviar antes de parar. 0 es sin limite.
+
+Sirve para encargar una tanda de tamano fijo -- «diez y paras» -- en vez
+de dejarlo corriendo y acordarse de apagarlo. Cuentan las que llegaron
+al broker; una rechazada por el validador no gasta cupo, porque no es
+una operacion sino un intento.
+
+Se para cuando ademas no queda ninguna abierta: cortar con una posicion
+viva dejaria a nadie para cerrarla en su horizonte, que es la forma en
+que se han ido varias esta manana.
+"""
+
+
 TARDE_MAX_MIN = float(os.getenv("PILOTO_TARDE_MAX_MIN", "2"))
 """
 Cuanto puede retrasarse un cierre antes de que su precio deje de valer.
@@ -557,6 +572,16 @@ def vivas(sim: str = "") -> list[dict]:
     return _suyas(DI.leer_estado(("abierta",), origen=ORIGEN), sim)
 
 
+def tanda_cumplida(sim: str = "") -> tuple[bool, int, int]:
+    """¿Se llego ya al numero de ordenes pedido? Devuelve (si, hechas, vivas)."""
+    filas = _suyas(DI.leer_estado(None, origen=ORIGEN), sim)
+    hechas = sum(1 for o in filas if o.get("estado") != "no_enviada")
+    vivas_ = sum(1 for o in filas if o.get("estado") == "abierta")
+    if not MAX_ENTRADAS:
+        return False, hechas, vivas_
+    return (hechas >= MAX_ENTRADAS and vivas_ == 0), hechas, vivas_
+
+
 def _cuando(o: dict) -> datetime | None:
     """
     La hora de una entrada, como fecha y no como texto.
@@ -1025,6 +1050,8 @@ async def ciclo(capital: float) -> None:
     resolver(d["m5"], s)
 
     ahora = datetime.now(NY)
+    if MAX_ENTRADAS and tanda_cumplida(s)[1] >= MAX_ENTRADAS:
+        return                      # el cupo esta gastado; solo resolver
     if not toca_entrar(ahora, s):
         r = resumen(s)
         # Con `_cuando` y no ordenando texto, por lo mismo que
@@ -1188,6 +1215,17 @@ async def main() -> None:
                 await ciclo(capital)
             except Exception:  # noqa: BLE001
                 log.exception("el ciclo fallo; se reintenta en el siguiente")
+            if MAX_ENTRADAS:
+                fin, hechas, vivas_ = tanda_cumplida(simbolo())
+                if fin:
+                    log.info("tanda cumplida: %d ordenes, nada abierto. "
+                             "El piloto para.", hechas)
+                    parar["si"] = True
+                    break
+                if hechas >= MAX_ENTRADAS:
+                    log.info("%d/%d ordenes hechas; esperando a que cierre "
+                             "%d abierta(s) para parar",
+                             hechas, MAX_ENTRADAS, vivas_)
             resto = revisar_s - (datetime.now() - t0).total_seconds()
             while resto > 0 and not parar["si"]:
                 await asyncio.sleep(min(resto, 5))
