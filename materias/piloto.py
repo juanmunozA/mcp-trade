@@ -1,0 +1,753 @@
+"""
+Piloto de entrada forzada: cada 4 horas toma posicion, si o si.
+
+QUE MIDE Y POR QUE ESTA SEPARADO DE TODO LO DEMAS
+─────────────────────────────────────────────────
+El sistema normal no opera casi nunca, y con razon: la guia lo repite --
+«si alguna es "no", no hay operacion» (cap. 11.9), «sobreoperar» entre
+los errores del principiante (cap. 20.4). Eso esta bien para operar y es
+terrible para medir, porque mezcla dos preguntas distintas:
+
+    ¿sabe ELEGIR cuando entrar?
+    ¿sabe ACERTAR la direccion cuando entra?
+
+Un sistema que opera cinco veces al mes tarda meses en responder la
+segunda, y cuando responde no se sabe cual de las dos habilidades midio.
+
+La entrada forzada separa las dos. Cada cuatro horas se entra pase lo que
+pase, alcista o bajista, sin permitir «no opero». Lo unico que decide el
+agente es LA DIRECCION. Si acierta por encima del azar de forma
+sostenida, sabe leer el mercado; si no, todo lo demas da igual.
+
+ESTO CONTRADICE LA GUIA, Y ES A PROPOSITO
+El capitulo 20.4 pone sobreoperar entre los errores, y esto sobreopera
+por definicion. No es una estrategia: es un experimento de medicion, con
+su propio origen en el diario (`piloto`) para que nunca se mezcle con las
+operaciones reales ni contamine sus metricas. Es la misma forma del banco
+de pruebas de cripto, que corrio con entrada forzada por el mismo motivo.
+
+SEIS AL DIA, Y ESO IMPORTA
+Cada 4 horas son 6 decisiones diarias. El tier gratis de Gemini da 20 al
+dia por modelo: cabe con holgura, cosa que un ciclo de 5 minutos dentro
+de killzone (~126 al dia) no hacia. La cadencia no es solo experimental,
+es lo que hace que el piloto pueda correr sin factura.
+
+QUE MIRA PARA DECIDIR
+Las velas, como siempre -- y ADEMAS las noticias reales del oro, buscadas
+en la web en ese momento. El capitulo 15 es explicito: «las noticias son
+el motor de fondo de las materias primas. Aunque operes tecnicamente,
+debes saber que noticias salen cada dia». Un sistema que entra cada
+cuatro horas pase lo que pase se va a comer un NFP tarde o temprano; que
+al menos lo sepa.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+from materias import agente as AG
+from materias import datos as D
+from materias import diario as DI
+from materias import estructura as E
+from materias import gestion as G
+from materias import guia as GUIA
+from materias import noticias as N
+
+log = logging.getLogger("materias.piloto")
+NY = ZoneInfo("America/New_York")
+
+CADA_HORAS = float(os.getenv("PILOTO_CADA_HORAS", "4"))
+HORIZONTE_HORAS = float(os.getenv("PILOTO_HORIZONTE_HORAS", "3.8333"))
+"""
+Cuanto vive una entrada: 3 horas y 50 minutos, no 4.
+
+Los diez minutos que faltan hasta la siguiente entrada no son un hueco:
+son la ventana de analisis. La posicion se cierra PRIMERO y el agente
+decide DESPUES, con el resultado de la anterior ya cerrado y las velas
+mas recientes ya descargadas.
+
+Si el horizonte fuera de cuatro horas exactas, la entrada nueva caeria en
+el mismo instante que el cierre de la vieja y el agente estaria decidiendo
+sobre un mercado que todavia tiene su propia posicion encima. Diez
+minutos separan las dos cosas.
+
+Tambien asegura que nunca hay dos posiciones vivas a la vez, que es lo
+que permite tratar cada tramo como una observacion independiente en vez
+de como parte de una serie solapada.
+"""
+
+ANALISIS_MIN = round((CADA_HORAS - HORIZONTE_HORAS) * 60)
+
+ORIGEN = "piloto"
+RIESGO_PCT = float(os.getenv("PILOTO_RIESGO_PCT", "0.5"))
+
+
+@dataclass
+class Entrada:
+    lado: str = ""
+    entrada: float = 0.0
+    sl: float = 0.0
+    tp: float = 0.0
+    confianza: str = "baja"
+    razonamiento: str = ""
+    citas: list[str] = field(default_factory=list)
+    riesgos: str = ""
+    peso_noticias: str = ""
+    """Cuanto peso tuvieron las noticias frente a las velas, segun el agente."""
+    noticias: str = ""
+    uso: dict = field(default_factory=dict)
+
+    def dict(self) -> dict:
+        return self.__dict__.copy()
+
+
+ESQUEMA = {
+    "type": "object",
+    "properties": {
+        # Sin "ninguno": eso es la entrada forzada. El agente no puede
+        # abstenerse, solo elegir lado.
+        "lado": {"type": "string", "enum": ["compra", "venta"],
+                 "description": "Obligatorio. No existe la opcion de no entrar"},
+        "sl": {"type": "number", "description": "Precio del stop loss"},
+        "tp": {"type": "number", "description": "Precio del objetivo"},
+        "confianza": {"type": "string", "enum": ["alta", "media", "baja"],
+                      "description": "Baja es una respuesta legitima y frecuente"},
+        "razonamiento": {
+            "type": "string",
+            "description": "Por que ese lado y no el otro. Di tambien que "
+                           "apunta al lado contrario"},
+        "citas": {"type": "array", "items": {"type": "string"},
+                  "description": "Capitulos de la guia en que te apoyas"},
+        "riesgos": {"type": "string",
+                    "description": "Que haria que esta direccion fuera la equivocada"},
+        "peso_noticias": {
+            "type": "string", "enum": ["decisivo", "apoya", "irrelevante", "en_contra"],
+            "description": "Que papel tuvieron las noticias en esta direccion"},
+    },
+    "required": ["lado", "sl", "tp", "confianza", "razonamiento", "citas",
+                 "riesgos", "peso_noticias"],
+    "additionalProperties": False,
+}
+
+
+SISTEMA = """Eres un operador de oro. Tu criterio es la guia que viene a
+continuacion: 56 paginas sobre como se lee el mercado.
+
+ESTO NO ES OPERATIVA NORMAL. ES UN EXPERIMENTO DE MEDICION.
+Cada cuatro horas tienes que tomar posicion, si o si, alcista o bajista.
+NO existe la opcion de no operar.
+
+Sabes que la guia dice lo contrario -- «si alguna es "no", no hay
+operacion» (cap. 11.9), y el capitulo 20.4 pone sobreoperar entre los
+errores del principiante. Tienes razon y aun asi tienes que elegir lado.
+El experimento mide UNA sola cosa: si sabes leer hacia donde va el precio.
+Permitir «no se» haria imposible medirlo, porque no se podria distinguir
+entre prudencia y no tener ni idea.
+
+COMO ELEGIR CUANDO NADA ES CLARO
+Casi siempre no habra un setup limpio. Entonces usa, en este orden:
+  1. el sesgo estructural de las temporalidades altas (caps. 4.2, 4.3)
+  2. hacia que liquidez apunta el precio -- el "draw on liquidity" del
+     capitulo 6.1: que extremo sin barrer tiene mas cerca y mas a mano
+  3. en que fase esta el mercado (cap. 5): en markup se compran
+     retrocesos, en markdown se venden
+  4. las noticias, si hay algo que mueva al oro (cap. 15.1)
+Y pones confianza "baja". Decir "baja" cuando no ves nada es lo mas util
+que puedes hacer: despues se mide si tus "alta" aciertan mas que tus
+"baja", y eso vale tanto como el acierto global.
+
+LO QUE SI DECIDES TU
+La direccion, el stop y el objetivo.
+
+DONDE VA EL STOP: ENTRE DOS PAREDES
+La posicion vive hasta cuatro horas, o hasta que toque stop u objetivo.
+Eso pone el stop entre dos limites, y los dos importan:
+
+  - demasiado cerca (menos de 1x el ATR de 1H) y lo barre el ruido de la
+    primera media hora, pase lo que pase con la direccion
+  - demasiado lejos (mas de 3x el ATR de 1H) y ya no cabe un objetivo a
+    2R dentro de lo que el precio puede recorrer en cuatro horas
+
+El punto dulce suele estar entre 1x y 2x el ATR de 1H, y SIEMPRE detras
+de una estructura: el minimo del rango, el extremo de la sesion, el borde
+del Order Block. Nunca a una distancia redonda ni a media vela.
+
+El objetivo, en liquidez identificable (cap. 6.1) y alcanzable en cuatro
+horas. Si con un stop estructural el 2R no cabe en ese recorrido, pon el
+objetivo donde de verdad esta la liquidez y deja el R:R que salga: es
+preferible un objetivo honesto a 1,5R que uno inventado a 2R.
+
+LO QUE NO DECIDES
+El tamano. El capitulo 14 lo fija en numeros y lo aplica el sistema.
+
+SE HONESTO CON LA CONFIANZA
+No la subas para que la respuesta parezca mejor. Un experimento donde
+todo es "alta" no mide nada."""
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Noticias reales
+# ══════════════════════════════════════════════════════════════════════
+
+PREGUNTA_NOTICIAS = """Busca que esta moviendo al oro (XAUUSD) AHORA MISMO.
+
+Necesito, de las ultimas 24 horas:
+- que datos macro de EE.UU. salieron y como quedaron frente al consenso
+- donde estan el dolar (DXY) y los rendimientos reales a 10 anos, y en
+  que direccion se movieron
+- si hay algo de la Fed: declaraciones, actas, expectativas de tasas
+- riesgo geopolitico o de mercado que empuje al oro como refugio
+- que hay en el calendario de HOY y MANANA que pueda moverlo
+
+Responde en 10 lineas como maximo, en espanol, con la fecha de cada cosa.
+Si algo no lo encuentras, dilo: es mejor un hueco que un dato inventado.
+No des opinion sobre si subira o bajara, solo los hechos."""
+
+
+RELEVANTES = (
+    "gold", "oro", "bullion", "xau", "fed", "fomc", "powell", "rate",
+    "tasa", "inflation", "inflac", "cpi", "pce", "yield", "treasury",
+    "dollar", "dxy", "jobs", "payroll", "nfp", "safe haven", "refugio",
+    "geopolit", "war", "guerra", "tariff", "arancel", "central bank",
+    "etf", "silver", "plata", "recession", "precious",
+)
+"""
+Que titular cuenta como noticia del oro.
+
+La fuente devuelve todo lo que toca al simbolo, y eso incluye una minera
+junior australiana que perforo un granito. Eso no mueve el XAUUSD. Lo que
+lo mueve esta en el capitulo 15.1: tasas reales, dolar, Fed, inflacion,
+refugio, bancos centrales, flujos de ETF. El filtro es esa lista, en los
+dos idiomas porque la fuente mezcla.
+"""
+
+
+def _noticias_yahoo(maximo: int = 8) -> list[str]:
+    """
+    Titulares reales del oro. Sin clave y sin cuota.
+
+    Es la fuente que SIEMPRE esta: la busqueda con grounding de Gemini
+    tiene una cuota propia mucho mas estrecha que la de generar texto
+    -- medido: con la misma clave, generar responde 200 y buscar devuelve
+    429 -- asi que no se puede depender de ella para un piloto que corre
+    seis veces al dia.
+    """
+    import warnings
+    import yfinance as yf
+    warnings.filterwarnings("ignore")
+    vistos: set[str] = set()
+    out: list[tuple[str, str]] = []
+    for simbolo in ("GC=F", "GLD"):
+        try:
+            crudas = yf.Ticker(simbolo).news or []
+        except Exception as exc:  # noqa: BLE001
+            log.warning("sin noticias de %s: %s", simbolo, exc)
+            continue
+        for x in crudas:
+            c = x.get("content", x)
+            titulo = str(c.get("title") or "").strip()
+            if not titulo or titulo in vistos:
+                continue
+            if not any(p in titulo.lower() for p in RELEVANTES):
+                continue
+            vistos.add(titulo)
+            prov = c.get("provider")
+            prov = prov.get("displayName", "?") if isinstance(prov, dict) else "?"
+            fecha = str(c.get("pubDate") or "")[:16].replace("T", " ")
+            resumen = " ".join(str(c.get("summary") or "").split())[:260]
+            out.append((fecha, f"[{fecha}] {prov}: {titulo}"
+                              + (f"\n    {resumen}" if resumen else "")))
+    out.sort(key=lambda t: t[0], reverse=True)
+    return [t[1] for t in out[:maximo]]
+
+
+def noticias_web() -> str:
+    """
+    Lo que esta pasando con el oro ahora mismo, de tres fuentes.
+
+    El capitulo 15.1 lista lo que mueve al oro -- tasas reales, dolar,
+    Fed, inflacion, refugio, bancos centrales -- y nada de eso esta en
+    las velas. El calendario de `noticias.py` sabe QUE dias salen los
+    datos, pero no que dijeron, y para elegir una direccion lo segundo
+    pesa mas.
+
+    Orden deliberado: primero los titulares de Yahoo, que no gastan cuota
+    y por tanto estan siempre; despues el calendario, que es determinista;
+    y por ultimo la busqueda de Gemini, que da el mejor resumen pero se
+    queda sin cuota a las pocas llamadas. Si la ultima falla, el piloto
+    sigue con las dos primeras en vez de entrar a ciegas.
+    """
+    partes = []
+    titulares = _noticias_yahoo()
+    if titulares:
+        partes.append("### Titulares (Yahoo Finance)\n" + "\n".join(titulares))
+
+    hoy = datetime.now(NY).date()
+    partes.append("### Calendario de hoy (deducido)\n" + "\n".join(N.agenda(hoy)))
+
+    for n, llave in enumerate(AG.llaves_gemini(), 1):
+        try:
+            partes.append("### Busqueda en la web\n" + _buscar_gemini(llave))
+            break
+        except Exception as exc:  # noqa: BLE001
+            log.info("clave %d sin cuota de busqueda: %s", n, str(exc)[:90])
+    return "\n\n".join(partes)
+
+
+def _buscar_gemini(llave: str) -> str:
+    """Gemini con busqueda de Google. Devuelve el texto y sus fuentes."""
+    import httpx
+    modelo = os.getenv("PILOTO_MODELO_NOTICIAS", "gemini-3.5-flash-lite")
+    r = httpx.post(
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{modelo}:generateContent",
+        headers={"x-goog-api-key": llave},
+        json={"contents": [{"role": "user",
+                            "parts": [{"text": PREGUNTA_NOTICIAS}]}],
+              "tools": [{"google_search": {}}],
+              "generationConfig": {"maxOutputTokens": 1200}},
+        timeout=180)
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code}: {r.text[:160]}")
+    d = r.json()
+    c = d["candidates"][0]
+    txt = "".join(p.get("text", "") for p in c["content"]["parts"])
+    gm = c.get("groundingMetadata", {}) or {}
+    fuentes = [x.get("web", {}).get("title", "")
+               for x in gm.get("groundingChunks", [])][:6]
+    if fuentes:
+        txt += "\n\nFuentes: " + ", ".join(f for f in fuentes if f)
+    return txt.strip()
+
+
+# ══════════════════════════════════════════════════════════════════════
+# La decision
+# ══════════════════════════════════════════════════════════════════════
+
+def decidir(simbolo: str, ctx: dict, noticias: str, notas: str = "") -> Entrada:
+    """Una direccion, obligatoria. La guia entera y las noticias delante."""
+    sistema = [
+        {"type": "text", "text": SISTEMA},
+        {"type": "text",
+         "text": "# LA GUIA (integra, 56 paginas)\n\n" + GUIA.texto(),
+         "cache_control": {"type": "ephemeral"}},
+    ]
+    if notas:
+        sistema.append({"type": "text",
+                        "text": "# LO QUE HAS APRENDIDO EN ESTE PILOTO\n\n" + notas})
+
+    mensaje = (AG.retrato(simbolo, ctx)
+               + "\n\n## Noticias del oro ahora mismo\n\n" + (noticias or "sin datos")
+               + "\n\nElige lado. No puedes abstenerte.")
+
+    # Se reusa la cadena de proveedores del agente, pero con ESTE esquema.
+    original = AG.ESQUEMA
+    try:
+        AG.ESQUEMA = ESQUEMA
+        d, uso = AG._preguntar(sistema, mensaje)
+    except AG.ErrorIA as exc:
+        log.warning("el piloto no pudo decidir: %s", exc)
+        return Entrada(razonamiento=f"sin decision: {exc}")
+    finally:
+        AG.ESQUEMA = original
+
+    precio = ctx.get("precio") or 0
+    return Entrada(
+        lado=d.get("lado", ""), entrada=precio,
+        sl=float(d.get("sl") or 0), tp=float(d.get("tp") or 0),
+        confianza=d.get("confianza", "baja"),
+        razonamiento=d.get("razonamiento", ""),
+        citas=list(d.get("citas") or []), riesgos=d.get("riesgos", ""),
+        peso_noticias=d.get("peso_noticias", ""), noticias=noticias, uso=uso)
+
+
+def revisar(e: Entrada, ctx: dict) -> str:
+    """
+    Lo que el codigo comprueba. Menos que en el sistema normal.
+
+    Aqui la entrada es a MERCADO -- se entra ya, al precio que haya -- asi
+    que no aplica la comprobacion de que la limite este en un retroceso.
+    Lo que si se comprueba es que el stop y el objetivo esten del lado
+    correcto y que el stop no caiga dentro del ruido, porque un stop de un
+    tick convierte la medicion en una moneda al aire con comisiones.
+    """
+    if e.lado not in ("compra", "venta"):
+        return f"lado ilegible: {e.lado!r}"
+    if e.sl <= 0 or e.tp <= 0:
+        return "faltan niveles"
+    p = e.entrada
+    if e.lado == "compra" and not (e.sl < p < e.tp):
+        return f"compra con SL {e.sl} y TP {e.tp} sobre un precio de {p}"
+    if e.lado == "venta" and not (e.tp < p < e.sl):
+        return f"venta con SL {e.sl} y TP {e.tp} sobre un precio de {p}"
+    # El stop se mide contra el ATR de 1H, no de 15M, porque la posicion
+    # vive hasta cuatro horas. Medido en la primera ejecucion real: el
+    # agente puso el stop a 2,30 con el ATR de 15M en 4,8 -- paso el
+    # filtro de 15M y aun asi lo habria barrido el ruido de la primera
+    # media hora. El yardstick tiene que ser el horizonte, no la vela.
+    # El stop se mide contra el ATR de 1H, no de 15M, porque la posicion
+    # vive hasta cuatro horas. Los dos limites salieron de ejecuciones
+    # reales: con el yardstick de 15M el agente puso el stop a 2,30 (medio
+    # ATR de 15M) y lo habria barrido el ruido; al darle el recorrido de
+    # cuatro horas se fue a 55,60 y el 2R ya no cabia. La banda de 1x a 3x
+    # es donde las dos cosas son posibles a la vez.
+    dist = abs(p - e.sl)
+    a1 = E.atr(E.velas(ctx.get("h1", [])))
+    if a1 > 0:
+        if dist < 1.0 * a1:
+            return (f"stop de {dist:.4f} por debajo del ATR de 1H ({a1:.4f}): "
+                    f"lo barre el ruido antes de las {HORIZONTE_HORAS:.0f} horas")
+        if dist > 3 * a1:
+            return (f"stop de {dist:.4f} sobre 3x ATR de 1H ({a1:.4f}): "
+                    f"no deja sitio para un objetivo alcanzable")
+    return ""
+
+
+# ══════════════════════════════════════════════════════════════════════
+# El ciclo
+# ══════════════════════════════════════════════════════════════════════
+
+def vivas() -> list[dict]:
+    return DI.leer_estado(("abierta",), origen=ORIGEN)
+
+
+def toca_entrar(ahora: datetime) -> bool:
+    """¿Han pasado ya las cuatro horas desde la ultima entrada?"""
+    todas = DI.leer_estado(None, origen=ORIGEN)
+    if not todas:
+        return True
+    ultima = max(todas, key=lambda o: str(o.get("ts") or ""))
+    t = ultima.get("ts")
+    try:
+        t = datetime.fromisoformat(str(t))
+    except (ValueError, TypeError):
+        return True
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=NY)
+    return (ahora - t) >= timedelta(hours=CADA_HORAS)
+
+
+def resolver(m5: list[dict]) -> list[dict]:
+    """
+    Cierra las entradas vivas contra el precio: por SL, por TP o por tiempo.
+
+    Se reproduce desde la vela de entrada con la misma funcion que usa el
+    backtest, para que el resultado del piloto sea comparable con todo lo
+    demas. Si ni SL ni TP se tocaron al cumplirse el horizonte, se cierra
+    a mercado y el R sale del recorrido real -- un empate tambien es un
+    dato, y forzarlo a ser ganancia o perdida seria inventarselo.
+    """
+    if not m5:
+        return []
+    cambios = []
+    esq = next(e for e in G.ESQUEMAS if e.nombre == "todo_en_tp")
+    for o in vivas():
+        try:
+            t0 = datetime.fromisoformat(str(o["ts"]))
+        except (ValueError, TypeError):
+            continue
+        if t0.tzinfo is None:
+            t0 = t0.replace(tzinfo=NY)
+        i = next((k for k, v in enumerate(m5) if v["dt"] >= t0), None)
+        if i is None:
+            continue
+        limite = t0 + timedelta(hours=HORIZONTE_HORAS)
+        tramo = [v for v in m5 if v["dt"] <= limite]
+        if len(tramo) <= i + 1:
+            continue
+        r = G.simular_salida(tramo, i, o["lado"], o["entrada"], o["sl"],
+                             o["tp"], esq)
+        dist = abs(o["entrada"] - o["sl"]) or 1
+        if r["estado"] == "abierta":
+            if m5[-1]["dt"] < limite:
+                continue          # todavia le queda tiempo
+            # Se acabo el horizonte sin tocar nada: se cierra a mercado.
+            cierre = tramo[-1]["c"]
+            signo = 1 if o["lado"] == "compra" else -1
+            bruto = round(signo * (cierre - o["entrada"]) / dist, 4)
+            estado = ("ganancia" if bruto > 0.02 else
+                      "perdida" if bruto < -0.02 else "be")
+            salida = str(tramo[-1]["dt"])
+        else:
+            bruto, estado, salida = r["r"], r["estado"], r.get("salida")
+        neto = round(bruto - (o.get("costo_r") or 0), 4)
+
+        # ── La medicion limpia: ¿acerto la DIRECCION a 4 horas? ───────
+        #
+        # Es otra pregunta que el R y hay que responderla aparte. El R
+        # depende de donde puso el stop: una direccion correcta con el
+        # stop mal puesto pierde dinero, y una direccion equivocada con
+        # el stop lejos puede cerrar en verde por azar. El experimento
+        # mide si SABE HACIA DONDE VA EL PRECIO, y eso solo se ve
+        # comparando el precio de entrada con el del horizonte, sin que
+        # el stop tenga nada que decir.
+        #
+        # El liston es 50 %: la moneda al aire. Es el mismo que uso el
+        # banco de pruebas de cripto, y por el mismo motivo.
+        cierre_h = tramo[-1]["c"]
+        signo = 1 if o["lado"] == "compra" else -1
+        mov = signo * (cierre_h - o["entrada"])
+        nota = _con_medicion(o.get("nota"), {
+            "direccion_ok": mov > 0,
+            "movimiento": round(mov, 4),
+            "precio_horizonte": round(cierre_h, 4),
+            "horas": HORIZONTE_HORAS,
+        })
+        DI.actualizar(o["id"], {"estado": estado, "r_bruto": bruto,
+                                "r": neto, "salida": salida, "nota": nota})
+        cambios.append({**o, "estado": estado, "r": neto,
+                        "direccion_ok": mov > 0})
+        log.info("PILOTO cierra %s %s -> %s  %+.2fR  ·  direccion %s (%+.2f)",
+                 o["simbolo"], o["lado"], estado, neto,
+                 "OK" if mov > 0 else "fallo", mov)
+    return cambios
+
+
+def _con_medicion(nota, medicion: dict) -> str:
+    """Anade la medicion a la nota sin perder lo que el agente escribio."""
+    try:
+        d = json.loads(nota or "{}")
+        if not isinstance(d, dict):
+            d = {"texto": str(nota)}
+    except (ValueError, TypeError):
+        d = {"texto": str(nota or "")}
+    d["medicion"] = medicion
+    return json.dumps(d, ensure_ascii=False)[:8000]
+
+
+def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
+    """Una entrada del piloto, de principio a fin."""
+    noticias = noticias_web()
+    e = decidir(simbolo, ctx, noticias, notas)
+    if not e.lado:
+        return {"entro": False, "motivo": e.razonamiento}
+    veto = revisar(e, ctx)
+    if veto:
+        log.warning("la direccion no era usable: %s", veto)
+        DI.guardar({"simbolo": simbolo, "setup": "piloto_4h", "lado": e.lado,
+                    "estado": "no_enviada", "origen": ORIGEN,
+                    "nota": f"rechazada: {veto} · {e.razonamiento}"[:900]})
+        return {"entro": False, "motivo": veto}
+
+    dist = abs(e.entrada - e.sl)
+    contrato = ctx.get("contrato", 1)
+    lotes = G.lotes(capital, RIESGO_PCT, dist, contrato)
+    costo_r = round((ctx.get("costo") or 0) / dist, 4) if dist else 0.0
+    nid = DI.guardar({
+        "ts": str(ctx["ahora"]), "simbolo": simbolo,
+        "nombre": D.ACTIVOS.get(simbolo, {}).get("nombre", simbolo),
+        "setup": "piloto_4h", "lado": e.lado, "ventana": "forzada",
+        "entrada": e.entrada, "sl": e.sl, "tp": e.tp,
+        "rr_objetivo": round(abs(e.tp - e.entrada) / dist, 2) if dist else 0,
+        "lotes": lotes, "riesgo_pct": RIESGO_PCT, "costo_r": costo_r,
+        "confluencias": e.citas, "estado": "abierta", "esquema": "todo_en_tp",
+        "origen": ORIGEN,
+        "nota": json.dumps({"confianza": e.confianza,
+                            "razonamiento": e.razonamiento,
+                            "riesgos": e.riesgos,
+                            "peso_noticias": e.peso_noticias,
+                            "noticias": e.noticias[:1800],
+                            "uso": e.uso}, ensure_ascii=False)[:8000],
+    })
+    log.info("PILOTO %s %s @ %.2f  SL %.2f  TP %.2f  %s lotes  confianza %s  "
+             "noticias %s", simbolo, e.lado.upper(), e.entrada, e.sl, e.tp,
+             lotes, e.confianza, e.peso_noticias)
+    return {"entro": True, "id": nid, "entrada": e.dict()}
+
+
+def resumen() -> dict:
+    """Como va el piloto. Es lo que pinta el tablero."""
+    from materias import metricas as M
+    todas = DI.leer_estado(None, origen=ORIGEN)
+    cerradas = [o for o in todas
+                if o.get("r") is not None and o["estado"] in
+                ("ganancia", "perdida", "be")]
+    d = {"entradas": len(todas),
+         "abiertas": sum(1 for o in todas if o["estado"] == "abierta"),
+         "cerradas": len(cerradas),
+         "desde": min((str(o.get("ts") or "") for o in todas), default=None)}
+    if not cerradas:
+        return d
+    rs = [o["r"] for o in cerradas]
+    m = M.calcular(rs, RIESGO_PCT)
+    d["metricas"] = m.dict()
+
+    # Lo que de verdad mide el experimento, y va separado del R a
+    # proposito: si el agente sabe hacia donde va el precio. El liston es
+    # 50 %, la moneda al aire.
+    def _nota(o) -> dict:
+        try:
+            x = json.loads(o.get("nota") or "{}")
+            return x if isinstance(x, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+
+    medidas = [(_nota(o), o) for o in cerradas]
+    con_dir = [(n["medicion"]["direccion_ok"], o)
+               for n, o in medidas if "medicion" in n]
+    if con_dir:
+        ok = sum(1 for v, _ in con_dir if v)
+        d["direccion"] = {
+            "n": len(con_dir),
+            "acierto_pct": round(100 * ok / len(con_dir), 1),
+            "liston_azar": 50.0,
+            "horizonte_horas": HORIZONTE_HORAS,
+        }
+
+    # Por confianza declarada. Si las "alta" no aciertan mas que las
+    # "baja", el agente no sabe cuando sabe -- y eso vale tanto como el
+    # acierto global, porque un sistema que reconoce su propia
+    # incertidumbre se puede filtrar y uno que no, no.
+    porc: dict[str, dict] = {}
+    for n, o in medidas:
+        c = n.get("confianza", "?")
+        e = porc.setdefault(c, {"rs": [], "dir": []})
+        e["rs"].append(o["r"])
+        if "medicion" in n:
+            e["dir"].append(n["medicion"]["direccion_ok"])
+    d["por_confianza"] = {
+        k: {"n": len(v["rs"]), "r_total": round(sum(v["rs"]), 2),
+            "direccion_pct": (round(100 * sum(v["dir"]) / len(v["dir"]), 1)
+                              if v["dir"] else None)}
+        for k, v in sorted(porc.items())}
+
+    # Y por el peso que el agente le dio a las noticias: si las entradas
+    # donde dijo "decisivo" no van mejor, las noticias no estan
+    # aportando y el capitulo 15 no se esta aprovechando.
+    porn: dict[str, list[float]] = {}
+    for n, o in medidas:
+        porn.setdefault(n.get("peso_noticias", "?"), []).append(o["r"])
+    d["por_noticias"] = {
+        k: {"n": len(v), "r_total": round(sum(v), 2)}
+        for k, v in sorted(porn.items())}
+    return d
+
+
+# ══════════════════════════════════════════════════════════════════════
+# El bucle
+# ══════════════════════════════════════════════════════════════════════
+
+async def ciclo(capital: float) -> None:
+    """
+    Un paso: resolver lo abierto y, si toca, entrar.
+
+    Se revisa cada pocos minutos aunque solo se entre cada cuatro horas,
+    porque una posicion puede tocar su stop u objetivo en cualquier
+    momento y anotarlo tarde falsearia la hora de salida en el diario
+    (cap. 19.1).
+    """
+    from materias import saber
+
+    datos = await D.cargar([D.PRINCIPAL])
+    d = datos.get(D.PRINCIPAL)
+    if not d or not d.get("m5"):
+        log.warning("sin velas de %s", D.PRINCIPAL)
+        return
+    resolver(d["m5"])
+
+    ahora = datetime.now(NY)
+    if not toca_entrar(ahora):
+        r = resumen()
+        prox = ""
+        todas = DI.leer_estado(None, origen=ORIGEN)
+        if todas:
+            try:
+                ult = datetime.fromisoformat(
+                    str(max(todas, key=lambda o: str(o.get("ts") or ""))["ts"]))
+                if ult.tzinfo is None:
+                    ult = ult.replace(tzinfo=NY)
+                falta = (ult + timedelta(hours=CADA_HORAS) - ahora)
+                prox = f" · proxima en {falta.seconds // 3600}h{falta.seconds % 3600 // 60:02d}m"
+            except (ValueError, TypeError):
+                pass
+        log.info("%s ET · %d entradas, %d abiertas, %d cerradas (%+.2fR)%s",
+                 ahora.strftime("%H:%M"), r["entradas"], r["abiertas"],
+                 r["cerradas"], (r.get("metricas") or {}).get("r_total", 0), prox)
+        return
+
+    ctx = D.contexto(D.PRINCIPAL, d, ahora)
+    entrar(D.PRINCIPAL, ctx, capital, saber.leer())
+
+    # Cada tanto el agente relee sus propios resultados y reescribe sus
+    # notas (cap. 20.1, paso 8). Va despues de entrar y no antes: si
+    # fallara, la entrada ya esta hecha.
+    try:
+        r = saber.aprender(origen=ORIGEN)
+        if r.get("cambio"):
+            log.info("notas reescritas: version %s sobre %s entradas",
+                     r["version"], r["apoyo"])
+    except Exception:  # noqa: BLE001
+        log.exception("no se pudieron reescribir las notas")
+
+
+async def main() -> None:
+    import asyncio
+    import signal
+
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(message)s",
+                        datefmt="%H:%M:%S")
+    # httpx registra cada peticion en INFO y ensucia el log del piloto,
+    # que hace seis cosas al dia y se lee entero.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
+    from materias import almacen as AL
+    from materias import agente as AG
+    from materias import api as API
+
+    parar = {"si": False}
+
+    def _fin(*_):
+        parar["si"] = True
+        log.info("parando al terminar el ciclo")
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            signal.signal(sig, _fin)
+        except (ValueError, AttributeError):
+            pass
+
+    capital = float(os.getenv("MATERIAS_CAPITAL", "10000"))
+    revisar_s = int(os.getenv("PILOTO_REVISAR_S", "300"))
+    r = resumen()
+    log.info("PILOTO de entrada forzada · entra cada %.0f h · la posicion vive "
+             "%dh%02dm · %d min de analisis entre una y otra",
+             CADA_HORAS, int(HORIZONTE_HORAS),
+             round((HORIZONTE_HORAS % 1) * 60), ANALISIS_MIN)
+    log.info("%s · riesgo %.2f%% · sin dinero real", D.PRINCIPAL, RIESGO_PCT)
+    log.info("proveedores: %s · claves de gemini: %d",
+             ",".join(AG.PROVEEDORES), len(AG.llaves_gemini()))
+    log.info("diario en %s", AL.destino())
+    log.info("%d entradas registradas, %d cerradas", r["entradas"], r["cerradas"])
+
+    puerto = int(os.getenv("PORT", os.getenv("MATERIAS_PUERTO", "8790")))
+
+    async def bucle():
+        while not parar["si"]:
+            t0 = datetime.now()
+            try:
+                await ciclo(capital)
+            except Exception:  # noqa: BLE001
+                log.exception("el ciclo fallo; se reintenta en el siguiente")
+            resto = revisar_s - (datetime.now() - t0).total_seconds()
+            while resto > 0 and not parar["si"]:
+                await asyncio.sleep(min(resto, 5))
+                resto -= 5
+
+    await asyncio.gather(API.servir(puerto), bucle())
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())

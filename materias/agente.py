@@ -219,8 +219,15 @@ def retrato(simbolo: str, ctx: dict) -> str:
     L.append("## Precio")
     precio = v5[-1].c if v5 else 0
     L.append(f"- ultimo cierre de 5M: {_fmt(precio)}")
-    L.append(f"- ATR(14) de 5M: {_fmt(a5)}   de 15M: {_fmt(E.atr(v15))}   "
-             f"diario: {_fmt(E.atr(vd))}")
+    a1 = E.atr(E.velas(ctx.get("h1", [])))
+    L.append(f"- ATR(14) de 5M: {_fmt(a5)}   15M: {_fmt(E.atr(v15))}   "
+             f"1H: {_fmt(a1)}   4H: {_fmt(E.atr(v4))}   diario: {_fmt(E.atr(vd))}")
+    if a1:
+        # Cuanto se mueve el oro en cuatro horas, que es el horizonte del
+        # piloto. Sin este numero el stop se dimensiona contra el ruido
+        # de 5M y lo barre cualquier vela.
+        L.append(f"- recorrido tipico en 4 horas: unos {_fmt(a1 * 4)} "
+                 f"(4 x ATR de 1H)")
     if len(v5) >= 12:
         L.append(f"- ultima hora: maximo {_fmt(max(v.h for v in v5[-12:]))}, "
                  f"minimo {_fmt(min(v.l for v in v5[-12:]))}")
@@ -437,24 +444,59 @@ saltar al siguiente de la cadena, que ya no tiene cache de la guia.
 """
 
 
+def llaves_gemini() -> list[str]:
+    """
+    Todas las claves de Gemini disponibles, en orden.
+
+    POR QUE VARIAS Y NO UNA
+    El tier gratis da 20 peticiones AL DIA por modelo y por proyecto. Cada
+    clave es un proyecto distinto, asi que dos claves son 40 y tres son
+    60. No es un truco: es la unidad en la que Google reparte la cuota.
+
+    Se leen de `GEMINI_API_KEY` (que admite varias separadas por comas) y
+    de `GEMINI_API_KEY_2`, `_3`... Las dos formas porque en Render las
+    variables se ponen de a una en el panel, y en un .env local es mas
+    comodo una lista.
+
+    Se quitan repetidas conservando el orden: la misma clave dos veces
+    seria gastar dos intentos en la misma cuota.
+    """
+    crudas: list[str] = []
+    crudas += [x.strip() for x in os.getenv("GEMINI_API_KEY", "").split(",")]
+    for i in range(2, 9):
+        crudas.append(os.getenv(f"GEMINI_API_KEY_{i}", "").strip())
+    vistas: set[str] = set()
+    out = []
+    for k in crudas:
+        if k and k not in vistas:
+            vistas.add(k)
+            out.append(k)
+    return out
+
+
 def _gemini(sistema: list, mensaje: str) -> tuple[dict, dict]:
     """
-    Gemini, distinguiendo saturacion de cuota agotada.
+    Gemini, distinguiendo saturacion de cuota agotada, y rotando claves.
 
-    La diferencia cuesta dinero y ya se pago una vez en el experimento de
-    cripto: reintentar un 429 gasta cuota que ya no hay y ACELERA el
-    agotamiento que se intentaba sobrevivir. Un 503 es lo contrario --
-    temporal, del lado de Google -- y rendirse al primero tira una
-    decision que se habria tenido dos segundos despues.
+    La diferencia entre 429 y 503 cuesta dinero y ya se pago una vez en el
+    experimento de cripto: reintentar un 429 gasta cuota que ya no hay y
+    ACELERA el agotamiento que se intentaba sobrevivir. Un 503 es lo
+    contrario -- temporal, del lado de Google -- y rendirse al primero
+    tira una decision que se habria tenido dos segundos despues.
 
-        429  cuota agotada    -> al siguiente proveedor, sin reintentar
-        503  saturacion       -> reintentar, y luego el modelo de respaldo
+        429  cuota agotada    -> a la SIGUIENTE CLAVE, sin reintentar
+        503  saturacion       -> reintentar, luego el modelo de respaldo
+
+    Lo nuevo es a donde lleva el 429: antes salia del proveedor entero, y
+    con varias claves lo correcto es probar la siguiente, porque la cuota
+    es por proyecto y la de al lado puede estar intacta.
     """
     import time
-    llave = os.getenv("GEMINI_API_KEY")
-    if not llave:
-        raise ErrorIA("sin GEMINI_API_KEY")
     import httpx
+
+    llaves = llaves_gemini()
+    if not llaves:
+        raise ErrorIA("sin GEMINI_API_KEY")
 
     cuerpo = {"systemInstruction": {"parts": [{"text": _plano(sistema)}]},
               "contents": [{"role": "user", "parts": [{"text": mensaje}]}],
@@ -462,39 +504,64 @@ def _gemini(sistema: list, mensaje: str) -> tuple[dict, dict]:
                                    "responseSchema": _esquema_gemini(),
                                    "maxOutputTokens": 8000}}
     principal = os.getenv("MATERIAS_MODELO_GEMINI", "gemini-3.5-flash")
-    ultimo = ""
-    for modelo in (principal, GEMINI_RESPALDO):
+    modelos = [principal] + ([GEMINI_RESPALDO] if GEMINI_RESPALDO != principal
+                             else [])
+    def intentar(llave: str, modelo: str) -> tuple[str, object]:
+        """
+        Un intento. Devuelve ('ok', respuesta), ('cuota', motivo) o
+        ('fallo', motivo).
+
+        Los reintentos por 503 viven aqui dentro para que el bucle de
+        fuera solo tenga que decidir entre «siguiente modelo» y
+        «siguiente clave», que es la unica decision que importa.
+        """
+        motivo = "sin respuesta"
         for intento in range(3):
             try:
                 r = httpx.post(
-                    f"https://generativelanguage.googleapis.com/v1beta/models/"
-                    f"{modelo}:generateContent",
+                    f"https://generativelanguage.googleapis.com/v1beta/"
+                    f"models/{modelo}:generateContent",
                     headers={"x-goog-api-key": llave}, json=cuerpo, timeout=240)
             except httpx.HTTPError as exc:
-                ultimo = f"red: {exc}"
+                motivo = f"red: {exc}"
                 time.sleep(2 * (intento + 1))
                 continue
             if r.status_code == 200:
-                d = r.json()
-                try:
-                    txt = d["candidates"][0]["content"]["parts"][0]["text"]
-                except (KeyError, IndexError) as exc:
-                    raise ErrorIA(f"gemini respondio raro: {str(d)[:160]}") from exc
-                u = d.get("usageMetadata", {})
-                if modelo != principal:
-                    log.info("gemini respondio con el respaldo %s", modelo)
-                return json.loads(txt), {
-                    "proveedor": "gemini", "modelo": modelo,
-                    "entrada": u.get("promptTokenCount", 0), "cache_lectura": 0,
-                    "cache_escritura": 0,
-                    "salida": u.get("candidatesTokenCount", 0)}
+                return "ok", r.json()
             if r.status_code == 429:
-                raise ErrorIA(f"gemini sin cuota: {r.text[:160]}")
-            ultimo = f"HTTP {r.status_code}: {r.text[:160]}"
+                return "cuota", f"sin cuota en {modelo}"
+            motivo = f"HTTP {r.status_code}: {r.text[:140]}"
             if r.status_code != 503:
-                break
+                return "fallo", motivo
             time.sleep(3 * (intento + 1))
-    raise ErrorIA(f"gemini ({principal} y {GEMINI_RESPALDO}): {ultimo}")
+        return "fallo", motivo
+
+    ultimo = "no se intento nada"
+    for n_llave, llave in enumerate(llaves, 1):
+        for modelo in modelos:
+            estado, res = intentar(llave, modelo)
+            if estado == "ok":
+                try:
+                    txt = res["candidates"][0]["content"]["parts"][0]["text"]
+                except (KeyError, IndexError) as exc:
+                    raise ErrorIA(f"gemini respondio raro: {str(res)[:160]}") from exc
+                u = res.get("usageMetadata", {})
+                if n_llave > 1 or modelo != principal:
+                    log.info("gemini respondio con la clave %d y el modelo %s",
+                             n_llave, modelo)
+                return json.loads(txt), {
+                    "proveedor": "gemini", "modelo": modelo, "llave": n_llave,
+                    "entrada": u.get("promptTokenCount", 0),
+                    "cache_lectura": 0, "cache_escritura": 0,
+                    "salida": u.get("candidatesTokenCount", 0)}
+            ultimo = f"clave {n_llave}: {res}"
+            if estado == "cuota":
+                # La cuota es por clave y por modelo. El respaldo puede
+                # tener cuota aunque el principal no, asi que se sigue
+                # con el siguiente modelo antes de cambiar de clave.
+                log.info("%s", ultimo)
+                continue
+    raise ErrorIA(f"gemini ({len(llaves)} clave(s), {', '.join(modelos)}): {ultimo}")
 
 
 def _mistral(sistema: list, mensaje: str) -> tuple[dict, dict]:

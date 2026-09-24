@@ -51,6 +51,14 @@ from materias import sesiones as S
 log = logging.getLogger("materias.api")
 
 UI = pathlib.Path(__file__).with_name("ui.html")
+UI_COMPLETO = pathlib.Path(__file__).with_name("ui_completo.html")
+"""
+El tablero anterior, con los nueve modelos y el backtest.
+
+No se borra porque sigue midiendo algo real -- 153 operaciones con su
+embudo y su Monte Carlo -- pero deja de ser la portada. Lo que se mira
+cada dia ahora es el piloto.
+"""
 NY = ZoneInfo("America/New_York")
 NL = chr(10)
 CRLF = chr(13) + chr(10)
@@ -178,6 +186,58 @@ def dia_a_dia() -> list[dict]:
         out.append({"fecha": f, "n": len(g[f]), "r": round(r, 3),
                     "acum": round(acum, 3)})
     return out
+
+
+def piloto() -> dict:
+    """
+    El piloto de entrada forzada. Es lo principal del tablero ahora.
+
+    Va aparte de todo lo demas porque mide otra cosa: no si el sistema
+    sabe elegir cuando entrar, sino si sabe hacia donde va el precio. Los
+    dos numeros que importan son el acierto de direccion contra el 50 %
+    del azar, y si las entradas de confianza "alta" aciertan mas que las
+    de "baja".
+    """
+    from materias import piloto as P
+    r = P.resumen()
+    filas = DI.leer_estado(None, origen=P.ORIGEN)
+    filas.sort(key=lambda o: str(o.get("ts") or ""), reverse=True)
+    out = []
+    for o in filas[:40]:
+        try:
+            n = json.loads(o.get("nota") or "{}")
+            n = n if isinstance(n, dict) else {}
+        except (ValueError, TypeError):
+            n = {}
+        med = n.get("medicion") or {}
+        out.append({
+            "id": o["id"], "ts": o.get("ts"), "lado": o.get("lado"),
+            "entrada": o.get("entrada"), "sl": o.get("sl"), "tp": o.get("tp"),
+            "rr_objetivo": o.get("rr_objetivo"), "lotes": o.get("lotes"),
+            "estado": o.get("estado"), "r": o.get("r"),
+            "r_bruto": o.get("r_bruto"), "costo_r": o.get("costo_r"),
+            "salida": o.get("salida"),
+            "confianza": n.get("confianza"),
+            "razonamiento": n.get("razonamiento"),
+            "riesgos": n.get("riesgos"),
+            "peso_noticias": n.get("peso_noticias"),
+            "noticias": n.get("noticias"),
+            "citas": o.get("confluencias") or [],
+            "direccion_ok": med.get("direccion_ok"),
+            "movimiento": med.get("movimiento"),
+            "uso": n.get("uso") or {},
+        })
+    r["entradas_detalle"] = out
+    r["cada_horas"] = P.CADA_HORAS
+    r["horizonte_horas"] = P.HORIZONTE_HORAS
+    return r
+
+
+def notas() -> dict:
+    """Lo que el agente ha aprendido de sus propias entradas (cap. 19.1)."""
+    from materias import saber
+    return {"version": saber.version(), "cuerpo": saber.leer(),
+            "historial": saber.historial(8)}
 
 
 def concentracion() -> dict:
@@ -320,7 +380,8 @@ def _json(obj) -> bytes:
                       allow_nan=False).encode()
 
 
-RUTAS = ["/ui", "/api/estado", "/api/corrida", "/api/listones",
+RUTAS = ["/ui", "/api/piloto", "/api/notas",
+         "/api/estado", "/api/corrida", "/api/listones",
          "/api/concentracion", "/api/historial", "/api/operaciones",
          "/api/vivo", "/api/planes", "/api/dias", "/api/informe", "/salud"]
 
@@ -344,10 +405,18 @@ async def servir(puerto: int) -> None:
             if camino in ("/", "/ui"):
                 tipo = "text/html; charset=utf-8"
                 cuerpo = UI.read_bytes() if UI.exists() else b"<p>sin tablero"
+            elif camino == "/ui/completo":
+                tipo = "text/html; charset=utf-8"
+                cuerpo = (UI_COMPLETO.read_bytes() if UI_COMPLETO.exists()
+                          else b"<p>sin tablero completo")
             elif camino == "/api/estado":
                 cuerpo = _json(estado_actual())
             elif camino == "/api/corrida":
                 cuerpo = _json(corrida())
+            elif camino == "/api/piloto":
+                cuerpo = _json(piloto())
+            elif camino == "/api/notas":
+                cuerpo = _json(notas())
             elif camino == "/api/concentracion":
                 cuerpo = _json(concentracion())
             elif camino == "/api/historial":
