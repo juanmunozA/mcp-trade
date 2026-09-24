@@ -689,6 +689,23 @@ def resolver(m5: list[dict], sim: str = "") -> list[dict]:
             # cerro solo, a su precio y a su hora. No hay retraso posible.
             tarde = 0.0
             bruto, estado, salida = r["r"], r["estado"], r.get("salida")
+            # Pero eso es lo que dice la REPRODUCCION sobre velas, no el
+            # broker. Los dos suelen coincidir y hoy coincidieron; no
+            # tienen por que. Una mecha que atraviesa el stop en la vela
+            # puede no haberse llenado, y al reves con deslizamiento.
+            # Si no cuadran, el diario daria la posicion por cerrada
+            # mientras sigue viva y arriesgando -- que es exactamente lo
+            # que costo 11,65 USD esta manana por otro camino.
+            if USA_BROKER:
+                from materias import broker as B
+                tk = _ticket_broker(o)
+                if tk:
+                    res = B.cerrar_posicion(tk, f"cuadrar {r['estado']}")
+                    if res.get("cerrada"):
+                        log.warning("la reproduccion daba %s por cerrada en "
+                                    "%s pero seguia viva en el broker; "
+                                    "cerrada ahora @%s", tk, r["estado"],
+                                    res.get("precio"))
         neto = round(bruto - (o.get("costo_r") or 0), 4)
 
         # ── La medicion limpia: ¿acerto la DIRECCION a 4 horas? ───────
