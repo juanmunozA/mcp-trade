@@ -100,6 +100,18 @@ que se han ido varias esta manana.
 """
 
 
+RR_MINIMO = float(os.getenv("PILOTO_RR_MINIMO", "1.0"))
+"""
+Relacion riesgo/beneficio minima para aceptar una entrada.
+
+1R, no los 2R del capitulo 11.9: en horizontes de 25 minutos un objetivo
+a dos veces el stop casi nunca es alcanzable y el veto deja al piloto
+sin operar. Por debajo de 1R, en cambio, el win rate de equilibrio del
+capitulo 14.3 sube por encima del 50 % y la operacion pierde sentido
+como medida de direccion.
+"""
+
+
 TARDE_MAX_MIN = float(os.getenv("PILOTO_TARDE_MAX_MIN", "2"))
 """
 Cuanto puede retrasarse un cierre antes de que su precio deje de valer.
@@ -509,6 +521,26 @@ def revisar(e: Entrada, ctx: dict) -> str:
         if dist > 3 * atr:
             return (f"stop de {dist:.4f} sobre 3x ATR de {tf} ({atr:.4f}): "
                     f"no deja sitio para un objetivo alcanzable en ese tiempo")
+    # Y que el objetivo pague el riesgo.
+    #
+    # Esto faltaba entero, y dejo pasar una venta con el stop a 13,28 y
+    # el objetivo a 8,22: 0,62R. Por el capitulo 14.3 el win rate de
+    # equilibrio es 1/(1+R), asi que esa operacion necesita acertar el
+    # 62 % solo para no perder dinero.
+    #
+    # El liston es 1R y no los 2R del capitulo 11.9 a proposito. Con
+    # 2R vetaba casi todo en horizontes cortos -- en 25 minutos un
+    # objetivo a dos veces el stop rara vez es alcanzable, y el veto
+    # dejaba al piloto sin entrar, que es peor que entrar con poca R.
+    # Pero por debajo de 1R el equilibrio se va por encima del 50 %, o
+    # sea que la operacion necesita superar a la moneda al aire solo
+    # para empatar. Ahi ya no se esta midiendo direccion: se esta
+    # apostando en contra de uno mismo.
+    rr = abs(e.tp - e.entrada) / dist if dist else 0
+    if rr < RR_MINIMO:
+        return (f"objetivo a {rr:.2f}R: por debajo de {RR_MINIMO}R el win rate "
+                f"de equilibrio pasa del 50 % (cap. 14.3)")
+
     return ""
 
 
