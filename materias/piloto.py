@@ -625,7 +625,14 @@ def resolver(m5: list[dict], sim: str = "") -> list[dict]:
                     res = B.cerrar_posicion(tk, "fin de horizonte")
                     # Cuanto se ha pasado del horizonte al cerrar. En
                     # marcha normal son segundos.
-                    tarde = max(0.0, (m5[-1]["dt"] - limite).total_seconds() / 60)
+                    #
+                    # Contra el RELOJ y no contra la ultima vela: si el
+                    # feed viene atrasado -- y viene, justo al despertar
+                    # de una suspension -- la ultima vela sigue siendo la
+                    # del horizonte y el retraso saldria cero. Paso: una
+                    # posicion estuvo 52 minutos de mas y se anoto como
+                    # cerrada a tiempo.
+                    tarde = max(0.0, (datetime.now(NY) - limite).total_seconds() / 60)
                     if res.get("precio") and tarde <= TARDE_MAX_MIN:
                         # El precio al que se cerro DE VERDAD, no el de la
                         # ultima vela: entre uno y otro hay spread.
@@ -906,6 +913,45 @@ def _registrar_broker() -> dict:
     return esp
 
 
+VELAS_RANCIAS_MIN = float(os.getenv("PILOTO_VELAS_RANCIAS_MIN", "12"))
+"""
+Cuanto puede atrasarse el feed antes de que no se pueda operar con el.
+
+Una vela de 5M recien cerrada ya tiene hasta 5 minutos; con el retardo
+de la descarga y algun hueco, 12 deja margen sin dejar pasar un feed
+parado de verdad.
+"""
+
+
+def _rancias(m5: list[dict]) -> bool:
+    """
+    ¿Son las velas demasiado viejas para decidir con ellas?
+
+    POR QUE HACE FALTA
+    Al volver de una suspension, MT5 tarda en resincronizar con el
+    servidor y `copy_rates` devuelve un rato lo ultimo que tenia en
+    cache, sin avisar. El ciclo lo daba por bueno.
+
+    Lo que pasa entonces no es que se pierda una operacion: es que se
+    manda una mala. El agente razono sobre velas de 52 minutos antes,
+    con el oro en 4268.64, y decidio una VENTA con el stop en 4279.00.
+    Para cuando la orden salio, el bid real era 4279.58 -- el stop
+    quedaba DEBAJO del precio, al otro lado. La orden se rechazo, que es
+    el final bueno; el malo habria sido que entrara.
+
+    Mas vale saltarse el ciclo. El siguiente llega en un minuto y para
+    entonces MT5 ya se ha puesto al dia.
+    """
+    if not m5:
+        return True
+    edad = (datetime.now(NY) - m5[-1]["dt"]).total_seconds() / 60
+    if edad <= VELAS_RANCIAS_MIN:
+        return False
+    log.warning("velas de %.0f min de antiguedad; el feed aun no se ha "
+                "puesto al dia. Se salta el ciclo", edad)
+    return True
+
+
 async def ciclo(capital: float) -> None:
     """
     Un paso: resolver lo abierto y, si toca, entrar.
@@ -921,6 +967,8 @@ async def ciclo(capital: float) -> None:
     d = await cargar_datos()
     if not d or not d.get("m5"):
         log.warning("sin velas de %s", s)
+        return
+    if _rancias(d["m5"]):
         return
     resolver(d["m5"], s)
 
