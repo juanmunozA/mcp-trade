@@ -820,9 +820,23 @@ def resumen(sim: str = "") -> dict:
         except (ValueError, TypeError):
             return {}
 
+    def _limpia(n: dict) -> bool:
+        """
+        ¿Se cerro a tiempo esta operacion?
+
+        Una que se cerro tarde tiene su direccion bien medida -- se mide
+        contra la vela del horizonte -- pero estuvo expuesta un rato que
+        no formaba parte de la pregunta, y su R no es comparable con el
+        de las demas. `limpia` lo dice desde `resolver`. Las de antes de
+        que existiera el flag no lo traen, y se dan por buenas: no se
+        media el retraso entonces, asi que no hay motivo para sospechar.
+        """
+        return n.get("medicion", {}).get("limpia", True)
+
     medidas = [(_nota(o), o) for o in cerradas]
     con_dir = [(n["medicion"]["direccion_ok"], o)
-               for n, o in medidas if "medicion" in n]
+               for n, o in medidas if "medicion" in n and _limpia(n)]
+    sucias = sum(1 for n, _ in medidas if "medicion" in n and not _limpia(n))
     if con_dir:
         ok = sum(1 for v, _ in con_dir if v)
         d["direccion"] = {
@@ -830,7 +844,13 @@ def resumen(sim: str = "") -> dict:
             "acierto_pct": round(100 * ok / len(con_dir), 1),
             "liston_azar": 50.0,
             "horizonte_horas": HORIZONTE_HORAS,
+            # Cuantas se dejaron fuera por cerrarse tarde. Va a la vista
+            # porque si son muchas el porcentaje de arriba se calculo
+            # sobre una muestra mas pequena de lo que parece.
+            "descartadas_por_retraso": sucias,
         }
+    elif sucias:
+        d["direccion"] = {"n": 0, "descartadas_por_retraso": sucias}
 
     # Por confianza declarada. Si las "alta" no aciertan mas que las
     # "baja", el agente no sabe cuando sabe -- y eso vale tanto como el
@@ -841,7 +861,7 @@ def resumen(sim: str = "") -> dict:
         c = n.get("confianza", "?")
         e = porc.setdefault(c, {"rs": [], "dir": []})
         e["rs"].append(o["r"])
-        if "medicion" in n:
+        if "medicion" in n and _limpia(n):
             e["dir"].append(n["medicion"]["direccion_ok"])
     d["por_confianza"] = {
         k: {"n": len(v["rs"]), "r_total": round(sum(v["rs"]), 2),
