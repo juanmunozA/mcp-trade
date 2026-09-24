@@ -86,6 +86,34 @@ ANALISIS_MIN = round((CADA_HORAS - HORIZONTE_HORAS) * 60)
 ORIGEN = "piloto"
 RIESGO_PCT = float(os.getenv("PILOTO_RIESGO_PCT", "0.5"))
 
+LOTE_FIJO = float(os.getenv("PILOTO_LOTE", "0") or 0)
+"""
+Lote fijo, en vez de calcularlo por el capitulo 14.2.
+
+Con 0 se usa la formula: `Lotes = Riesgo / (Distancia SL x Contrato)`, que
+es lo que manda la guia y lo que mantiene el riesgo en el 0,5 % pase lo
+que pase con el stop.
+
+Con un numero se usa ese, y punto. Sirve para cuentas pequenas donde el
+lote minimo del broker es mayor que el que sale de la formula: con 160
+USD de balance, un stop de 15 dolares en oro y riesgo del 0,5 %, la
+formula pide 0,0005 lotes y el broker no baja de 0,01. Veinte veces mas.
+
+LO QUE ESO IMPLICA, ESCRITO PARA QUE NO SE OLVIDE
+0,01 lotes de oro con un stop de 15 dolares arriesgan 15 USD. Sobre 160
+de balance es el 9,4 %, no el 0,5 %. Dos perdidas seguidas son el 19 % de
+la cuenta. El capitulo 14.1 fija el riesgo por operacion en 0,5-1 % y
+14.5 explica por que: «con 40 % de acierto, la probabilidad de 8 perdidas
+seguidas en 200 operaciones es alta».
+
+LO QUE NO SE ROMPE
+La medicion. El R es independiente del lote -- es (salida - entrada)
+dividido por (entrada - stop) -- asi que el acierto de direccion y todas
+las metricas en R siguen siendo validas. Lo unico que dependia del lote
+era traducir R a porcentaje de cuenta, y eso se arregla calculando el
+riesgo REAL de cada entrada en vez de suponer el 0,5 %.
+"""
+
 USA_BROKER = os.getenv("PILOTO_BROKER", "").strip() == "1"
 """
 Con esto a 1 el piloto analiza y opera EL INSTRUMENTO DEL BROKER.
@@ -586,8 +614,19 @@ def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
 
     dist = abs(e.entrada - e.sl)
     contrato = ctx.get("contrato", 1)
-    lotes = G.lotes(capital, RIESGO_PCT, dist, contrato)
+    lotes = LOTE_FIJO or G.lotes(capital, RIESGO_PCT, dist, contrato)
     costo_r = round((ctx.get("costo") or 0) / dist, 4) if dist else 0.0
+
+    # El riesgo REAL de esta entrada, no el que se pidio. Con lote fijo
+    # los dos se separan, y guardar el supuesto convertiria el drawdown
+    # en porcentaje del tablero en una cifra inventada. El R no cambia --
+    # va normalizado por la distancia al stop -- pero el % de cuenta si.
+    riesgo_usd = dist * lotes * contrato
+    riesgo_real = round(100 * riesgo_usd / capital, 3) if capital else 0.0
+    if LOTE_FIJO and riesgo_real > RIESGO_PCT * 2:
+        log.warning("lote fijo de %s: esta entrada arriesga %.2f USD = %.1f%% "
+                    "de %.0f, no el %.1f%% del cap. 14.1",
+                    lotes, riesgo_usd, riesgo_real, capital, RIESGO_PCT)
 
     # ── Al broker, si esta conectado ──────────────────────────────────
     #
@@ -614,7 +653,7 @@ def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
         "setup": "piloto_4h", "lado": e.lado, "ventana": "forzada",
         "entrada": e.entrada, "sl": e.sl, "tp": e.tp,
         "rr_objetivo": round(abs(e.tp - e.entrada) / dist, 2) if dist else 0,
-        "lotes": lotes, "riesgo_pct": RIESGO_PCT, "costo_r": costo_r,
+        "lotes": lotes, "riesgo_pct": riesgo_real, "costo_r": costo_r,
         "confluencias": e.citas,
         # Si el broker la rechazo no se marca como abierta: no existe.
         "estado": ("abierta" if (not USA_BROKER or envio.get("enviada"))
@@ -650,7 +689,13 @@ def resumen() -> dict:
     if not cerradas:
         return d
     rs = [o["r"] for o in cerradas]
-    m = M.calcular(rs, RIESGO_PCT)
+    # El riesgo medio REAL de las operaciones, no el configurado: con
+    # lote fijo son distintos, y `metricas` lo usa para pasar el drawdown
+    # de R a porcentaje de cuenta.
+    reales = [o["riesgo_pct"] for o in cerradas if o.get("riesgo_pct")]
+    riesgo = round(sum(reales) / len(reales), 3) if reales else RIESGO_PCT
+    m = M.calcular(rs, riesgo)
+    d["riesgo_medio_pct"] = riesgo
     d["metricas"] = m.dict()
 
     # Lo que de verdad mide el experimento, y va separado del R a
@@ -845,7 +890,12 @@ async def main() -> None:
              "%dh%02dm · %d min de analisis entre una y otra",
              CADA_HORAS, int(HORIZONTE_HORAS),
              round((HORIZONTE_HORAS % 1) * 60), ANALISIS_MIN)
-    log.info("%s · riesgo %.2f%% · sin dinero real", D.PRINCIPAL, RIESGO_PCT)
+    if LOTE_FIJO:
+        log.info("%s · LOTE FIJO %s (el riesgo por operacion lo fija el stop, "
+                 "no el %.2f%% del cap. 14.1)", simbolo(), LOTE_FIJO, RIESGO_PCT)
+    else:
+        log.info("%s · riesgo %.2f%% por operacion (cap. 14.2)",
+                 simbolo(), RIESGO_PCT)
     log.info("proveedores: %s · claves de gemini: %d",
              ",".join(AG.PROVEEDORES), len(AG.llaves_gemini()))
     log.info("diario en %s", AL.destino())

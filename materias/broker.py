@@ -151,15 +151,63 @@ def desfase_servidor(simbolo: str = "") -> timedelta:
     if _desfase is not None:
         return _desfase
     mt5 = _api()
-    tick = mt5.symbol_info_tick(simbolo or SIMBOLO)
-    if tick is None:
-        raise RuntimeError(f"sin tick de {simbolo or SIMBOLO}: ¿simbolo mal escrito?")
-    servidor = datetime.fromtimestamp(tick.time, tz=UTC)
-    bruto = (servidor - datetime.now(UTC)).total_seconds()
+    simbolo = simbolo or SIMBOLO
+
+    # ── El tick, si sirve ─────────────────────────────────────────────
+    #
+    # Un simbolo recien activado en Observacion del Mercado devuelve un
+    # tick con `time=0` durante unos segundos, hasta que llega la primera
+    # cotizacion. Sin validarlo, el desfase salia de comparar 1970 con
+    # hoy: UTC-497282,5 horas, y las velas aterrizaban en el ano 2083.
+    #
+    # Lo peor no era el numero: era que NO FALLABA. La comprobacion
+    # imprimia "velas 5M: 30" tan tranquila y el sistema habria operado
+    # con killzones desplazadas medio siglo.
+    epoca = 0
+    for _ in range(6):
+        t = mt5.symbol_info_tick(simbolo)
+        if t is not None and t.time:
+            epoca = int(t.time)
+            break
+        mt5.symbol_select(simbolo, True)
+        _dormir(1.0)
+
+    # ── Si no hay tick, la ultima vela sirve igual ────────────────────
+    #
+    # Las velas tambien vienen en hora del servidor y existen aunque el
+    # mercado este cerrado. Es peor ancla -- la ultima vela puede ser de
+    # hace horas -- pero se redondea a media hora y eso lo absorbe.
+    origen = "tick"
+    if not epoca:
+        filas = mt5.copy_rates_from_pos(simbolo, mt5.TIMEFRAME_M5, 0, 1)
+        if filas is not None and len(filas):
+            epoca = int(filas[-1]["time"]) + 300  # el cierre, no la apertura
+            origen = "ultima vela"
+
+    if not epoca:
+        raise RuntimeError(
+            f"no hay ni tick ni velas de «{simbolo}»: anadelo a Observacion "
+            f"del Mercado (clic derecho > Mostrar todo) y reintenta")
+
+    bruto = (datetime.fromtimestamp(epoca, tz=UTC) - datetime.now(UTC)).total_seconds()
+    horas = bruto / 3600
+    # Ningun broker esta a mas de medio dia de UTC. Fuera de esa banda el
+    # dato esta roto, y es mejor parar que operar con la hora corrida --
+    # el capitulo 10 avisa de que eso vuelve inutiles las killzones.
+    if not -14 <= horas <= 14:
+        raise RuntimeError(
+            f"la hora de «{simbolo}» da un desfase imposible ({horas:+.1f} h). "
+            f"El simbolo no esta cotizando; anadelo a Observacion del Mercado.")
+
     _desfase = timedelta(minutes=round(bruto / 1800) * 30)
-    log.info("hora del servidor: UTC%+.1f (medido, no supuesto)",
-             _desfase.total_seconds() / 3600)
+    log.info("hora del servidor: UTC%+.1f (medido por %s, no supuesto)",
+             _desfase.total_seconds() / 3600, origen)
     return _desfase
+
+
+def _dormir(s: float) -> None:
+    import time
+    time.sleep(s)
 
 
 def _a_ny(epoch: int, simbolo: str) -> datetime:
@@ -191,7 +239,14 @@ def especificacion(simbolo: str = "") -> dict:
     if not si.visible and not mt5.symbol_select(simbolo, True):
         raise RuntimeError(f"no se pudo activar «{simbolo}» en Observacion de Mercado")
     si = mt5.symbol_info(simbolo)
+    # Tras activarlo tarda un segundo en llegar la primera cotizacion, y
+    # un bid/ask en cero se propaga a todo lo demas sin quejarse.
     tick = mt5.symbol_info_tick(simbolo)
+    for _ in range(5):
+        if tick is not None and tick.bid:
+            break
+        _dormir(1.0)
+        tick = mt5.symbol_info_tick(simbolo)
     punto = si.point or 0.01
     spread_precio = (tick.ask - tick.bid) if tick else si.spread * punto
     return {
@@ -305,8 +360,19 @@ def _modo_llenado(esp: dict):
     """
     mt5 = _api()
     m = esp.get("modo_llenado", 0)
-    for bit, modo in ((mt5.SYMBOL_FILLING_FOK, mt5.ORDER_FILLING_FOK),
-                      (mt5.SYMBOL_FILLING_IOC, mt5.ORDER_FILLING_IOC)):
+    # Los bits van literales porque el paquete de Python NO exporta las
+    # constantes `SYMBOL_FILLING_*` -- solo las `ORDER_FILLING_*`, que son
+    # otra cosa y valen otros numeros. Usarlas por su nombre reventaba con
+    # AttributeError justo al enviar la primera orden.
+    #
+    #   mascara del simbolo        orden que hay que mandar
+    #   bit 1 = SYMBOL_FILLING_FOK -> ORDER_FILLING_FOK (0)
+    #   bit 2 = SYMBOL_FILLING_IOC -> ORDER_FILLING_IOC (1)
+    #
+    # Medido en Tickmill: XAUUSD devuelve mascara 2, o sea SOLO IOC.
+    # Mandar FOK ahi da «Unsupported filling mode» y la orden se pierde.
+    for bit, modo in ((1, mt5.ORDER_FILLING_FOK),
+                      (2, mt5.ORDER_FILLING_IOC)):
         if m & bit:
             return modo
     # Las pendientes suelen admitir RETURN aunque no este en la mascara.
