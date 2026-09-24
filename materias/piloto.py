@@ -557,20 +557,39 @@ def vivas(sim: str = "") -> list[dict]:
     return _suyas(DI.leer_estado(("abierta",), origen=ORIGEN), sim)
 
 
+def _cuando(o: dict) -> datetime | None:
+    """
+    La hora de una entrada, como fecha y no como texto.
+
+    POR QUE NO VALE COMPARAR EL TEXTO
+    Conviven dos formatos. Postgres devuelve la suya con un espacio y
+    con zona -- `2026-09-24 09:27:25.069431-04:00` -- y una fila escrita
+    sin `ts` explicito se guarda con `isoformat()`, que pone una T y no
+    lleva zona: `2026-09-24T08:27:24`.
+
+    Ordenados como texto, la T gana: vale 84 y el espacio 32. Asi que la
+    fila mas vieja salia elegida como la mas reciente.
+
+    Lo que eso provoco: el piloto creyo que la ultima entrada era de una
+    hora antes, dio por cumplida la espera de 15 minutos y abrio una
+    segunda posicion 50 segundos despues de la primera, en direccion
+    contraria. Dos posiciones opuestas a la vez, que no miden nada y
+    pagan el spread dos veces.
+    """
+    try:
+        t = datetime.fromisoformat(str(o.get("ts")))
+    except (ValueError, TypeError):
+        return None
+    return t.replace(tzinfo=NY) if t.tzinfo is None else t
+
+
 def toca_entrar(ahora: datetime, sim: str = "") -> bool:
     """¿Han pasado ya las cuatro horas desde la ultima entrada de este activo?"""
     todas = _suyas(DI.leer_estado(None, origen=ORIGEN), sim)
-    if not todas:
+    fechas = [f for f in map(_cuando, todas) if f]
+    if not fechas:
         return True
-    ultima = max(todas, key=lambda o: str(o.get("ts") or ""))
-    t = ultima.get("ts")
-    try:
-        t = datetime.fromisoformat(str(t))
-    except (ValueError, TypeError):
-        return True
-    if t.tzinfo is None:
-        t = t.replace(tzinfo=NY)
-    return (ahora - t) >= timedelta(hours=CADA_HORAS)
+    return (ahora - max(fechas)) >= timedelta(hours=CADA_HORAS)
 
 
 def resolver(m5: list[dict], sim: str = "") -> list[dict]:
@@ -726,7 +745,8 @@ def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
     veto = revisar(e, ctx)
     if veto:
         log.warning("la direccion no era usable: %s", veto)
-        DI.guardar({"simbolo": simbolo, "setup": "piloto_4h", "lado": e.lado,
+        DI.guardar({"ts": str(ctx["ahora"]),
+                    "simbolo": simbolo, "setup": "piloto_4h", "lado": e.lado,
                     "estado": "no_enviada", "origen": ORIGEN,
                     "nota": f"rechazada: {veto} · {e.razonamiento}"[:900]})
         return {"entro": False, "motivo": veto}
