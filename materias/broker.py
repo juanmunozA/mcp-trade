@@ -531,3 +531,86 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     print(comprobar())
     desconectar()
+
+
+def enviar_mercado(lado: str, lotes: float, sl: float, tp: float,
+                   simbolo: str = "", magia: int = 20260923,
+                   comentario: str = "") -> dict:
+    """
+    Entra AHORA, al precio que haya. Para el piloto de entrada forzada.
+
+    `enviar` coloca una limite porque la estrategia del capitulo 20.2 lo
+    pide: se entra en un retroceso a un FVG. El piloto es otra cosa --
+    cada cuatro horas toma posicion pase lo que pase -- y una limite ahi
+    no sirve: si el precio no vuelve, no hay entrada, y una entrada que a
+    veces no ocurre rompe la cadencia que hace medible el experimento.
+
+    El SL y el TP van adjuntos en el mismo envio. El capitulo 19 lo pone
+    entre las soluciones a «mover el stop»: «SL fijo desde la entrada;
+    automatizar SL/TP». Una orden que llega sin stop y espera a que un
+    segundo mensaje se lo ponga esta sin stop durante ese intervalo.
+    """
+    mt5 = _api()
+    simbolo = simbolo or SIMBOLO
+    esp = especificacion(simbolo)
+    lotes = lotes_validos(lotes, esp)
+    compra = lado == "compra"
+    dig = esp["digitos"]
+    precio = esp["ask"] if compra else esp["bid"]
+    if precio is None:
+        return {"enviada": False, "motivo": "sin cotizacion"}
+    sl, tp = round(sl, dig), round(tp, dig)
+
+    problemas = []
+    minimo = esp["stops_min"]
+    if minimo > 0:
+        if abs(precio - sl) < minimo:
+            problemas.append(f"SL a {abs(precio - sl):.{dig}f}, por debajo del "
+                             f"minimo del broker ({minimo})")
+        if abs(tp - precio) < minimo:
+            problemas.append(f"TP a {abs(tp - precio):.{dig}f}, por debajo del "
+                             f"minimo del broker ({minimo})")
+    if compra and not (sl < precio < tp):
+        problemas.append(f"compra con SL {sl} y TP {tp} sobre un ask de {precio}")
+    if not compra and not (tp < precio < sl):
+        problemas.append(f"venta con SL {sl} y TP {tp} sobre un bid de {precio}")
+
+    peticion = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": simbolo,
+        "volume": lotes,
+        "type": mt5.ORDER_TYPE_BUY if compra else mt5.ORDER_TYPE_SELL,
+        "price": precio,
+        "sl": sl, "tp": tp,
+        # Cuanto slippage se tolera, en puntos. Con entrada a mercado hay
+        # que dar alguno o el broker rechaza la orden en cuanto el precio
+        # se mueve entre que se calcula y que llega.
+        "deviation": int(os.getenv("MT5_SLIPPAGE_PUNTOS", "20")),
+        "type_filling": _modo_llenado(esp),
+        "magic": magia,
+        "comment": (comentario or "piloto 4h")[:31],
+    }
+    if problemas:
+        log.warning("orden NO enviada: %s", " · ".join(problemas))
+        return {"enviada": False, "motivo": " · ".join(problemas),
+                "peticion": peticion}
+    if not ENVIAR_DE_VERDAD:
+        log.info("SECO · %s %s %s lotes @ %s  SL %s  TP %s  (falta "
+                 "MATERIAS_ENVIAR=1)", simbolo, lado, lotes, precio, sl, tp)
+        return {"enviada": False, "motivo": "modo seco", "peticion": peticion,
+                "precio": precio}
+
+    res = mt5.order_send(peticion)
+    if res is None:
+        code, msg = mt5.last_error()
+        return {"enviada": False, "motivo": f"order_send None ({code}): {msg}",
+                "peticion": peticion}
+    ok = res.retcode == mt5.TRADE_RETCODE_DONE
+    if not ok:
+        log.warning("el broker rechazo la orden (%s): %s", res.retcode, res.comment)
+    else:
+        log.info("EJECUTADA %s %s %s lotes @ %s · ticket %s", simbolo, lado,
+                 lotes, res.price, res.order)
+    return {"enviada": ok, "ticket": getattr(res, "order", None),
+            "precio": getattr(res, "price", precio), "retcode": res.retcode,
+            "comentario": res.comment, "peticion": peticion}

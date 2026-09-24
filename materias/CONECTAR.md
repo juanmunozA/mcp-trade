@@ -1,5 +1,23 @@
 # Conectar el bot a Tickmill
 
+## Lo primero: la cuenta que tienes en TradingView no sirve
+
+Tickmill tiene **dos familias de cuenta que no se hablan entre si**:
+
+| | plataforma | ¿la puede manejar un bot? |
+|---|---|---|
+| **Tickmill Trader** (DXtrade) | TradingView, web | **no** |
+| **MT4 / MT5** | MetaTrader | **si**, con Python |
+
+La que usas en TradingView es del primer tipo. Para automatizar hace falta
+abrir una **cuenta demo de MT5 aparte**, gratis y al instante desde el
+Client Area. No sincronizan: lo que el bot abra en MT5 no aparece en
+TradingView, y al reves.
+
+Y tampoco hay atajo por API: Tickmill ofrece FIX API **solo en Tickmill
+Prime**, con 500.000 USD de saldo minimo y 5.000 al mes de comisiones. En
+retail no existe, ni REST ni FIX.
+
 ## Antes de empezar: TradingView no puede hacer esto
 
 TradingView **no tiene API para enviar órdenes**. Lo único que ofrece para
@@ -127,9 +145,22 @@ MT5_SIMBOLO=XAUUSD.r
 
 ### 5. Correr en seco
 
+Hay dos cosas que puedes correr contra el broker, y hacen cosas distintas:
+
 ```bash
+# El piloto: cada 4 horas el AGENTE elige direccion leyendo la guia entera,
+# entra si o si, y la posicion vive 3h50m. Es lo que corre en Render, pero
+# contra tu XAUUSD en vez de contra el futuro de Yahoo.
+PILOTO_BROKER=1 python -m materias.piloto
+
+# El sistema normal: los nueve modelos deterministas del capitulo 11, que
+# solo entran cuando el checklist del 11.9 pasa entero. Opera poco.
 python -m materias.operar
 ```
+
+Los dos **por defecto no mandan nada**. Analizan, calculan el lote,
+deciden la orden y la registran con el motivo. Deja uno corriendo al
+menos una sesion entera y mira en el tablero que habria hecho.
 
 **Por defecto no manda nada.** Analiza, calcula el lote, decide la orden y
 la registra como `no_enviada`, con el motivo. Déjalo así al menos una sesión

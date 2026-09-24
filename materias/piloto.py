@@ -86,6 +86,26 @@ ANALISIS_MIN = round((CADA_HORAS - HORIZONTE_HORAS) * 60)
 ORIGEN = "piloto"
 RIESGO_PCT = float(os.getenv("PILOTO_RIESGO_PCT", "0.5"))
 
+USA_BROKER = os.getenv("PILOTO_BROKER", "").strip() == "1"
+"""
+Con esto a 1 el piloto analiza y opera EL INSTRUMENTO DEL BROKER.
+
+Sin ella lee `GC=F` de Yahoo -- el futuro de COMEX -- y opera en papel
+contra esa misma serie. Sirve para medir la direccion sin depender de
+nada, y es lo que corre en Render.
+
+Con ella lee XAUUSD de MT5 y manda las ordenes a la cuenta. La diferencia
+no es cosmetica: el futuro y el contado cotizan con decenas de dolares de
+separacion y ese desfase SE MUEVE. Medido contra el grafico del operador
+el mismo dia: 38,42 a las 14:27 y 41,30 a las 21:45. Tres dolares de
+deriva en siete horas, sobre stops de cuatro. Un nivel calculado en uno y
+puesto en el otro no es una aproximacion: es otro precio.
+
+Solo funciona en Windows, porque el paquete MetaTrader5 solo existe ahi.
+Por eso Render se queda con Yahoo y esto corre en la maquina que tenga la
+terminal abierta.
+"""
+
 
 @dataclass
 class Entrada:
@@ -412,6 +432,36 @@ def revisar(e: Entrada, ctx: dict) -> str:
 # El ciclo
 # ══════════════════════════════════════════════════════════════════════
 
+def simbolo() -> str:
+    """Sobre que se opera: el del broker o el futuro de Yahoo."""
+    if USA_BROKER:
+        from materias import broker as B
+        return B.SIMBOLO
+    return D.PRINCIPAL
+
+
+async def cargar_datos() -> dict:
+    """
+    Las velas, de donde toque.
+
+    Con broker vienen de MT5 y son del MISMO instrumento que se opera.
+    Sin el, de Yahoo. La forma que devuelven es identica, asi que todo lo
+    que hay aguas abajo -- estructura, retrato, agente -- funciona igual
+    sin saber de donde salieron.
+    """
+    if USA_BROKER:
+        from materias import broker as B
+        return await asyncio_to_thread(B.datos_completos)
+    datos = await D.cargar([D.PRINCIPAL])
+    return datos.get(D.PRINCIPAL) or {}
+
+
+async def asyncio_to_thread(fn, *a, **k):
+    """`MetaTrader5` es sincrono y bloqueante: va a un hilo."""
+    import asyncio
+    return await asyncio.to_thread(fn, *a, **k)
+
+
 def vivas() -> list[dict]:
     return DI.leer_estado(("abierta",), origen=ORIGEN)
 
@@ -538,6 +588,26 @@ def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
     contrato = ctx.get("contrato", 1)
     lotes = G.lotes(capital, RIESGO_PCT, dist, contrato)
     costo_r = round((ctx.get("costo") or 0) / dist, 4) if dist else 0.0
+
+    # ── Al broker, si esta conectado ──────────────────────────────────
+    #
+    # A mercado y no con una limite: el piloto entra pase lo que pase, y
+    # una limite que a veces no se llena rompe la cadencia que hace
+    # medible el experimento.
+    envio = {}
+    if USA_BROKER:
+        from materias import broker as B
+        envio = B.enviar_mercado(e.lado, lotes, e.sl, e.tp, simbolo,
+                                 comentario="piloto 4h")
+        if envio.get("precio"):
+            # El precio real de llenado manda sobre el que se calculo:
+            # entre decidir y ejecutar el mercado se movio, y el R tiene
+            # que salir de donde se entro de verdad.
+            e.entrada = round(envio["precio"], 4)
+            dist = abs(e.entrada - e.sl)
+        if not envio.get("enviada"):
+            log.warning("el broker no acepto la orden: %s", envio.get("motivo"))
+
     nid = DI.guardar({
         "ts": str(ctx["ahora"]), "simbolo": simbolo,
         "nombre": D.ACTIVOS.get(simbolo, {}).get("nombre", simbolo),
@@ -545,14 +615,20 @@ def entrar(simbolo: str, ctx: dict, capital: float, notas: str = "") -> dict:
         "entrada": e.entrada, "sl": e.sl, "tp": e.tp,
         "rr_objetivo": round(abs(e.tp - e.entrada) / dist, 2) if dist else 0,
         "lotes": lotes, "riesgo_pct": RIESGO_PCT, "costo_r": costo_r,
-        "confluencias": e.citas, "estado": "abierta", "esquema": "todo_en_tp",
-        "origen": ORIGEN,
+        "confluencias": e.citas,
+        # Si el broker la rechazo no se marca como abierta: no existe.
+        "estado": ("abierta" if (not USA_BROKER or envio.get("enviada"))
+                   else "no_enviada"),
+        "esquema": "todo_en_tp", "origen": ORIGEN,
         "nota": json.dumps({"confianza": e.confianza,
                             "razonamiento": e.razonamiento,
                             "riesgos": e.riesgos,
                             "peso_noticias": e.peso_noticias,
                             "noticias": e.noticias[:1800],
-                            "uso": e.uso}, ensure_ascii=False)[:8000],
+                            "uso": e.uso,
+                            "broker": {k: v for k, v in envio.items()
+                                       if k != "peticion"} or None,
+                            }, ensure_ascii=False)[:8000],
     })
     log.info("PILOTO %s %s @ %.2f  SL %.2f  TP %.2f  %s lotes  confianza %s  "
              "noticias %s", simbolo, e.lado.upper(), e.entrada, e.sl, e.tp,
@@ -632,6 +708,27 @@ def resumen() -> dict:
 # El bucle
 # ══════════════════════════════════════════════════════════════════════
 
+def _registrar_broker() -> dict:
+    """
+    Mete el simbolo del broker en `datos.ACTIVOS` con SUS numeros.
+
+    `datos.contexto` y `gestion.lotes` buscan ahi el tamano de contrato y
+    el colchon del stop. Para un futuro de Yahoo son constantes escritas;
+    para el simbolo de un broker no: los define la cuenta y cambian entre
+    brokers y entre tipos de cuenta del mismo broker.
+    """
+    from materias import broker as B
+    esp = B.especificacion()
+    D.ACTIVOS[esp["simbolo"]] = {
+        "nombre": esp["nombre"], "contrato": esp["contrato"],
+        "tick": esp["tick"],
+        "margen_sl": max(esp["spread"] * 2, esp["stops_min"], esp["tick"] * 3),
+        "spread": esp["spread"],
+        "comision": float(os.getenv("MT5_COMISION", "0") or 0),
+    }
+    return esp
+
+
 async def ciclo(capital: float) -> None:
     """
     Un paso: resolver lo abierto y, si toca, entrar.
@@ -643,10 +740,10 @@ async def ciclo(capital: float) -> None:
     """
     from materias import saber
 
-    datos = await D.cargar([D.PRINCIPAL])
-    d = datos.get(D.PRINCIPAL)
+    s = simbolo()
+    d = await cargar_datos()
     if not d or not d.get("m5"):
-        log.warning("sin velas de %s", D.PRINCIPAL)
+        log.warning("sin velas de %s", s)
         return
     resolver(d["m5"])
 
@@ -670,8 +767,8 @@ async def ciclo(capital: float) -> None:
                  r["cerradas"], (r.get("metricas") or {}).get("r_total", 0), prox)
         return
 
-    ctx = D.contexto(D.PRINCIPAL, d, ahora)
-    entrar(D.PRINCIPAL, ctx, capital, saber.leer())
+    ctx = D.contexto(s, d, ahora)
+    entrar(s, ctx, capital, saber.leer())
 
     # Cada tanto el agente relee sus propios resultados y reescribe sus
     # notas (cap. 20.1, paso 8). Va despues de entrar y no antes: si
@@ -719,6 +816,29 @@ async def main() -> None:
             pass
 
     capital = float(os.getenv("MATERIAS_CAPITAL", "10000"))
+    if USA_BROKER:
+        from materias import broker as B
+        try:
+            cta = B.conectar()
+        except Exception as exc:  # noqa: BLE001
+            log.error("%s", exc)
+            log.error("  Abri MetaTrader 5, entra a la cuenta, y en")
+            log.error("  Herramientas > Opciones > Asesores Expertos marca")
+            log.error("  «Permitir trading algoritmico».")
+            log.error("  Comprueba todo con:  python -m materias.broker")
+            return
+        if not cta["es_demo"] and os.getenv("MATERIAS_ACEPTO_REAL") != "1":
+            log.error("la cuenta %s es REAL y falta MATERIAS_ACEPTO_REAL=1. "
+                      "El paso 7 del capitulo 20.1 es DEMO.", cta.get("login"))
+            return
+        capital = float(cta.get("balance") or capital)
+        esp = _registrar_broker()
+        log.info("operando %s en la cuenta %s · contrato %s · spread %.2f · "
+                 "stop minimo %.2f", esp["simbolo"], cta.get("login"),
+                 esp["contrato"], esp["spread"], esp["stops_min"])
+        if not B.ENVIAR_DE_VERDAD:
+            log.warning("MODO SECO: se decide y se registra, pero NO se manda "
+                        "ninguna orden. Pone MATERIAS_ENVIAR=1 para operar.")
     revisar_s = int(os.getenv("PILOTO_REVISAR_S", "300"))
     r = resumen()
     log.info("PILOTO de entrada forzada · entra cada %.0f h · la posicion vive "
