@@ -104,7 +104,10 @@ ESQUEMA = {
     "properties": {
         "opera": {"type": "boolean",
                   "description": "true solo si el checklist del cap. 11.9 pasa entero"},
-        "lado": {"type": "string", "enum": ["compra", "venta", ""]},
+        # "ninguno" y no "": Gemini rechaza un enum con un valor vacio
+        # ("enum[2]: cannot be empty") y devuelve 400 sobre el esquema
+        # entero. Ademas se lee mejor en el diario.
+        "lado": {"type": "string", "enum": ["compra", "venta", "ninguno"]},
         "entrada": {"type": "number", "description": "0 si no opera"},
         "sl": {"type": "number"},
         "tp": {"type": "number"},
@@ -397,37 +400,101 @@ def _anthropic(sistema: list, mensaje: str) -> tuple[dict, dict]:
     }
 
 
+def _esquema_gemini() -> dict:
+    """
+    El mismo esquema, en el dialecto que acepta Gemini.
+
+    HAY QUE MANDARLO, Y ESTE ES EL MOTIVO
+    Sin esquema, pidiendo solo `responseMimeType: application/json`, el
+    modelo devuelve JSON valido con LOS CAMPOS QUE A EL LE PARECEN. En la
+    primera prueba real razono perfectamente -- aplico el punto 5 del
+    checklist 11.9, cito los capitulos 11.9, 10.2 y 20.4 -- pero lo
+    escribio en `razon`, `capitulos_citados` e `invalidadores`. El codigo
+    buscaba `razonamiento`, `citas` y `riesgos`, encontro vacio, y la
+    decision llego sin una linea de razonamiento.
+
+    Un fallo asi no se ve: el JSON parsea, no hay excepcion, y lo unico
+    raro es que el agente «no explico nada». Con el esquema no puede
+    pasar.
+
+    `additionalProperties` no existe en el dialecto de Gemini, y mandarlo
+    hace que rechace el esquema entero.
+    """
+    e = {k: v for k, v in ESQUEMA.items() if k != "additionalProperties"}
+    e["propertyOrdering"] = list(ESQUEMA["properties"])
+    return e
+
+
+GEMINI_RESPALDO = os.getenv("MATERIAS_MODELO_GEMINI_RESPALDO",
+                            "gemini-3.5-flash-lite")
+"""
+A que modelo caer cuando el principal esta saturado.
+
+Un 503 de Gemini es «este modelo tiene mucha demanda ahora mismo», no un
+problema de la cuenta: el hermano pequeno suele responder en el mismo
+instante. Cambiar de modelo dentro del mismo proveedor es mas barato que
+saltar al siguiente de la cadena, que ya no tiene cache de la guia.
+"""
+
+
 def _gemini(sistema: list, mensaje: str) -> tuple[dict, dict]:
+    """
+    Gemini, distinguiendo saturacion de cuota agotada.
+
+    La diferencia cuesta dinero y ya se pago una vez en el experimento de
+    cripto: reintentar un 429 gasta cuota que ya no hay y ACELERA el
+    agotamiento que se intentaba sobrevivir. Un 503 es lo contrario --
+    temporal, del lado de Google -- y rendirse al primero tira una
+    decision que se habria tenido dos segundos despues.
+
+        429  cuota agotada    -> al siguiente proveedor, sin reintentar
+        503  saturacion       -> reintentar, y luego el modelo de respaldo
+    """
+    import time
     llave = os.getenv("GEMINI_API_KEY")
     if not llave:
         raise ErrorIA("sin GEMINI_API_KEY")
     import httpx
-    modelo = os.getenv("MATERIAS_MODELO_GEMINI", "gemini-3.5-flash")
-    r = httpx.post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{modelo}:generateContent",
-        headers={"x-goog-api-key": llave},
-        json={"systemInstruction": {"parts": [{"text": _plano(sistema)}]},
+
+    cuerpo = {"systemInstruction": {"parts": [{"text": _plano(sistema)}]},
               "contents": [{"role": "user", "parts": [{"text": mensaje}]}],
               "generationConfig": {"responseMimeType": "application/json",
-                                   "maxOutputTokens": 8000}},
-        timeout=180)
-    # 429 es cuota agotada y 503 es saturacion. Los dos pasan al
-    # siguiente, pero solo el segundo valdria la pena reintentar aqui --
-    # reintentar un 429 gasta cuota que ya no hay, que es como se acelero
-    # el agotamiento en el experimento de cripto.
-    if r.status_code != 200:
-        raise ErrorIA(f"gemini HTTP {r.status_code}: {r.text[:200]}")
-    d = r.json()
-    try:
-        txt = d["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError) as exc:
-        raise ErrorIA(f"gemini respondio raro: {str(d)[:160]}") from exc
-    u = d.get("usageMetadata", {})
-    return json.loads(txt), {
-        "proveedor": "gemini", "modelo": modelo,
-        "entrada": u.get("promptTokenCount", 0), "cache_lectura": 0,
-        "cache_escritura": 0, "salida": u.get("candidatesTokenCount", 0)}
+                                   "responseSchema": _esquema_gemini(),
+                                   "maxOutputTokens": 8000}}
+    principal = os.getenv("MATERIAS_MODELO_GEMINI", "gemini-3.5-flash")
+    ultimo = ""
+    for modelo in (principal, GEMINI_RESPALDO):
+        for intento in range(3):
+            try:
+                r = httpx.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/"
+                    f"{modelo}:generateContent",
+                    headers={"x-goog-api-key": llave}, json=cuerpo, timeout=240)
+            except httpx.HTTPError as exc:
+                ultimo = f"red: {exc}"
+                time.sleep(2 * (intento + 1))
+                continue
+            if r.status_code == 200:
+                d = r.json()
+                try:
+                    txt = d["candidates"][0]["content"]["parts"][0]["text"]
+                except (KeyError, IndexError) as exc:
+                    raise ErrorIA(f"gemini respondio raro: {str(d)[:160]}") from exc
+                u = d.get("usageMetadata", {})
+                if modelo != principal:
+                    log.info("gemini respondio con el respaldo %s", modelo)
+                return json.loads(txt), {
+                    "proveedor": "gemini", "modelo": modelo,
+                    "entrada": u.get("promptTokenCount", 0), "cache_lectura": 0,
+                    "cache_escritura": 0,
+                    "salida": u.get("candidatesTokenCount", 0)}
+            if r.status_code == 429:
+                raise ErrorIA(f"gemini sin cuota: {r.text[:160]}")
+            ultimo = f"HTTP {r.status_code}: {r.text[:160]}"
+            if r.status_code != 503:
+                break
+            time.sleep(3 * (intento + 1))
+    raise ErrorIA(f"gemini ({principal} y {GEMINI_RESPALDO}): {ultimo}")
 
 
 def _mistral(sistema: list, mensaje: str) -> tuple[dict, dict]:
@@ -435,7 +502,7 @@ def _mistral(sistema: list, mensaje: str) -> tuple[dict, dict]:
     if not llave:
         raise ErrorIA("sin MISTRAL_API_KEY")
     import httpx
-    modelo = os.getenv("MATERIAS_MODELO_MISTRAL", "mistral-large-latest")
+    modelo = os.getenv("MATERIAS_MODELO_MISTRAL", "mistral-medium-latest")
     r = httpx.post(
         "https://api.mistral.ai/v1/chat/completions",
         headers={"Authorization": f"Bearer {llave}"},
@@ -527,8 +594,10 @@ def decidir(simbolo: str, ctx: dict, notas: str = "",
         log.warning("el agente no pudo decidir: %s", exc)
         return Decision(descartado=f"sin decision: {exc}")
 
+    lado = d.get("lado", "")
     dec = Decision(
-        opera=bool(d.get("opera")), lado=d.get("lado", ""),
+        opera=bool(d.get("opera")),
+        lado="" if lado == "ninguno" else lado,
         entrada=float(d.get("entrada") or 0), sl=float(d.get("sl") or 0),
         tp=float(d.get("tp") or 0), modelo_guia=d.get("modelo_guia", ""),
         confianza=d.get("confianza", "baja"),
