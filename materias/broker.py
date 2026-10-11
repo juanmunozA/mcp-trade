@@ -613,6 +613,39 @@ if __name__ == "__main__":
     desconectar()
 
 
+def exige_demo() -> str:
+    """
+    Niega abrir posiciones en una cuenta real sin permiso explicito.
+
+    POR QUE AQUI Y NO SOLO EN EL PILOTO
+    El cerrojo MATERIAS_ACEPTO_REAL vivia unicamente en el arranque de
+    `piloto.main`. Pero las ordenes manuales -- que es como se coloco
+    todo lo de estos dos dias -- llaman a `enviar_mercado` directamente y
+    se lo saltaban enteras. Bastaba con que alguien cambiara de cuenta en
+    la terminal para que la siguiente orden saliera a dinero real sin un
+    solo aviso.
+
+    La comprobacion va donde se manda la orden, que es el unico sitio por
+    el que pasan todos los caminos.
+
+    CERRAR NO SE BLOQUEA. Cerrar reduce riesgo; impedirlo por falta de
+    una variable de entorno dejaria una posicion viva sin quien la cierre,
+    que es peor que el riesgo que se intenta evitar.
+    """
+    try:
+        a = _api().account_info()
+    except Exception:  # noqa: BLE001
+        return ""
+    if a is None or a.trade_mode == 0:      # 0 = demo
+        return ""
+    if os.getenv("MATERIAS_ACEPTO_REAL") == "1":
+        log.warning("cuenta %s es REAL y MATERIAS_ACEPTO_REAL=1: se opera "
+                    "con dinero de verdad", a.login)
+        return ""
+    return (f"la cuenta {a.login} ({a.server}) NO es demo y falta "
+            f"MATERIAS_ACEPTO_REAL=1. No se manda nada.")
+
+
 def enviar_mercado(lado: str, lotes: float, sl: float, tp: float,
                    simbolo: str = "", magia: int = 20260923,
                    comentario: str = "") -> dict:
@@ -630,6 +663,11 @@ def enviar_mercado(lado: str, lotes: float, sl: float, tp: float,
     automatizar SL/TP». Una orden que llega sin stop y espera a que un
     segundo mensaje se lo ponga esta sin stop durante ese intervalo.
     """
+    veto = exige_demo()
+    if veto:
+        log.error("ORDEN BLOQUEADA: %s", veto)
+        return {"enviada": False, "ticket": 0, "precio": 0.0, "motivo": veto}
+
     mt5 = _api()
     simbolo = simbolo or SIMBOLO
     esp = especificacion(simbolo)

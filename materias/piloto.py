@@ -371,7 +371,16 @@ def _noticias_yahoo(maximo: int = 8) -> list[str]:
             log.warning("sin noticias de %s: %s", simbolo, exc)
             continue
         for x in crudas:
-            c = x.get("content", x)
+            if not isinstance(x, dict):
+                continue
+            # `or x` y no `get("content", x)`: el respaldo de `get` solo
+            # entra cuando la clave FALTA, y Yahoo manda "content": null.
+            # Con el default, `c` salia None y la linea siguiente reventaba
+            # -- y como la excepcion subia entera, el agente se quedaba sin
+            # ninguna noticia en vez de sin una.
+            c = x.get("content") or x
+            if not isinstance(c, dict):
+                continue
             titulo = str(c.get("title") or "").strip()
             if not titulo or titulo in vistos:
                 continue
