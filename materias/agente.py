@@ -333,6 +333,19 @@ def retrato(simbolo: str, ctx: dict) -> str:
         L.append(f"- pivotes: S2 {_fmt(p['s2'])}  S1 {_fmt(p['s1'])}  "
                  f"P {_fmt(p['p'])}  R1 {_fmt(p['r1'])}  R2 {_fmt(p['r2'])}")
 
+    # La parte numerica de la red de conocimiento: tabla de pips por hora y
+    # red neuronal propia, cada una con su fiabilidad medida. Va en un try
+    # porque es un anadido: si faltan los datos de entrenamiento, el agente
+    # sigue razonando con la guia como antes en vez de quedarse mudo.
+    try:
+        from materias.red import consejo
+        bloque = consejo.texto(ctx)
+        if bloque:
+            L.append("")
+            L.append(bloque)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("sin la red de conocimiento numerica: %s", exc)
+
     L.append("")
     L.append("## Coste de operar")
     L.append(f"- spread: {_fmt(ctx.get('spread', 0))}")
