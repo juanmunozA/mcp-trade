@@ -2,7 +2,8 @@
 El paso semanal que hace que la parte numerica aprenda sola.
 
 1. Baja de MT5 las velas de 5M que hayan salido desde la ultima vez.
-2. Rehace la tabla de pips (ultimos 365 dias) y las lecciones de entrada.
+2. Rehace la tabla de pips (ultimos 365 dias), las lecciones de entrada
+   y las reacciones en vacios y extremos de serie (desde 2022).
 3. Si cambiaron, las sube a GitHub; Render las recoge en el siguiente
    despliegue y el agente las lee en cada decision.
 
@@ -58,19 +59,21 @@ def subir(archivos: list[str]) -> None:
 
 def main() -> None:
     load_dotenv(RAIZ / ".env")
-    from materias.red import consejo, lecciones
+    from materias.red import consejo, lecciones, zonas
     from materias.red import datos as D
     v = D.descargar("M5")
     D.guardar(v, "M5")
     _log(f"velas 5M: {len(v):,}")
     consejo.exportar()
     lecciones.exportar()
+    zonas.ARCHIVO.write_text(__import__("json").dumps(zonas.medir(), indent=1, ensure_ascii=False),
+                             encoding="utf-8")
     g = lecciones.datos()["grupos"]
     for cl in ("corto|todas", "largo|todas"):
         if cl in g:
             m, li = g[cl]["mercado"], g[cl]["limitada"]
             _log(f"{cl}: n={m['n']} mercado {m['r_medio']:+.3f} R · limitada {li['r_medio']:+.3f} R → {g[cl]['mejor']}")
-    subir(["materias/red/tabla_pips.json", "materias/red/lecciones.json"])
+    subir(["materias/red/tabla_pips.json", "materias/red/lecciones.json", "materias/red/zonas.json"])
 
 
 if __name__ == "__main__":
