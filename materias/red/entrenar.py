@@ -57,12 +57,19 @@ def informe(horizonte=HORIZONTE, guardar=True):
         # Se elige con VALIDACION (elegir con prueba seria hacer trampa) y se
         # guarda con su AUC de PRUEBA, para que el agente vea cuanto vale.
         mejor = max(redes, key=lambda k: auc(redes[k].predecir(X[val]).ravel(), y[val]))
-        redes[mejor].guardar(D.CARPETA / "red_direccion.npz")
+        minutos = horizonte * 5
+        redes[mejor].guardar(D.CARPETA / f"red_direccion_{minutos}m.npz")
         import json
-        (D.CARPETA / "metricas.json").write_text(json.dumps({"direccion": {
-            "modelo": mejor, "horizonte_min": horizonte * 5,
+        ruta_m = D.CARPETA / "metricas.json"
+        try:
+            todo = json.loads(ruta_m.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            todo = {}
+        todo[f"direccion_{minutos}m"] = {
+            "modelo": mejor, "horizonte_min": minutos,
             "auc": auc(redes[mejor].predecir(X[pru]).ravel(), y[pru]),
-            "n_prueba": int(len(pru))}}, indent=1), encoding="utf-8")
+            "n_prueba": int(len(pru))}
+        ruta_m.write_text(json.dumps(todo, indent=1), encoding="utf-8")
 
     # ── 2. retroceso previo, en pips ────────────────────────────────────
     print("\nRETROCESO antes de moverse a favor (pips) · error medio absoluto en prueba")
@@ -83,9 +90,13 @@ def informe(horizonte=HORIZONTE, guardar=True):
         print(f"  {nom:18} compra {np.abs(pr[:,0]-real[:,0]).mean():5.1f} · "
               f"venta {np.abs(pr[:,1]-real[:,1]).mean():5.1f}")
         if guardar and capas:
-            r.guardar(D.CARPETA / "red_retroceso.npz")
+            r.guardar(D.CARPETA / f"red_retroceso_{horizonte * 5}m.npz")
     np.save(D.CARPETA / "nombres_entradas.npy", np.array(nombres))
 
 
 if __name__ == "__main__":
-    informe()
+    import sys
+    for hz in [int(x) for x in sys.argv[1:]] or [HORIZONTE]:
+        print()
+        print(f"######## horizonte {hz * 5} minutos ########")
+        informe(hz)

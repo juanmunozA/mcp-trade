@@ -95,8 +95,22 @@ def guardar(velas: np.ndarray, tf: str, simbolo: str = "XAUUSD") -> Path:
     return ruta
 
 
-def cargar(tf: str = "M5", simbolo: str = "XAUUSD") -> np.ndarray:
-    return np.load(CARPETA / f"{simbolo.lower()}_{tf.lower()}.npz")["velas"]
+COMPLETO_DESDE = dt.datetime(2019, 1, 1, tzinfo=dt.UTC)
+"""
+Desde cuando el historico de 5M y 1M de Tickmill esta entero.
+
+Medido en la demo con el tope de barras subido a 5.000.000: de 2010 a 2018
+hay entre 126 y 486 velas de 5M por ano -- un 0,4 % de lo que deberia --,
+y de 2019 en adelante entre el 98,5 y el 99,2 %. Entrenar con los anos
+huecos haria que una «ventana de una hora» abarcase semanas.
+"""
+
+
+def cargar(tf: str = "M5", simbolo: str = "XAUUSD", completo: bool = True) -> np.ndarray:
+    v = np.load(CARPETA / f"{simbolo.lower()}_{tf.lower()}.npz")["velas"]
+    if completo and tf in ("M1", "M5", "M15"):
+        v = v[v["time"] >= int(COMPLETO_DESDE.timestamp())]
+    return v
 
 
 if __name__ == "__main__":
