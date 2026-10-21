@@ -1,0 +1,1386 @@
+{
+ "periodo_eleccion": "2019-2024",
+ "periodo_prueba": "2025-2026",
+ "res": {
+  "5M a=1": {
+   "giro_pips": {
+    "eleccion": -1.0,
+    "prueba": 0.4,
+    "n": 71901
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 55888,
+     "gana_pct": 31.5,
+     "r_medio": -0.1
+    },
+    "prueba": {
+     "n": 15965,
+     "gana_pct": 33.7,
+     "r_medio": -0.015
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 28245,
+     "gana_pct": 31.5,
+     "r_medio": -0.099
+    },
+    "prueba": {
+     "n": 8075,
+     "gana_pct": 33.7,
+     "r_medio": -0.017
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 26677,
+     "gana_pct": 31.4,
+     "r_medio": -0.101
+    },
+    "prueba": {
+     "n": 7587,
+     "gana_pct": 34.5,
+     "r_medio": 0.008
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 27886,
+     "gana_pct": 31.4,
+     "r_medio": -0.102
+    },
+    "prueba": {
+     "n": 7980,
+     "gana_pct": 33.6,
+     "r_medio": -0.02
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 36364,
+     "gana_pct": 32.1,
+     "r_medio": -0.07
+    },
+    "prueba": {
+     "n": 10225,
+     "gana_pct": 34.3,
+     "r_medio": 0.006
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 21329,
+     "gana_pct": 31.3,
+     "r_medio": -0.103
+    },
+    "prueba": {
+     "n": 6040,
+     "gana_pct": 34.3,
+     "r_medio": 0.002
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 4276,
+     "gana_pct": 31.5,
+     "r_medio": -0.103
+    },
+    "prueba": {
+     "n": 1215,
+     "gana_pct": 34.5,
+     "r_medio": 0.004
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 2791,
+     "gana_pct": 30.9,
+     "r_medio": -0.108
+    },
+    "prueba": {
+     "n": 796,
+     "gana_pct": 35.8,
+     "r_medio": 0.047
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 13857,
+     "gana_pct": 31.9,
+     "r_medio": -0.075
+    },
+    "prueba": {
+     "n": 3860,
+     "gana_pct": 35.0,
+     "r_medio": 0.029
+    }
+   }
+  },
+  "5M a=1 HA": {
+   "giro_pips": {
+    "eleccion": -0.85,
+    "prueba": 1.35,
+    "n": 49973
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 38656,
+     "gana_pct": 31.9,
+     "r_medio": -0.093
+    },
+    "prueba": {
+     "n": 11224,
+     "gana_pct": 34.0,
+     "r_medio": -0.009
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 19669,
+     "gana_pct": 31.9,
+     "r_medio": -0.097
+    },
+    "prueba": {
+     "n": 5667,
+     "gana_pct": 34.5,
+     "r_medio": 0.006
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 18645,
+     "gana_pct": 31.5,
+     "r_medio": -0.112
+    },
+    "prueba": {
+     "n": 5401,
+     "gana_pct": 34.3,
+     "r_medio": 0.001
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 19208,
+     "gana_pct": 31.9,
+     "r_medio": -0.089
+    },
+    "prueba": {
+     "n": 5589,
+     "gana_pct": 33.4,
+     "r_medio": -0.029
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 25057,
+     "gana_pct": 32.5,
+     "r_medio": -0.062
+    },
+    "prueba": {
+     "n": 7248,
+     "gana_pct": 34.3,
+     "r_medio": 0.005
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 15596,
+     "gana_pct": 31.4,
+     "r_medio": -0.115
+    },
+    "prueba": {
+     "n": 4479,
+     "gana_pct": 34.4,
+     "r_medio": 0.004
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 2849,
+     "gana_pct": 31.2,
+     "r_medio": -0.114
+    },
+    "prueba": {
+     "n": 744,
+     "gana_pct": 34.1,
+     "r_medio": -0.007
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 1886,
+     "gana_pct": 31.1,
+     "r_medio": -0.108
+    },
+    "prueba": {
+     "n": 491,
+     "gana_pct": 33.2,
+     "r_medio": -0.029
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 10134,
+     "gana_pct": 31.9,
+     "r_medio": -0.08
+    },
+    "prueba": {
+     "n": 2903,
+     "gana_pct": 34.1,
+     "r_medio": -0.001
+    }
+   }
+  },
+  "5M a=2": {
+   "giro_pips": {
+    "eleccion": -1.29,
+    "prueba": 2.35,
+    "n": 28950
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 22427,
+     "gana_pct": 33.5,
+     "r_medio": -0.049
+    },
+    "prueba": {
+     "n": 6514,
+     "gana_pct": 34.6,
+     "r_medio": -0.0
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 11641,
+     "gana_pct": 33.3,
+     "r_medio": -0.053
+    },
+    "prueba": {
+     "n": 3356,
+     "gana_pct": 35.9,
+     "r_medio": 0.041
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 10463,
+     "gana_pct": 32.8,
+     "r_medio": -0.067
+    },
+    "prueba": {
+     "n": 3031,
+     "gana_pct": 35.6,
+     "r_medio": 0.037
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 10931,
+     "gana_pct": 33.8,
+     "r_medio": -0.044
+    },
+    "prueba": {
+     "n": 3227,
+     "gana_pct": 33.0,
+     "r_medio": -0.048
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 14903,
+     "gana_pct": 34.8,
+     "r_medio": -0.014
+    },
+    "prueba": {
+     "n": 4299,
+     "gana_pct": 35.5,
+     "r_medio": 0.026
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 8818,
+     "gana_pct": 32.9,
+     "r_medio": -0.066
+    },
+    "prueba": {
+     "n": 2582,
+     "gana_pct": 35.8,
+     "r_medio": 0.045
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 2370,
+     "gana_pct": 33.2,
+     "r_medio": -0.043
+    },
+    "prueba": {
+     "n": 622,
+     "gana_pct": 35.0,
+     "r_medio": 0.027
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 1505,
+     "gana_pct": 34.3,
+     "r_medio": -0.008
+    },
+    "prueba": {
+     "n": 397,
+     "gana_pct": 36.3,
+     "r_medio": 0.072
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 5870,
+     "gana_pct": 34.4,
+     "r_medio": -0.023
+    },
+    "prueba": {
+     "n": 1715,
+     "gana_pct": 36.7,
+     "r_medio": 0.068
+    }
+   }
+  },
+  "5M a=2 HA": {
+   "giro_pips": {
+    "eleccion": -1.01,
+    "prueba": 0.79,
+    "n": 22758
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 17461,
+     "gana_pct": 34.6,
+     "r_medio": -0.033
+    },
+    "prueba": {
+     "n": 5286,
+     "gana_pct": 34.8,
+     "r_medio": -0.014
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 9250,
+     "gana_pct": 34.8,
+     "r_medio": -0.028
+    },
+    "prueba": {
+     "n": 2802,
+     "gana_pct": 35.8,
+     "r_medio": 0.024
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 8186,
+     "gana_pct": 34.0,
+     "r_medio": -0.046
+    },
+    "prueba": {
+     "n": 2478,
+     "gana_pct": 35.1,
+     "r_medio": 0.009
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 8392,
+     "gana_pct": 34.6,
+     "r_medio": -0.032
+    },
+    "prueba": {
+     "n": 2589,
+     "gana_pct": 33.8,
+     "r_medio": -0.041
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 11611,
+     "gana_pct": 35.7,
+     "r_medio": -0.007
+    },
+    "prueba": {
+     "n": 3494,
+     "gana_pct": 35.7,
+     "r_medio": 0.008
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 6938,
+     "gana_pct": 34.3,
+     "r_medio": -0.038
+    },
+    "prueba": {
+     "n": 2120,
+     "gana_pct": 35.6,
+     "r_medio": 0.022
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 2123,
+     "gana_pct": 34.6,
+     "r_medio": -0.018
+    },
+    "prueba": {
+     "n": 652,
+     "gana_pct": 32.1,
+     "r_medio": -0.071
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 1343,
+     "gana_pct": 35.7,
+     "r_medio": 0.013
+    },
+    "prueba": {
+     "n": 412,
+     "gana_pct": 32.0,
+     "r_medio": -0.074
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 4624,
+     "gana_pct": 35.8,
+     "r_medio": -0.004
+    },
+    "prueba": {
+     "n": 1434,
+     "gana_pct": 37.0,
+     "r_medio": 0.062
+    }
+   }
+  },
+  "5M a=3": {
+   "giro_pips": {
+    "eleccion": -0.9,
+    "prueba": 0.29,
+    "n": 15670
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 12042,
+     "gana_pct": 36.3,
+     "r_medio": -0.023
+    },
+    "prueba": {
+     "n": 3621,
+     "gana_pct": 37.1,
+     "r_medio": 0.003
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 6649,
+     "gana_pct": 36.1,
+     "r_medio": -0.017
+    },
+    "prueba": {
+     "n": 1978,
+     "gana_pct": 37.6,
+     "r_medio": 0.037
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 5582,
+     "gana_pct": 35.4,
+     "r_medio": -0.033
+    },
+    "prueba": {
+     "n": 1671,
+     "gana_pct": 37.1,
+     "r_medio": 0.024
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 5456,
+     "gana_pct": 36.1,
+     "r_medio": -0.039
+    },
+    "prueba": {
+     "n": 1721,
+     "gana_pct": 35.9,
+     "r_medio": -0.044
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 8206,
+     "gana_pct": 37.2,
+     "r_medio": -0.01
+    },
+    "prueba": {
+     "n": 2469,
+     "gana_pct": 38.0,
+     "r_medio": 0.012
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 4669,
+     "gana_pct": 35.4,
+     "r_medio": -0.031
+    },
+    "prueba": {
+     "n": 1405,
+     "gana_pct": 37.2,
+     "r_medio": 0.029
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 1634,
+     "gana_pct": 34.2,
+     "r_medio": -0.06
+    },
+    "prueba": {
+     "n": 504,
+     "gana_pct": 34.9,
+     "r_medio": -0.012
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 1047,
+     "gana_pct": 35.6,
+     "r_medio": -0.024
+    },
+    "prueba": {
+     "n": 338,
+     "gana_pct": 34.6,
+     "r_medio": -0.024
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 3200,
+     "gana_pct": 35.8,
+     "r_medio": -0.037
+    },
+    "prueba": {
+     "n": 982,
+     "gana_pct": 38.7,
+     "r_medio": 0.059
+    }
+   }
+  },
+  "5M a=3 HA": {
+   "giro_pips": {
+    "eleccion": -0.47,
+    "prueba": 0.62,
+    "n": 12876
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 9864,
+     "gana_pct": 37.0,
+     "r_medio": -0.031
+    },
+    "prueba": {
+     "n": 3009,
+     "gana_pct": 37.2,
+     "r_medio": -0.019
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 5630,
+     "gana_pct": 36.8,
+     "r_medio": -0.026
+    },
+    "prueba": {
+     "n": 1688,
+     "gana_pct": 37.3,
+     "r_medio": 0.015
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 4582,
+     "gana_pct": 36.5,
+     "r_medio": -0.025
+    },
+    "prueba": {
+     "n": 1393,
+     "gana_pct": 36.8,
+     "r_medio": -0.007
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 4281,
+     "gana_pct": 36.0,
+     "r_medio": -0.057
+    },
+    "prueba": {
+     "n": 1369,
+     "gana_pct": 36.5,
+     "r_medio": -0.056
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 6764,
+     "gana_pct": 38.3,
+     "r_medio": -0.014
+    },
+    "prueba": {
+     "n": 2061,
+     "gana_pct": 37.1,
+     "r_medio": -0.027
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 3827,
+     "gana_pct": 36.6,
+     "r_medio": -0.024
+    },
+    "prueba": {
+     "n": 1154,
+     "gana_pct": 37.0,
+     "r_medio": 0.0
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 1382,
+     "gana_pct": 34.0,
+     "r_medio": -0.078
+    },
+    "prueba": {
+     "n": 450,
+     "gana_pct": 36.9,
+     "r_medio": 0.014
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 900,
+     "gana_pct": 35.6,
+     "r_medio": -0.049
+    },
+    "prueba": {
+     "n": 296,
+     "gana_pct": 36.5,
+     "r_medio": 0.001
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 2648,
+     "gana_pct": 38.1,
+     "r_medio": -0.004
+    },
+    "prueba": {
+     "n": 820,
+     "gana_pct": 36.5,
+     "r_medio": -0.022
+    }
+   }
+  },
+  "15M a=1": {
+   "giro_pips": {
+    "eleccion": -1.14,
+    "prueba": -1.0,
+    "n": 22781
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 17467,
+     "gana_pct": 32.9,
+     "r_medio": -0.056
+    },
+    "prueba": {
+     "n": 5301,
+     "gana_pct": 33.5,
+     "r_medio": -0.02
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 8819,
+     "gana_pct": 32.9,
+     "r_medio": -0.051
+    },
+    "prueba": {
+     "n": 2674,
+     "gana_pct": 34.5,
+     "r_medio": 0.012
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 6968,
+     "gana_pct": 33.0,
+     "r_medio": -0.047
+    },
+    "prueba": {
+     "n": 2107,
+     "gana_pct": 34.0,
+     "r_medio": -0.005
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 8464,
+     "gana_pct": 33.1,
+     "r_medio": -0.058
+    },
+    "prueba": {
+     "n": 2584,
+     "gana_pct": 32.4,
+     "r_medio": -0.05
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 12284,
+     "gana_pct": 33.4,
+     "r_medio": -0.04
+    },
+    "prueba": {
+     "n": 3726,
+     "gana_pct": 34.2,
+     "r_medio": 0.002
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 4932,
+     "gana_pct": 32.9,
+     "r_medio": -0.049
+    },
+    "prueba": {
+     "n": 1508,
+     "gana_pct": 34.2,
+     "r_medio": 0.004
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 749,
+     "gana_pct": 33.8,
+     "r_medio": -0.039
+    },
+    "prueba": {
+     "n": 222,
+     "gana_pct": 34.7,
+     "r_medio": 0.022
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 529,
+     "gana_pct": 33.3,
+     "r_medio": -0.052
+    },
+    "prueba": {
+     "n": 153,
+     "gana_pct": 34.6,
+     "r_medio": 0.028
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 3452,
+     "gana_pct": 33.3,
+     "r_medio": -0.038
+    },
+    "prueba": {
+     "n": 1083,
+     "gana_pct": 35.3,
+     "r_medio": 0.038
+    }
+   }
+  },
+  "15M a=1 HA": {
+   "giro_pips": {
+    "eleccion": -1.09,
+    "prueba": 1.12,
+    "n": 15868
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 12132,
+     "gana_pct": 34.1,
+     "r_medio": -0.051
+    },
+    "prueba": {
+     "n": 3717,
+     "gana_pct": 34.0,
+     "r_medio": -0.033
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 6174,
+     "gana_pct": 34.0,
+     "r_medio": -0.051
+    },
+    "prueba": {
+     "n": 1897,
+     "gana_pct": 34.3,
+     "r_medio": -0.021
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 4725,
+     "gana_pct": 33.4,
+     "r_medio": -0.059
+    },
+    "prueba": {
+     "n": 1452,
+     "gana_pct": 34.4,
+     "r_medio": -0.008
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 5608,
+     "gana_pct": 33.5,
+     "r_medio": -0.068
+    },
+    "prueba": {
+     "n": 1766,
+     "gana_pct": 32.6,
+     "r_medio": -0.078
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 8452,
+     "gana_pct": 35.2,
+     "r_medio": -0.023
+    },
+    "prueba": {
+     "n": 2601,
+     "gana_pct": 34.1,
+     "r_medio": -0.037
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 3588,
+     "gana_pct": 34.0,
+     "r_medio": -0.042
+    },
+    "prueba": {
+     "n": 1093,
+     "gana_pct": 35.7,
+     "r_medio": 0.027
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 357,
+     "gana_pct": 32.5,
+     "r_medio": -0.061
+    },
+    "prueba": {
+     "n": 95,
+     "gana_pct": 22.1,
+     "r_medio": -0.373
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 251,
+     "gana_pct": 33.1,
+     "r_medio": -0.038
+    },
+    "prueba": {
+     "n": 70,
+     "gana_pct": 18.6,
+     "r_medio": -0.486
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 2505,
+     "gana_pct": 35.6,
+     "r_medio": 0.002
+    },
+    "prueba": {
+     "n": 783,
+     "gana_pct": 35.9,
+     "r_medio": 0.028
+    }
+   }
+  },
+  "15M a=2": {
+   "giro_pips": {
+    "eleccion": -0.24,
+    "prueba": 5.62,
+    "n": 9046
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 6950,
+     "gana_pct": 37.7,
+     "r_medio": -0.014
+    },
+    "prueba": {
+     "n": 2097,
+     "gana_pct": 38.5,
+     "r_medio": 0.004
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 3622,
+     "gana_pct": 36.9,
+     "r_medio": -0.028
+    },
+    "prueba": {
+     "n": 1095,
+     "gana_pct": 37.6,
+     "r_medio": -0.002
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 2687,
+     "gana_pct": 36.4,
+     "r_medio": -0.022
+    },
+    "prueba": {
+     "n": 811,
+     "gana_pct": 38.1,
+     "r_medio": 0.042
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 2725,
+     "gana_pct": 37.0,
+     "r_medio": -0.038
+    },
+    "prueba": {
+     "n": 902,
+     "gana_pct": 38.0,
+     "r_medio": -0.047
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 5232,
+     "gana_pct": 38.7,
+     "r_medio": 0.004
+    },
+    "prueba": {
+     "n": 1543,
+     "gana_pct": 38.6,
+     "r_medio": -0.006
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 2265,
+     "gana_pct": 35.8,
+     "r_medio": -0.041
+    },
+    "prueba": {
+     "n": 658,
+     "gana_pct": 38.3,
+     "r_medio": 0.05
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 407,
+     "gana_pct": 32.7,
+     "r_medio": -0.081
+    },
+    "prueba": {
+     "n": 109,
+     "gana_pct": 35.8,
+     "r_medio": 0.014
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 283,
+     "gana_pct": 33.9,
+     "r_medio": -0.048
+    },
+    "prueba": {
+     "n": 83,
+     "gana_pct": 34.9,
+     "r_medio": -0.014
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 1720,
+     "gana_pct": 35.9,
+     "r_medio": -0.051
+    },
+    "prueba": {
+     "n": 503,
+     "gana_pct": 38.8,
+     "r_medio": 0.047
+    }
+   }
+  },
+  "15M a=2 HA": {
+   "giro_pips": {
+    "eleccion": 1.07,
+    "prueba": 11.86,
+    "n": 7009
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 5386,
+     "gana_pct": 39.8,
+     "r_medio": -0.008
+    },
+    "prueba": {
+     "n": 1623,
+     "gana_pct": 40.2,
+     "r_medio": 0.028
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 2866,
+     "gana_pct": 40.0,
+     "r_medio": -0.004
+    },
+    "prueba": {
+     "n": 842,
+     "gana_pct": 40.1,
+     "r_medio": 0.033
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 2032,
+     "gana_pct": 38.7,
+     "r_medio": -0.01
+    },
+    "prueba": {
+     "n": 605,
+     "gana_pct": 39.5,
+     "r_medio": 0.047
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 1771,
+     "gana_pct": 38.3,
+     "r_medio": -0.037
+    },
+    "prueba": {
+     "n": 607,
+     "gana_pct": 39.5,
+     "r_medio": -0.03
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 4048,
+     "gana_pct": 40.4,
+     "r_medio": -0.001
+    },
+    "prueba": {
+     "n": 1197,
+     "gana_pct": 40.1,
+     "r_medio": 0.016
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 1779,
+     "gana_pct": 39.0,
+     "r_medio": -0.011
+    },
+    "prueba": {
+     "n": 527,
+     "gana_pct": 39.7,
+     "r_medio": 0.042
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 322,
+     "gana_pct": 34.8,
+     "r_medio": -0.045
+    },
+    "prueba": {
+     "n": 84,
+     "gana_pct": 35.7,
+     "r_medio": -0.03
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 222,
+     "gana_pct": 36.9,
+     "r_medio": 0.01
+    },
+    "prueba": {
+     "n": 64,
+     "gana_pct": 35.9,
+     "r_medio": -0.068
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 1326,
+     "gana_pct": 38.9,
+     "r_medio": -0.018
+    },
+    "prueba": {
+     "n": 404,
+     "gana_pct": 39.6,
+     "r_medio": 0.033
+    }
+   }
+  },
+  "15M a=3": {
+   "giro_pips": {
+    "eleccion": -0.21,
+    "prueba": 20.02,
+    "n": 4972
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 3832,
+     "gana_pct": 41.9,
+     "r_medio": -0.02
+    },
+    "prueba": {
+     "n": 1140,
+     "gana_pct": 43.3,
+     "r_medio": 0.013
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 2147,
+     "gana_pct": 41.4,
+     "r_medio": -0.024
+    },
+    "prueba": {
+     "n": 614,
+     "gana_pct": 44.8,
+     "r_medio": 0.048
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 1477,
+     "gana_pct": 42.0,
+     "r_medio": -0.007
+    },
+    "prueba": {
+     "n": 429,
+     "gana_pct": 44.8,
+     "r_medio": 0.076
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 762,
+     "gana_pct": 42.0,
+     "r_medio": -0.02
+    },
+    "prueba": {
+     "n": 268,
+     "gana_pct": 42.5,
+     "r_medio": -0.057
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 3027,
+     "gana_pct": 42.0,
+     "r_medio": -0.039
+    },
+    "prueba": {
+     "n": 863,
+     "gana_pct": 44.3,
+     "r_medio": 0.024
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 1388,
+     "gana_pct": 41.9,
+     "r_medio": -0.007
+    },
+    "prueba": {
+     "n": 391,
+     "gana_pct": 44.5,
+     "r_medio": 0.071
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 155,
+     "gana_pct": 34.8,
+     "r_medio": -0.179
+    },
+    "prueba": {
+     "n": 52,
+     "gana_pct": 48.1,
+     "r_medio": 0.031
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 120,
+     "gana_pct": 30.8,
+     "r_medio": -0.304
+    },
+    "prueba": {
+     "n": 41,
+     "gana_pct": 56.1,
+     "r_medio": 0.15
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 1096,
+     "gana_pct": 42.3,
+     "r_medio": -0.028
+    },
+    "prueba": {
+     "n": 306,
+     "gana_pct": 45.4,
+     "r_medio": 0.09
+    }
+   }
+  },
+  "15M a=3 HA": {
+   "giro_pips": {
+    "eleccion": -0.63,
+    "prueba": 24.88,
+    "n": 4169
+   },
+   "tal cual": {
+    "eleccion": {
+     "n": 3220,
+     "gana_pct": 42.3,
+     "r_medio": -0.024
+    },
+    "prueba": {
+     "n": 949,
+     "gana_pct": 46.5,
+     "r_medio": 0.044
+    }
+   },
+   "tendencia (EMA 200)": {
+    "eleccion": {
+     "n": 1850,
+     "gana_pct": 42.6,
+     "r_medio": -0.003
+    },
+    "prueba": {
+     "n": 527,
+     "gana_pct": 47.6,
+     "r_medio": 0.081
+    }
+   },
+   "1 h a favor": {
+    "eleccion": {
+     "n": 1242,
+     "gana_pct": 43.0,
+     "r_medio": 0.007
+    },
+    "prueba": {
+     "n": 358,
+     "gana_pct": 45.8,
+     "r_medio": 0.091
+    }
+   },
+   "zona (compra <50 %, venta >50 %)": {
+    "eleccion": {
+     "n": 464,
+     "gana_pct": 43.1,
+     "r_medio": -0.042
+    },
+    "prueba": {
+     "n": 162,
+     "gana_pct": 45.1,
+     "r_medio": -0.082
+    }
+   },
+   "killzone": {
+    "eleccion": {
+     "n": 2545,
+     "gana_pct": 41.8,
+     "r_medio": -0.052
+    },
+    "prueba": {
+     "n": 707,
+     "gana_pct": 47.2,
+     "r_medio": 0.055
+    }
+   },
+   "tendencia + 1 h": {
+    "eleccion": {
+     "n": 1173,
+     "gana_pct": 43.1,
+     "r_medio": 0.009
+    },
+    "prueba": {
+     "n": 332,
+     "gana_pct": 45.8,
+     "r_medio": 0.09
+    }
+   },
+   "1 h + zona": {
+    "eleccion": {
+     "n": 99,
+     "gana_pct": 41.4,
+     "r_medio": -0.1
+    },
+    "prueba": {
+     "n": 36,
+     "gana_pct": 41.7,
+     "r_medio": -0.125
+    }
+   },
+   "1 h + zona + killzone": {
+    "eleccion": {
+     "n": 75,
+     "gana_pct": 36.0,
+     "r_medio": -0.202
+    },
+    "prueba": {
+     "n": 30,
+     "gana_pct": 40.0,
+     "r_medio": -0.17
+    }
+   },
+   "tendencia + 1 h + killzone": {
+    "eleccion": {
+     "n": 918,
+     "gana_pct": 42.4,
+     "r_medio": -0.03
+    },
+    "prueba": {
+     "n": 253,
+     "gana_pct": 45.5,
+     "r_medio": 0.098
+    }
+   }
+  }
+ }
+}
