@@ -163,6 +163,11 @@ def texto(ctx: dict) -> str:
     if hubo_red:
         L.append("  La red de direccion PIERDE dinero con costes reales en todos los umbrales "
                  "probados (553.000 velas, 2019-2026). Es informativa: no decide el lado.")
+    from materias.red import lecciones
+    extra = lecciones.texto()
+    if extra:
+        L.append("")
+        L.append(extra)
     return "\n".join(L)
 
 

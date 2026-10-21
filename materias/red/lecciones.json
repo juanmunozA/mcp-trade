@@ -1,0 +1,313 @@
+{
+ "medido": "2026-10-21",
+ "dias": 365,
+ "senal": "barrida del extremo de 12 h con cierre 15M de vuelta dentro",
+ "grupos": {
+  "corto|Asia 20-00": {
+   "mercado": {
+    "n": 49,
+    "gana_pct": 22.4,
+    "r_medio": 0.255,
+    "r_total": 12.5
+   },
+   "limitada": {
+    "n": 49,
+    "gana_pct": 8.2,
+    "r_medio": -0.34,
+    "r_total": -16.6,
+    "llenadas_pct": 75.5,
+    "r_medio_llenas": -0.45
+   },
+   "mejor": "mercado"
+  },
+  "corto|London Close 10-12": {
+   "mercado": {
+    "n": 41,
+    "gana_pct": 36.6,
+    "r_medio": 0.415,
+    "r_total": 17.0
+   },
+   "limitada": {
+    "n": 41,
+    "gana_pct": 12.2,
+    "r_medio": -0.183,
+    "r_total": -7.5,
+    "llenadas_pct": 65.9,
+    "r_medio_llenas": -0.278
+   },
+   "mejor": "mercado"
+  },
+  "corto|Londres KZ 02-05": {
+   "mercado": {
+    "n": 38,
+    "gana_pct": 13.2,
+    "r_medio": -0.465,
+    "r_total": -17.7
+   },
+   "limitada": {
+    "n": 38,
+    "gana_pct": 13.2,
+    "r_medio": 0.243,
+    "r_total": 9.2,
+    "llenadas_pct": 86.8,
+    "r_medio_llenas": 0.279
+   },
+   "mejor": "limitada"
+  },
+  "corto|NY AM 07-10": {
+   "mercado": {
+    "n": 65,
+    "gana_pct": 24.6,
+    "r_medio": 0.037,
+    "r_total": 2.4
+   },
+   "limitada": {
+    "n": 65,
+    "gana_pct": 9.2,
+    "r_medio": -0.273,
+    "r_total": -17.8,
+    "llenadas_pct": 81.5,
+    "r_medio_llenas": -0.335
+   },
+   "mejor": "mercado"
+  },
+  "corto|NY PM 13:30-16": {
+   "mercado": {
+    "n": 37,
+    "gana_pct": 21.6,
+    "r_medio": 0.333,
+    "r_total": 12.3
+   },
+   "limitada": {
+    "n": 37,
+    "gana_pct": 2.7,
+    "r_medio": -0.518,
+    "r_total": -19.2,
+    "llenadas_pct": 78.4,
+    "r_medio_llenas": -0.66
+   },
+   "mejor": "mercado"
+  },
+  "corto|con tendencia": {
+   "mercado": {
+    "n": 123,
+    "gana_pct": 22.0,
+    "r_medio": 0.142,
+    "r_total": 17.5
+   },
+   "limitada": {
+    "n": 123,
+    "gana_pct": 9.8,
+    "r_medio": -0.173,
+    "r_total": -21.3,
+    "llenadas_pct": 80.5,
+    "r_medio_llenas": -0.215
+   },
+   "mejor": "mercado"
+  },
+  "corto|contra tendencia": {
+   "mercado": {
+    "n": 173,
+    "gana_pct": 23.7,
+    "r_medio": 0.057,
+    "r_total": 9.9
+   },
+   "limitada": {
+    "n": 173,
+    "gana_pct": 11.0,
+    "r_medio": -0.015,
+    "r_total": -2.5,
+    "llenadas_pct": 80.3,
+    "r_medio_llenas": -0.018
+   },
+   "mejor": "mercado"
+  },
+  "corto|fuera de killzone": {
+   "mercado": {
+    "n": 66,
+    "gana_pct": 19.7,
+    "r_medio": 0.012,
+    "r_total": 0.8
+   },
+   "limitada": {
+    "n": 66,
+    "gana_pct": 15.2,
+    "r_medio": 0.425,
+    "r_total": 28.1,
+    "llenadas_pct": 89.4,
+    "r_medio_llenas": 0.476
+   },
+   "mejor": "limitada"
+  },
+  "corto|todas": {
+   "mercado": {
+    "n": 296,
+    "gana_pct": 23.0,
+    "r_medio": 0.092,
+    "r_total": 27.3
+   },
+   "limitada": {
+    "n": 296,
+    "gana_pct": 10.5,
+    "r_medio": -0.08,
+    "r_total": -23.8,
+    "llenadas_pct": 80.4,
+    "r_medio_llenas": -0.1
+   },
+   "mejor": "mercado"
+  },
+  "largo|Asia 20-00": {
+   "mercado": {
+    "n": 42,
+    "gana_pct": 28.6,
+    "r_medio": -0.0,
+    "r_total": -0.0
+   },
+   "limitada": {
+    "n": 42,
+    "gana_pct": 19.0,
+    "r_medio": -0.051,
+    "r_total": -2.2,
+    "llenadas_pct": 78.6,
+    "r_medio_llenas": -0.066
+   },
+   "mejor": "mercado"
+  },
+  "largo|London Close 10-12": {
+   "mercado": {
+    "n": 38,
+    "gana_pct": 34.2,
+    "r_medio": 0.383,
+    "r_total": 14.5
+   },
+   "limitada": {
+    "n": 38,
+    "gana_pct": 21.1,
+    "r_medio": 0.15,
+    "r_total": 5.7,
+    "llenadas_pct": 76.3,
+    "r_medio_llenas": 0.196
+   },
+   "mejor": "mercado"
+  },
+  "largo|Londres KZ 02-05": {
+   "mercado": {
+    "n": 31,
+    "gana_pct": 6.5,
+    "r_medio": -0.769,
+    "r_total": -23.8
+   },
+   "limitada": {
+    "n": 31,
+    "gana_pct": 0.0,
+    "r_medio": -0.922,
+    "r_total": -28.6,
+    "llenadas_pct": 90.3,
+    "r_medio_llenas": -1.021
+   },
+   "mejor": "mercado"
+  },
+  "largo|NY AM 07-10": {
+   "mercado": {
+    "n": 48,
+    "gana_pct": 22.9,
+    "r_medio": -0.186,
+    "r_total": -8.9
+   },
+   "limitada": {
+    "n": 48,
+    "gana_pct": 14.6,
+    "r_medio": 0.039,
+    "r_total": 1.9,
+    "llenadas_pct": 87.5,
+    "r_medio_llenas": 0.045
+   },
+   "mejor": "limitada"
+  },
+  "largo|NY PM 13:30-16": {
+   "mercado": {
+    "n": 20,
+    "gana_pct": 30.0,
+    "r_medio": 0.085,
+    "r_total": 1.7
+   },
+   "limitada": {
+    "n": 20,
+    "gana_pct": 30.0,
+    "r_medio": 0.474,
+    "r_total": 9.5,
+    "llenadas_pct": 95.0,
+    "r_medio_llenas": 0.499
+   },
+   "mejor": "limitada"
+  },
+  "largo|con tendencia": {
+   "mercado": {
+    "n": 83,
+    "gana_pct": 27.7,
+    "r_medio": 0.086,
+    "r_total": 7.1
+   },
+   "limitada": {
+    "n": 83,
+    "gana_pct": 15.7,
+    "r_medio": -0.011,
+    "r_total": -0.9,
+    "llenadas_pct": 80.7,
+    "r_medio_llenas": -0.014
+   },
+   "mejor": "mercado"
+  },
+  "largo|contra tendencia": {
+   "mercado": {
+    "n": 165,
+    "gana_pct": 21.8,
+    "r_medio": -0.238,
+    "r_total": -39.2
+   },
+   "limitada": {
+    "n": 165,
+    "gana_pct": 13.9,
+    "r_medio": -0.219,
+    "r_total": -36.1,
+    "llenadas_pct": 81.8,
+    "r_medio_llenas": -0.268
+   },
+   "mejor": "limitada"
+  },
+  "largo|fuera de killzone": {
+   "mercado": {
+    "n": 69,
+    "gana_pct": 21.7,
+    "r_medio": -0.225,
+    "r_total": -15.5
+   },
+   "limitada": {
+    "n": 69,
+    "gana_pct": 10.1,
+    "r_medio": -0.338,
+    "r_total": -23.3,
+    "llenadas_pct": 73.9,
+    "r_medio_llenas": -0.458
+   },
+   "mejor": "mercado"
+  },
+  "largo|todas": {
+   "mercado": {
+    "n": 248,
+    "gana_pct": 23.8,
+    "r_medio": -0.129,
+    "r_total": -32.1
+   },
+   "limitada": {
+    "n": 248,
+    "gana_pct": 14.5,
+    "r_medio": -0.149,
+    "r_total": -37.1,
+    "llenadas_pct": 81.5,
+    "r_medio_llenas": -0.183
+   },
+   "mejor": "mercado"
+  }
+ }
+}
