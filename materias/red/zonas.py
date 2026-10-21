@@ -79,11 +79,15 @@ def fractales(h, lo, n: int = 2) -> list[tuple[int, int, float, int]]:
     return out
 
 
-def huecos(h, lo, a, min_atr: float = MIN_HUECO) -> list[tuple[int, int, float, float]]:
-    """(vela en que se forma, +1 alcista / -1 bajista, borde bajo, borde alto)."""
+def huecos(h, lo, a, min_atr: float = MIN_HUECO, t=None, seg: int = 900) -> list[tuple[int, int, float, float]]:
+    """
+    (vela en que se forma, +1 alcista / -1 bajista, borde bajo, borde alto).
+    Con `t`, se saltan los huecos de la reapertura diaria o del lunes: entre
+    velas no seguidas no hay vacio, hay mercado cerrado.
+    """
     out = []
     for i in range(2, len(h)):
-        if np.isnan(a[i]):
+        if np.isnan(a[i]) or (t is not None and t[i] - t[i - 2] > 3 * seg):
             continue
         if lo[i] > h[i - 2] and lo[i] - h[i - 2] >= min_atr * a[i]:
             out.append((i, 1, float(h[i - 2]), float(lo[i])))
@@ -117,7 +121,7 @@ def _sesion(t) -> str:
 def medir_huecos(b, a, tend) -> list[dict]:
     h, lo, c = b["h"], b["l"], b["c"]
     ev = []
-    for i, lado, bajo, alto in huecos(h, lo, a):
+    for i, lado, bajo, alto in huecos(h, lo, a, t=b["t"]):
         if b["t"][i] < DESDE:
             continue
         ancho = alto - bajo
@@ -254,7 +258,8 @@ def _vivo(m15: list[dict]) -> dict | None:
     p, ai = b["c"][-1], a[-1]
     piv = series(b["h"], b["l"], a)
     abiertos = []
-    for i, lado, bajo, alto in huecos(b["h"], b["l"], a):
+    tt = np.array([x["dt"].timestamp() for x in m15])
+    for i, lado, bajo, alto in huecos(b["h"], b["l"], a, t=tt):
         resto = slice(i + 1, len(b["c"]))
         roto = (b["c"][resto] < bajo).any() if lado > 0 else (b["c"][resto] > alto).any()
         toques = np.flatnonzero(b["l"][resto] <= alto) if lado > 0 else np.flatnonzero(b["h"][resto] >= bajo)

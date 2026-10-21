@@ -36,12 +36,13 @@ input double GiroSerieATR    = 3.0;   // Giro en ATR que cierra un tramo (maximo
 input double MinVacioATR     = 0.2;   // Vacios mas chicos que esto (en ATR) se ignoran
 input bool   MostrarRelativos = true; // Puntos en los maximos/minimos relativos
 input bool   MostrarRotos    = false; // Dibujar tambien los vacios ya rotos
-input bool   MostrarIFVG     = true;  // Vacios rotos que pasan a inversos
+input bool   MostrarIFVG     = true;  // Vacios rotos que pasan a inversos (solo borde)
+input double MaxDistanciaATR = 5.0;   // Solo vacios a menos de esto del precio (en ATR)
 input color  ColorAlcista    = C'0,90,40';
 input color  ColorBajista    = C'110,20,20';
 input color  ColorDefendido  = C'0,150,70';   // primer toque en el borde (el que se defiende)
 input color  ColorDefendidoB = C'190,40,40';
-input color  ColorInverso    = C'70,70,90';
+input color  ColorInverso    = clrSlateGray;
 
 #define P "EZ_"
 
@@ -154,7 +155,10 @@ void Vacios(const int ini, const int ult, const datetime &time[], const double &
       { lado = 1; bajo = high[i - 2]; alto = low[i]; }
       else if(high[i] < low[i - 2] && low[i - 2] - high[i] >= MinVacioATR * Atr[i])
       { lado = -1; bajo = high[i]; alto = low[i - 2]; }
-      if(lado == 0)
+      // El hueco de la reapertura diaria o del lunes no es un FVG: velas no seguidas
+      if(lado == 0 || time[i] - time[i - 2] > 3 * PeriodSeconds())
+         continue;
+      if(MathAbs((alto + bajo) / 2 - close[ult]) > MaxDistanciaATR * Atr[ult])
          continue;
       double ce = (alto + bajo) / 2;
       int roto = -1, toque = -1;
@@ -190,7 +194,7 @@ void Vacios(const int ini, const int ult, const datetime &time[], const double &
          if((lado > 0 && close[k] > alto) || (lado < 0 && close[k] < bajo)) { fin = k; break; }
       if(fin < 0)
       {
-         Caja(P + "I" + id, time[roto], bajo, futuro, alto, ColorInverso, true, STYLE_SOLID);
+         Caja(P + "I" + id, time[roto], bajo, futuro, alto, ColorInverso, false, STYLE_DASH);
          Texto(P + "IT" + id, futuro, lado > 0 ? bajo : alto, "IFVG", clrSilver, 7,
                lado > 0 ? ANCHOR_LEFT_UPPER : ANCHOR_LEFT_LOWER);
       }
