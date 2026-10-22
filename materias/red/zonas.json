@@ -272,5 +272,119 @@
     "ruptura_sigue_pct": 42.4
    }
   }
+ },
+ "order_blocks": {
+  "OB todos": {
+   "2022-2024": {
+    "n": 6095,
+    "reacciona_pct": 46.3,
+    "rompe_pct": 53.7,
+    "azar_pct": 44.9
+   },
+   "2025-2026": {
+    "n": 3644,
+    "reacciona_pct": 46.4,
+    "rompe_pct": 53.6,
+    "azar_pct": 45.0
+   }
+  },
+  "OB con FVG en el impulso": {
+   "2022-2024": {
+    "n": 1930,
+    "reacciona_pct": 45.8,
+    "rompe_pct": 54.2,
+    "azar_pct": 45.6
+   },
+   "2025-2026": {
+    "n": 1226,
+    "reacciona_pct": 48.0,
+    "rompe_pct": 52.0,
+    "azar_pct": 45.7
+   }
+  },
+  "OB sin FVG": {
+   "2022-2024": {
+    "n": 4165,
+    "reacciona_pct": 46.6,
+    "rompe_pct": 53.4,
+    "azar_pct": 44.7
+   },
+   "2025-2026": {
+    "n": 2418,
+    "reacciona_pct": 45.6,
+    "rompe_pct": 54.4,
+    "azar_pct": 44.6
+   }
+  },
+  "OB a favor de la tendencia": {
+   "2022-2024": {
+    "n": 3856,
+    "reacciona_pct": 45.6,
+    "rompe_pct": 54.4,
+    "azar_pct": 45.4
+   },
+   "2025-2026": {
+    "n": 2339,
+    "reacciona_pct": 46.3,
+    "rompe_pct": 53.6,
+    "azar_pct": 45.3
+   }
+  },
+  "OB contra la tendencia": {
+   "2022-2024": {
+    "n": 2239,
+    "reacciona_pct": 47.4,
+    "rompe_pct": 52.6,
+    "azar_pct": 44.1
+   },
+   "2025-2026": {
+    "n": 1305,
+    "reacciona_pct": 46.5,
+    "rompe_pct": 53.5,
+    "azar_pct": 44.4
+   }
+  },
+  "OB primer toque se queda en el borde": {
+   "2022-2024": {
+    "n": 3540,
+    "reacciona_pct": 56.3,
+    "rompe_pct": 43.7,
+    "azar_pct": 47.0
+   },
+   "2025-2026": {
+    "n": 2112,
+    "reacciona_pct": 57.8,
+    "rompe_pct": 42.2,
+    "azar_pct": 47.2
+   }
+  },
+  "OB primer toque llega a la mitad": {
+   "2022-2024": {
+    "n": 2555,
+    "reacciona_pct": 32.5,
+    "rompe_pct": 67.5,
+    "azar_pct": 42.1
+   },
+   "2025-2026": {
+    "n": 1532,
+    "reacciona_pct": 30.7,
+    "rompe_pct": 69.3,
+    "azar_pct": 41.9
+   }
+  },
+  "OB con FVG y toque en el borde": {
+   "2022-2024": {
+    "n": 1136,
+    "reacciona_pct": 54.9,
+    "rompe_pct": 45.1,
+    "azar_pct": 48.1
+   },
+   "2025-2026": {
+    "n": 736,
+    "reacciona_pct": 59.0,
+    "rompe_pct": 41.0,
+    "azar_pct": 48.4
+   }
+  }
  }
 }

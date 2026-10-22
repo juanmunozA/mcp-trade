@@ -10,6 +10,8 @@
 //|  primer toque que llega a la mitad:     reacciona 27 % (azar 30)  |
 //|  extremos de serie: se rompen 74 %; la ruptura sigue 47 %         |
 //|  (relativos: 77 % y 41 %)                                         |
+//|  order blocks: solos 46 % (azar 45); toque en el borde 56 % (47); |
+//|  toque que llega a la mitad 32 % (42)                             |
 //+------------------------------------------------------------------+
 #property copyright   "MCP Trade"
 #property version     "1.00"
@@ -43,6 +45,9 @@ input color  ColorBajista    = C'110,20,20';
 input color  ColorDefendido  = C'0,150,70';   // primer toque en el borde (el que se defiende)
 input color  ColorDefendidoB = C'190,40,40';
 input color  ColorInverso    = clrSlateGray;
+input bool   MostrarOB       = true;  // Order blocks (ultima vela contraria antes de romper estructura)
+input color  ColorOBAlcista  = clrDodgerBlue;
+input color  ColorOBBajista  = clrDarkOrange;
 
 #define P "EZ_"
 
@@ -64,7 +69,7 @@ int OnInit()
       PlotIndexSetInteger(1, PLOT_DRAW_TYPE, DRAW_NONE);
       PlotIndexSetInteger(2, PLOT_DRAW_TYPE, DRAW_NONE);
    }
-   IndicatorSetString(INDICATOR_SHORTNAME, "Estructura y vacios");
+   IndicatorSetString(INDICATOR_SHORTNAME, "Estructura, vacios y order blocks");
    return INIT_SUCCEEDED;
 }
 
@@ -201,6 +206,54 @@ void Vacios(const int ini, const int ult, const datetime &time[], const double &
    }
 }
 
+void OrderBlocks(const int ini, const int ult, const datetime &time[], const double &open[],
+                 const double &high[], const double &low[], const double &close[])
+{
+   datetime futuro = time[ult] + PeriodSeconds() * 8;
+   double ultMax = 0, ultMin = 0;
+   bool hayMax = false, hayMin = false;
+   for(int k = ini + 4; k <= ult; k++)
+   {
+      int f = k - 2;   // fractal de 2 velas que se confirma en k
+      if(high[f] >= high[f - 1] && high[f] >= high[f - 2] && high[f] >= high[f + 1] && high[f] >= high[f + 2])
+      { ultMax = high[f]; hayMax = true; }
+      if(low[f] <= low[f - 1] && low[f] <= low[f - 2] && low[f] <= low[f + 1] && low[f] <= low[f + 2])
+      { ultMin = low[f]; hayMin = true; }
+      for(int lado = 1; lado >= -1; lado -= 2)
+      {
+         bool rompe = lado > 0 ? (hayMax && close[k] > ultMax) : (hayMin && close[k] < ultMin);
+         if(!rompe)
+            continue;
+         if(lado > 0) hayMax = false; else hayMin = false;
+         int j = -1;
+         for(int x = k - 1; x >= MathMax(ini, k - 10); x--)
+            if((lado > 0 && close[x] < open[x]) || (lado < 0 && close[x] > open[x])) { j = x; break; }
+         if(j < 0)
+            continue;
+         double bajo = low[j], alto = high[j], mitad = (alto + bajo) / 2;
+         if(MathAbs(mitad - close[ult]) > MaxDistanciaATR * Atr[ult])
+            continue;
+         int toque = -1;
+         bool llego = false, roto = false;
+         for(int x = k + 1; x <= ult; x++)
+         {
+            if(toque < 0 && ((lado > 0 && low[x] <= alto) || (lado < 0 && high[x] >= bajo)))
+            { toque = x; llego = lado > 0 ? low[x] <= mitad : high[x] >= mitad; }
+            if((lado > 0 && close[x] < bajo) || (lado < 0 && close[x] > alto)) { roto = true; break; }
+         }
+         if(roto)
+            continue;
+         string id = IntegerToString(j) + (lado > 0 ? "a" : "b");
+         color c = lado > 0 ? ColorOBAlcista : ColorOBBajista;
+         Caja(P + "O" + id, time[j], bajo, futuro, alto, c, false, STYLE_SOLID);
+         ObjectSetInteger(0, P + "O" + id, OBJPROP_WIDTH, 2);
+         string estado = toque < 0 ? "OB sin tocar" : (llego ? "OB llego a la mitad" : "OB defendido 56%");
+         Texto(P + "OT" + id, futuro, lado > 0 ? bajo : alto, estado, c, 7,
+               lado > 0 ? ANCHOR_LEFT_UPPER : ANCHOR_LEFT_LOWER);
+      }
+   }
+}
+
 int OnCalculate(const int rates_total, const int prev_calculated, const datetime &time[],
                 const double &open[], const double &high[], const double &low[], const double &close[],
                 const long &tick_volume[], const long &volume[], const int &spread[])
@@ -233,6 +286,8 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
    }
    Serie(ini, ult, time, high, low);
    Vacios(ini, ult, time, high, low, close);
+   if(MostrarOB)
+      OrderBlocks(ini, ult, time, open, high, low, close);
    ChartRedraw();
    return rates_total;
 }

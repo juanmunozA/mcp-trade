@@ -228,6 +228,88 @@ def resumir_extremos(ev: list[dict]) -> dict:
     return out
 
 
+def order_blocks(b, a, n: int = 2, atras: int = 10) -> list[tuple[int, int, float, float, bool]]:
+    """
+    Order blocks (cap. 7): la ultima vela contraria antes del impulso que
+    rompe un maximo/minimo relativo con un cierre de cuerpo.
+      alcista: el cierre de la vela k supera el ultimo maximo relativo YA
+               confirmado; el OB es la ultima vela bajista de las `atras`
+               anteriores. Zona = [minimo, maximo] de esa vela.
+    Devuelve (vela de la ruptura, +1/-1, bajo, alto, el impulso dejo FVG).
+    Solo se sabe en el cierre de la vela k: no mira el futuro.
+    """
+    h, lo, c, o = b["h"], b["l"], b["c"], b["o"]
+    out = []
+    ult_max = ult_min = None
+    usado_max = usado_min = True
+    for k in range(n * 2 + 1, len(c)):
+        f = k - n                       # fractal que se confirma en esta vela
+        if h[f] == h[f - n:f + n + 1].max():
+            ult_max, usado_max = h[f], False
+        if lo[f] == lo[f - n:f + n + 1].min():
+            ult_min, usado_min = lo[f], False
+        if np.isnan(a[k]):
+            continue
+        for lado in (1, -1):
+            nivel, usado = (ult_max, usado_max) if lado > 0 else (ult_min, usado_min)
+            if nivel is None or usado or not ((c[k] > nivel) if lado > 0 else (c[k] < nivel)):
+                continue
+            if lado > 0:
+                usado_max = True
+            else:
+                usado_min = True
+            j = next((x for x in range(k - 1, max(0, k - atras) - 1, -1)
+                      if ((c[x] < o[x]) if lado > 0 else (c[x] > o[x]))), None)
+            if j is None:
+                continue
+            fvg = any(((lo[x] > h[x - 2]) if lado > 0 else (h[x] < lo[x - 2]))
+                      for x in range(j + 2, k + 1))
+            out.append((k, lado, float(lo[j]), float(h[j]), fvg))
+    return out
+
+
+def medir_obs(b, a, tend) -> list[dict]:
+    h, lo, c = b["h"], b["l"], b["c"]
+    ev = []
+    for k, lado, bajo, alto, fvg in order_blocks(b, a):
+        if b["t"][k] < DESDE or alto - bajo <= 0:
+            continue
+        borde, lejos = (alto, bajo) if lado > 0 else (bajo, alto)
+        mitad = (alto + bajo) / 2
+        j = next((x for x in range(k + 1, min(k + 1 + ESPERA, len(c)))
+                  if ((lo[x] <= borde) if lado > 0 else (h[x] >= borde))), None)
+        if j is None:
+            continue
+        res, _ = _resolver(b, j, lado, borde, lejos, borde + lado * a[k])
+        ancho = alto - bajo
+        ev.append({"t": int(b["t"][k]), "lado": lado, "fvg": fvg, "a_favor": bool(tend[k] == lado),
+                   "llega_mitad": bool((lo[j] <= mitad) if lado > 0 else (h[j] >= mitad)),
+                   "res": res, "base": ancho / (ancho + a[k]), "edad": j - k})
+    return ev
+
+
+def resumir_obs(ev: list[dict]) -> dict:
+    grupos = {
+        "OB todos": lambda e: True,
+        "OB con FVG en el impulso": lambda e: e["fvg"],
+        "OB sin FVG": lambda e: not e["fvg"],
+        "OB a favor de la tendencia": lambda e: e["a_favor"],
+        "OB contra la tendencia": lambda e: not e["a_favor"],
+        "OB primer toque se queda en el borde": lambda e: not e["llega_mitad"],
+        "OB primer toque llega a la mitad": lambda e: e["llega_mitad"],
+        "OB con FVG y toque en el borde": lambda e: e["fvg"] and not e["llega_mitad"],
+    }
+    out = {}
+    for nom, g in grupos.items():
+        for tr, f in (("2022-2024", lambda e: e["t"] < CORTE), ("2025-2026", lambda e: e["t"] >= CORTE)):
+            x = [e for e in ev if f(e) and g(e)]
+            if x:
+                out.setdefault(nom, {})[tr] = {
+                    "n": len(x), "reacciona_pct": _pct([e["res"] == "reacciona" for e in x]),
+                    "rompe_pct": _pct([e["res"] == "rompe" for e in x]), "azar_pct": _pct([e["base"] for e in x])}
+    return out
+
+
 def medir() -> dict:
     v = D.cargar("M5")
     v = v[v["time"] >= DESDE - 30 * 86400]
@@ -238,7 +320,8 @@ def medir() -> dict:
     ev_e = (medir_extremos(b, a, series(b["h"], b["l"], a), "serie")
             + medir_extremos(b, a, fractales(b["h"], b["l"]), "relativo"))
     return {"desde": "2022-01-01", "marco": "15M", "k_serie_atr": K_SERIE,
-            "huecos": resumir_huecos(ev_h), "extremos": resumir_extremos(ev_e)}
+            "huecos": resumir_huecos(ev_h), "extremos": resumir_extremos(ev_e),
+            "order_blocks": resumir_obs(medir_obs(b, a, tend))}
 
 
 # --- lo que ve el agente -------------------------------------------------
@@ -273,7 +356,22 @@ def _vivo(m15: list[dict]) -> dict | None:
             llego = (b["l"][j] <= ce) if lado > 0 else (b["h"][j] >= ce)
             estado = "primer toque llego a la mitad" if llego else "primer toque se quedo en el borde"
         abiertos.append((len(b["c"]) - 1 - i, lado, bajo, alto, estado))
-    return {"precio": p, "atr": ai, "pivotes": piv[-6:], "huecos": abiertos[-6:]}
+    obs = []
+    for k, lado, bajo, alto, fvg in order_blocks(b, a):
+        resto = slice(k + 1, len(b["c"]))
+        roto = (b["c"][resto] < bajo).any() if lado > 0 else (b["c"][resto] > alto).any()
+        if roto or abs((alto + bajo) / 2 - p) > 4 * ai:
+            continue
+        toques = np.flatnonzero(b["l"][resto] <= alto) if lado > 0 else np.flatnonzero(b["h"][resto] >= bajo)
+        if not len(toques):
+            estado = "sin tocar"
+        else:
+            j = k + 1 + int(toques[0])
+            mitad = (alto + bajo) / 2
+            llego = (b["l"][j] <= mitad) if lado > 0 else (b["h"][j] >= mitad)
+            estado = "primer toque llego a la mitad" if llego else "primer toque se quedo en el borde"
+        obs.append((len(b["c"]) - 1 - k, lado, bajo, alto, estado + (", con FVG" if fvg else "")))
+    return {"precio": p, "atr": ai, "pivotes": piv[-6:], "huecos": abiertos[-6:], "obs": obs[-4:]}
 
 
 def texto(ctx: dict) -> str:
@@ -281,7 +379,7 @@ def texto(ctx: dict) -> str:
     if not d.get("huecos"):
         return ""
     m15 = (ctx.get("m15") or [])[:-1]
-    L = ["## Vacios (FVG) y maximos/minimos de serie, 15M (medido desde 2022)"]
+    L = ["## Vacios (FVG), order blocks y maximos/minimos de serie, 15M (medido desde 2022)"]
     hh = d["huecos"]
     L.append("Reacciona = cierra 1 ATR mas alla del borde antes de cerrar al otro lado del vacio. "
              "Azar = lo que daria una moneda con esas distancias. La diferencia es la ventaja.")
@@ -299,6 +397,12 @@ def texto(ctx: dict) -> str:
         if f:
             L.append(f"- al volver a un {nom}: rechaza {f['rechaza_pct']:.0f} %, rompe {f['rompe_pct']:.0f} %; "
                      f"de las rupturas sigue 1 ATR el {f['ruptura_sigue_pct']:.0f} % (n={f['n']})")
+    for nom in ("OB todos", "OB primer toque se queda en el borde", "OB primer toque llega a la mitad"):
+        f = d.get("order_blocks", {}).get(nom, {}).get("2022-2024")
+        if f:
+            L.append(f"- {nom}: reacciona {f['reacciona_pct']:.0f} % (azar {f['azar_pct']:.0f} %), n={f['n']}")
+    L.append("Un order block solo no vale mas que cualquier zona; vale si el primer toque se queda en el borde. "
+             "Los vacios dan mas ventaja que los order blocks.")
     L.append("Lectura: un vacio cuyo primer toque NO llega a la mitad es el que se defiende; si llega "
              "a la mitad, lo normal es que se llene. Los extremos se rompen 3 de cada 4 veces: "
              "no son muros. La ruptura de un extremo de SERIE sigue mas que la de uno relativo.")
@@ -317,6 +421,9 @@ def texto(ctx: dict) -> str:
         L.append("- ahora, extremos de serie (del mas viejo al ultimo): " + " → ".join(etiqueta))
         for edad, lado, bajo, alto, estado in vv["huecos"]:
             L.append(f"- vacio {'alcista' if lado > 0 else 'bajista'} abierto {bajo:.2f}-{alto:.2f} "
+                     f"(hace {edad} velas de 15M, {estado})")
+        for edad, lado, bajo, alto, estado in vv.get("obs", []):
+            L.append(f"- order block {'alcista' if lado > 0 else 'bajista'} {bajo:.2f}-{alto:.2f} "
                      f"(hace {edad} velas de 15M, {estado})")
     return "\n".join(L)
 
