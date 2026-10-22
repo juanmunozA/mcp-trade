@@ -1,0 +1,386 @@
+{
+ "compra|OTE 62-79 % en killzone|2022-2024": {
+  "al_minimo": {
+   "n": 441,
+   "r_medio": -0.064,
+   "gana_pct": 53.3
+  },
+  "a_2R": {
+   "n": 498,
+   "r_medio": -0.065,
+   "gana_pct": 33.7
+  }
+ },
+ "compra|OTE 62-79 % en killzone|2025-2026": {
+  "al_minimo": {
+   "n": 247,
+   "r_medio": 0.02,
+   "gana_pct": 59.9
+  },
+  "a_2R": {
+   "n": 278,
+   "r_medio": 0.018,
+   "gana_pct": 36.7
+  }
+ },
+ "compra|OTE 62-79 %|2022-2024": {
+  "al_minimo": {
+   "n": 646,
+   "r_medio": -0.082,
+   "gana_pct": 52.5
+  },
+  "a_2R": {
+   "n": 724,
+   "r_medio": -0.074,
+   "gana_pct": 33.4
+  }
+ },
+ "compra|OTE 62-79 %|2025-2026": {
+  "al_minimo": {
+   "n": 373,
+   "r_medio": -0.024,
+   "gana_pct": 58.2
+  },
+  "a_2R": {
+   "n": 422,
+   "r_medio": 0.02,
+   "gana_pct": 36.7
+  }
+ },
+ "compra|en killzone|2022-2024": {
+  "al_minimo": {
+   "n": 1852,
+   "r_medio": -0.026,
+   "gana_pct": 59.4
+  },
+  "a_2R": {
+   "n": 2190,
+   "r_medio": -0.017,
+   "gana_pct": 35.6
+  }
+ },
+ "compra|en killzone|2025-2026": {
+  "al_minimo": {
+   "n": 1101,
+   "r_medio": -0.015,
+   "gana_pct": 60.0
+  },
+  "a_2R": {
+   "n": 1340,
+   "r_medio": 0.009,
+   "gana_pct": 36.1
+  }
+ },
+ "compra|retroceso 30-50 %|2022-2024": {
+  "al_minimo": {
+   "n": 1597,
+   "r_medio": -0.045,
+   "gana_pct": 59.9
+  },
+  "a_2R": {
+   "n": 1926,
+   "r_medio": -0.08,
+   "gana_pct": 32.9
+  }
+ },
+ "compra|retroceso 30-50 %|2025-2026": {
+  "al_minimo": {
+   "n": 960,
+   "r_medio": -0.086,
+   "gana_pct": 58.1
+  },
+  "a_2R": {
+   "n": 1165,
+   "r_medio": -0.002,
+   "gana_pct": 35.1
+  }
+ },
+ "compra|retroceso 50-80 %|2022-2024": {
+  "al_minimo": {
+   "n": 1330,
+   "r_medio": -0.054,
+   "gana_pct": 55.2
+  },
+  "a_2R": {
+   "n": 1502,
+   "r_medio": -0.011,
+   "gana_pct": 35.6
+  }
+ },
+ "compra|retroceso 50-80 %|2025-2026": {
+  "al_minimo": {
+   "n": 775,
+   "r_medio": 0.035,
+   "gana_pct": 58.8
+  },
+  "a_2R": {
+   "n": 893,
+   "r_medio": 0.044,
+   "gana_pct": 37.4
+  }
+ },
+ "compra|sin vacio|2022-2024": {
+  "al_minimo": {
+   "n": 164,
+   "r_medio": -0.043,
+   "gana_pct": 64.6
+  },
+  "a_2R": {
+   "n": 228,
+   "r_medio": -0.099,
+   "gana_pct": 32.5
+  }
+ },
+ "compra|sin vacio|2025-2026": {
+  "al_minimo": {
+   "n": 67,
+   "r_medio": -0.091,
+   "gana_pct": 65.7
+  },
+  "a_2R": {
+   "n": 106,
+   "r_medio": 0.178,
+   "gana_pct": 42.5
+  }
+ },
+ "compra|toco vacio|2022-2024": {
+  "al_minimo": {
+   "n": 2763,
+   "r_medio": -0.049,
+   "gana_pct": 57.4
+  },
+  "a_2R": {
+   "n": 3200,
+   "r_medio": -0.046,
+   "gana_pct": 34.2
+  }
+ },
+ "compra|toco vacio|2025-2026": {
+  "al_minimo": {
+   "n": 1668,
+   "r_medio": -0.03,
+   "gana_pct": 58.2
+  },
+  "a_2R": {
+   "n": 1952,
+   "r_medio": 0.009,
+   "gana_pct": 35.8
+  }
+ },
+ "compra|todas|2022-2024": {
+  "al_minimo": {
+   "n": 2927,
+   "r_medio": -0.049,
+   "gana_pct": 57.8
+  },
+  "a_2R": {
+   "n": 3428,
+   "r_medio": -0.05,
+   "gana_pct": 34.1
+  }
+ },
+ "compra|todas|2025-2026": {
+  "al_minimo": {
+   "n": 1735,
+   "r_medio": -0.032,
+   "gana_pct": 58.4
+  },
+  "a_2R": {
+   "n": 2058,
+   "r_medio": 0.018,
+   "gana_pct": 36.1
+  }
+ },
+ "venta|OTE 62-79 % en killzone|2022-2024": {
+  "al_minimo": {
+   "n": 426,
+   "r_medio": 0.027,
+   "gana_pct": 59.6
+  },
+  "a_2R": {
+   "n": 481,
+   "r_medio": 0.073,
+   "gana_pct": 39.9
+  }
+ },
+ "venta|OTE 62-79 % en killzone|2025-2026": {
+  "al_minimo": {
+   "n": 278,
+   "r_medio": 0.101,
+   "gana_pct": 58.3
+  },
+  "a_2R": {
+   "n": 309,
+   "r_medio": 0.133,
+   "gana_pct": 38.5
+  }
+ },
+ "venta|OTE 62-79 %|2022-2024": {
+  "al_minimo": {
+   "n": 645,
+   "r_medio": -0.032,
+   "gana_pct": 54.6
+  },
+  "a_2R": {
+   "n": 715,
+   "r_medio": -0.032,
+   "gana_pct": 35.9
+  }
+ },
+ "venta|OTE 62-79 %|2025-2026": {
+  "al_minimo": {
+   "n": 426,
+   "r_medio": 0.039,
+   "gana_pct": 55.2
+  },
+  "a_2R": {
+   "n": 468,
+   "r_medio": 0.134,
+   "gana_pct": 38.9
+  }
+ },
+ "venta|en killzone|2022-2024": {
+  "al_minimo": {
+   "n": 1793,
+   "r_medio": -0.026,
+   "gana_pct": 58.4
+  },
+  "a_2R": {
+   "n": 2151,
+   "r_medio": -0.019,
+   "gana_pct": 35.6
+  }
+ },
+ "venta|en killzone|2025-2026": {
+  "al_minimo": {
+   "n": 1076,
+   "r_medio": -0.007,
+   "gana_pct": 56.5
+  },
+  "a_2R": {
+   "n": 1275,
+   "r_medio": 0.014,
+   "gana_pct": 35.7
+  }
+ },
+ "venta|retroceso 30-50 %|2022-2024": {
+  "al_minimo": {
+   "n": 1521,
+   "r_medio": -0.066,
+   "gana_pct": 54.8
+  },
+  "a_2R": {
+   "n": 1829,
+   "r_medio": -0.082,
+   "gana_pct": 33.1
+  }
+ },
+ "venta|retroceso 30-50 %|2025-2026": {
+  "al_minimo": {
+   "n": 865,
+   "r_medio": -0.09,
+   "gana_pct": 55.0
+  },
+  "a_2R": {
+   "n": 1041,
+   "r_medio": -0.126,
+   "gana_pct": 30.9
+  }
+ },
+ "venta|retroceso 50-80 %|2022-2024": {
+  "al_minimo": {
+   "n": 1313,
+   "r_medio": -0.044,
+   "gana_pct": 54.2
+  },
+  "a_2R": {
+   "n": 1475,
+   "r_medio": -0.023,
+   "gana_pct": 35.5
+  }
+ },
+ "venta|retroceso 50-80 %|2025-2026": {
+  "al_minimo": {
+   "n": 866,
+   "r_medio": 0.015,
+   "gana_pct": 54.0
+  },
+  "a_2R": {
+   "n": 976,
+   "r_medio": 0.072,
+   "gana_pct": 37.1
+  }
+ },
+ "venta|sin vacio|2022-2024": {
+  "al_minimo": {
+   "n": 171,
+   "r_medio": -0.068,
+   "gana_pct": 62.6
+  },
+  "a_2R": {
+   "n": 247,
+   "r_medio": -0.082,
+   "gana_pct": 33.6
+  }
+ },
+ "venta|sin vacio|2025-2026": {
+  "al_minimo": {
+   "n": 114,
+   "r_medio": -0.039,
+   "gana_pct": 63.2
+  },
+  "a_2R": {
+   "n": 165,
+   "r_medio": -0.091,
+   "gana_pct": 30.9
+  }
+ },
+ "venta|toco vacio|2022-2024": {
+  "al_minimo": {
+   "n": 2663,
+   "r_medio": -0.055,
+   "gana_pct": 54.0
+  },
+  "a_2R": {
+   "n": 3057,
+   "r_medio": -0.053,
+   "gana_pct": 34.2
+  }
+ },
+ "venta|toco vacio|2025-2026": {
+  "al_minimo": {
+   "n": 1617,
+   "r_medio": -0.037,
+   "gana_pct": 53.9
+  },
+  "a_2R": {
+   "n": 1852,
+   "r_medio": -0.025,
+   "gana_pct": 34.2
+  }
+ },
+ "venta|todas|2022-2024": {
+  "al_minimo": {
+   "n": 2834,
+   "r_medio": -0.056,
+   "gana_pct": 54.5
+  },
+  "a_2R": {
+   "n": 3304,
+   "r_medio": -0.055,
+   "gana_pct": 34.2
+  }
+ },
+ "venta|todas|2025-2026": {
+  "al_minimo": {
+   "n": 1731,
+   "r_medio": -0.037,
+   "gana_pct": 54.5
+  },
+  "a_2R": {
+   "n": 2017,
+   "r_medio": -0.03,
+   "gana_pct": 33.9
+  }
+ }
+}

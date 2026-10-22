@@ -59,7 +59,7 @@ def subir(archivos: list[str]) -> None:
 
 def main() -> None:
     load_dotenv(RAIZ / ".env")
-    from materias.red import consejo, lecciones, zonas
+    from materias.red import consejo, lecciones, retroceso, zonas
     from materias.red import datos as D
     v = D.descargar("M5")
     D.guardar(v, "M5")
@@ -68,12 +68,14 @@ def main() -> None:
     lecciones.exportar()
     zonas.ARCHIVO.write_text(__import__("json").dumps(zonas.medir(), indent=1, ensure_ascii=False),
                              encoding="utf-8")
+    retroceso.ARCHIVO.write_text(__import__("json").dumps(retroceso.medir(), indent=1, ensure_ascii=False),
+                                 encoding="utf-8")
     g = lecciones.datos()["grupos"]
     for cl in ("corto|todas", "largo|todas"):
         if cl in g:
             m, li = g[cl]["mercado"], g[cl]["limitada"]
             _log(f"{cl}: n={m['n']} mercado {m['r_medio']:+.3f} R · limitada {li['r_medio']:+.3f} R → {g[cl]['mejor']}")
-    subir(["materias/red/tabla_pips.json", "materias/red/lecciones.json", "materias/red/zonas.json"])
+    subir(["materias/red/tabla_pips.json", "materias/red/lecciones.json", "materias/red/zonas.json", "materias/red/retroceso.json"])
 
 
 if __name__ == "__main__":
