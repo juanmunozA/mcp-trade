@@ -33,6 +33,8 @@ input bool   MostrarOB       = true;  // Order blocks
 input bool   MostrarIFVG     = false; // Vacios rotos que pasan a inversos
 input bool   MostrarMitad    = false; // Zonas cuyo primer toque llego a la mitad (suelen llenarse)
 input bool   MostrarSerie    = true;  // HH / LH / HL / LL y la linea del zigzag
+input color  ColorVacio      = C'232,232,232'; // Relleno de los vacios (fondo claro)
+input color  ColorOB         = C'253,226,226'; // Relleno de los order blocks (fondo claro)
 
 #define P "EZ_"
 
@@ -71,8 +73,8 @@ bool FondoClaro()
    return (r + g + b) / 3 > 128;
 }
 
-// Paleta: rellenos suaves en fondo claro, oscuros en fondo negro
-color Relleno(const int lado) { return claro ? (lado > 0 ? C'198,239,206' : C'255,205,210') : (lado > 0 ? C'0,70,35' : C'90,15,15'); }
+// Paleta: vacios gris claro y order blocks rojo muy suave; en fondo negro, sus equivalentes oscuros
+color Relleno(const int tipo) { return tipo == 1 ? (claro ? ColorOB : C'70,30,30') : (claro ? ColorVacio : C'50,50,56'); }
 color Borde(const int tipo, const int lado)
 {
    if(tipo == 1) return lado > 0 ? clrDodgerBlue : clrDarkOrange;
@@ -272,11 +274,11 @@ void Dibujar(const double precio, const datetime fin)
          continue;
       string id = IntegerToString(i);
       Zona z = zonas[i];
-      bool fvg = z.tipo == 0;
-      Caja(P + "Z" + id, z.t0, z.bajo, fin, z.alto, fvg ? Relleno(z.lado) : Borde(z.tipo, z.lado),
-           fvg, z.tipo == 2 ? STYLE_DASH : STYLE_SOLID, fvg ? 1 : 2);
-      Texto(P + "N" + id, z.t0, z.alto, " " + Nombre(z), z.tipo == 0 ? Tinta() : Borde(z.tipo, z.lado), 8,
-            ANCHOR_LEFT_UPPER, z.estado == 1);
+      bool inverso = z.tipo == 2;
+      Caja(P + "Z" + id, z.t0, z.bajo, fin, z.alto, inverso ? clrSlateGray : Relleno(z.tipo),
+           !inverso, inverso ? STYLE_DASH : STYLE_SOLID, 1);
+      // la etiqueta al final de la caja, junto al precio actual, para que no quede cortada
+      Texto(P + "N" + id, fin, z.alto, Nombre(z) + " ", Tinta(), 8, ANCHOR_RIGHT_UPPER, z.estado == 1);
    }
 }
 
