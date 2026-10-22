@@ -35,12 +35,20 @@ input bool   MostrarMitad    = false; // Zonas cuyo primer toque llego a la mita
 input bool   MostrarSerie    = true;  // HH / LH / HL / LL y la linea del zigzag
 input color  ColorVacio      = C'232,232,232'; // Relleno de los vacios (fondo claro)
 input color  ColorOB         = C'253,226,226'; // Relleno de los order blocks (fondo claro)
+input bool   MostrarH1       = true;  // Traer tambien los vacios y order blocks de H1 vigentes
+input int    ZonasH1PorLado  = 2;     // Zonas de H1 por encima y por debajo del precio
+input int    VelasH1         = 500;   // Velas de H1 hacia atras (~3 semanas)
+input color  ColorVacioH1    = C'212,212,212'; // Relleno de los vacios de H1 (fondo claro)
+input color  ColorOBH1       = C'247,196,196'; // Relleno de los order blocks de H1 (fondo claro)
 
 #define P "EZ_"
 
 double Zig[], Atr[];
 datetime ultimaVela = 0;
+uint ultimoDibujo = 0;
+int enCurso = -1;   // indice de la vela que se esta formando
 bool claro = false;
+int marcoActual = 0;   // 0 el del grafico, 1 H1
 
 struct Zona
 {
@@ -48,8 +56,9 @@ struct Zona
    int      lado;     // +1 alcista, -1 bajista
    double   bajo, alto;
    datetime t0;
-   int      estado;   // 0 sin tocar, 1 defendido en el borde, 2 llego a la mitad
+   int      estado;   // 0 sin tocar, 1 defendido en el borde, 2 llego a la mitad, 3 tocando ahora
    bool     conFVG;   // OB cuyo impulso dejo un vacio
+   int      marco;    // 0 el del grafico, 1 H1
 };
 Zona zonas[];
 
@@ -74,7 +83,11 @@ bool FondoClaro()
 }
 
 // Paleta: vacios gris claro y order blocks rojo muy suave; en fondo negro, sus equivalentes oscuros
-color Relleno(const int tipo) { return tipo == 1 ? (claro ? ColorOB : C'70,30,30') : (claro ? ColorVacio : C'50,50,56'); }
+color Relleno(const int tipo, const int marco)
+{
+   if(marco == 1) return tipo == 1 ? (claro ? ColorOBH1 : C'95,35,35') : (claro ? ColorVacioH1 : C'65,65,72');
+   return tipo == 1 ? (claro ? ColorOB : C'70,30,30') : (claro ? ColorVacio : C'50,50,56');
+}
 color Borde(const int tipo, const int lado)
 {
    if(tipo == 1) return lado > 0 ? clrDodgerBlue : clrDarkOrange;
@@ -115,7 +128,7 @@ void Agregar(const int tipo, const int lado, const double bajo, const double alt
    int n = ArraySize(zonas);
    ArrayResize(zonas, n + 1);
    zonas[n].tipo = tipo; zonas[n].lado = lado; zonas[n].bajo = bajo; zonas[n].alto = alto;
-   zonas[n].t0 = t0; zonas[n].estado = estado; zonas[n].conFVG = conFVG;
+   zonas[n].t0 = t0; zonas[n].estado = estado; zonas[n].conFVG = conFVG; zonas[n].marco = marcoActual;
 }
 
 // Primer toque y si la zona sigue viva (no hay cierre al otro lado)
@@ -135,6 +148,9 @@ bool Seguir(const int desde, const int ult, const int lado, const double bajo, c
       if((lado > 0 && close[x] < bajo) || (lado < 0 && close[x] > alto))
          return false;
    }
+   // la vela en curso: si toca por primera vez, se marca, pero no rompe hasta cerrar
+   if(!tocado && enCurso > ult && ((lado > 0 && low[enCurso] <= alto) || (lado < 0 && high[enCurso] >= bajo)))
+      estado = 3;
    return true;
 }
 
@@ -174,16 +190,16 @@ void Serie(const int ini, const int ult, const datetime &time[], const double &h
 }
 
 void BuscarVacios(const int ini, const int ult, const datetime &time[], const double &high[],
-                  const double &low[], const double &close[])
+                  const double &low[], const double &close[], const double &atr[], const int seg)
 {
    for(int i = ini + 2; i <= ult; i++)
    {
       int lado = 0;
       double bajo = 0, alto = 0;
-      if(low[i] > high[i - 2] && low[i] - high[i - 2] >= MinVacioATR * Atr[i]) { lado = 1; bajo = high[i - 2]; alto = low[i]; }
-      else if(high[i] < low[i - 2] && low[i - 2] - high[i] >= MinVacioATR * Atr[i]) { lado = -1; bajo = high[i]; alto = low[i - 2]; }
+      if(low[i] > high[i - 2] && low[i] - high[i - 2] >= MinVacioATR * atr[i]) { lado = 1; bajo = high[i - 2]; alto = low[i]; }
+      else if(high[i] < low[i - 2] && low[i - 2] - high[i] >= MinVacioATR * atr[i]) { lado = -1; bajo = high[i]; alto = low[i - 2]; }
       // El hueco de la reapertura diaria o del lunes no es un vacio: velas no seguidas
-      if(lado == 0 || time[i] - time[i - 2] > 3 * PeriodSeconds())
+      if(lado == 0 || time[i] - time[i - 2] > 3 * seg)
          continue;
       int estado;
       if(Seguir(i + 1, ult, lado, bajo, alto, high, low, close, estado))
@@ -239,9 +255,10 @@ string Nombre(const Zona &z)
 {
    string t = z.tipo == 0 ? "FVG" : (z.tipo == 1 ? "OB" : "IFVG");
    string l = z.lado > 0 ? "alcista" : "bajista";
-   string e = z.estado == 0 ? "sin tocar" : (z.estado == 1 ? (z.tipo == 1 ? "defendido 56%" : "defendido 54%") : "llego a la mitad");
+   string e = z.estado == 0 ? "sin tocar" : (z.estado == 1 ? (z.tipo == 1 ? "defendido 56%" : "defendido 54%")
+            : (z.estado == 3 ? "TOCANDO AHORA" : "llego a la mitad"));
    if(z.tipo == 2) e = "roto, ahora " + (z.lado > 0 ? "soporte" : "resistencia");
-   return t + " " + l + " · " + e + (z.conFVG ? " · con FVG" : "");
+   return (z.marco == 1 ? "H1 " : "") + t + " " + l + " · " + e + (z.conFVG ? " · con FVG" : "");
 }
 
 void Dibujar(const double precio, const datetime fin)
@@ -251,14 +268,15 @@ void Dibujar(const double precio, const datetime fin)
    bool elegida[];
    ArrayResize(elegida, n);
    ArrayInitialize(elegida, false);
+   for(int marco = 0; marco <= 1; marco++)
    for(int lado = 1; lado >= -1; lado -= 2)
-      for(int c = 0; c < ZonasPorLado; c++)
+      for(int c = 0; c < (marco == 0 ? ZonasPorLado : ZonasH1PorLado); c++)
       {
          int mejor = -1;
          double dist = DBL_MAX;
          for(int i = 0; i < n; i++)
          {
-            if(elegida[i] || (zonas[i].estado == 2 && !MostrarMitad))
+            if(elegida[i] || zonas[i].marco != marco || (zonas[i].estado == 2 && !MostrarMitad))
                continue;
             double d = lado > 0 ? zonas[i].bajo - precio : precio - zonas[i].alto;
             if(d >= 0 && d < dist) { dist = d; mejor = i; }
@@ -275,11 +293,37 @@ void Dibujar(const double precio, const datetime fin)
       string id = IntegerToString(i);
       Zona z = zonas[i];
       bool inverso = z.tipo == 2;
-      Caja(P + "Z" + id, z.t0, z.bajo, fin, z.alto, inverso ? clrSlateGray : Relleno(z.tipo),
+      Caja(P + "Z" + id, z.t0, z.bajo, fin, z.alto, inverso ? clrSlateGray : Relleno(z.tipo, z.marco),
            !inverso, inverso ? STYLE_DASH : STYLE_SOLID, 1);
       // la etiqueta al final de la caja, junto al precio actual, para que no quede cortada
-      Texto(P + "N" + id, fin, z.alto, Nombre(z) + " ", Tinta(), 8, ANCHOR_RIGHT_UPPER, z.estado == 1);
+      Texto(P + "N" + id, fin, z.alto, Nombre(z) + " ", z.estado == 3 ? clrDodgerBlue : Tinta(), 8,
+            ANCHOR_RIGHT_UPPER, z.estado == 1 || z.estado == 3);
    }
+}
+
+// Vacios y order blocks de H1 que siguen vivos, para verlos en marcos menores
+void ZonasH1()
+{
+   MqlRates rh[];
+   int nh = CopyRates(_Symbol, PERIOD_H1, 0, VelasH1, rh);
+   if(nh < 60)
+      return;
+   datetime tH[]; double oH[], hH[], lH[], cH[], aH[];
+   ArrayResize(tH, nh); ArrayResize(oH, nh); ArrayResize(hH, nh); ArrayResize(lH, nh);
+   ArrayResize(cH, nh); ArrayResize(aH, nh);
+   for(int i = 0; i < nh; i++)
+   {
+      tH[i] = rh[i].time; oH[i] = rh[i].open; hH[i] = rh[i].high; lH[i] = rh[i].low; cH[i] = rh[i].close;
+      double tr = (i == 0) ? hH[i] - lH[i]
+                 : MathMax(hH[i] - lH[i], MathMax(MathAbs(hH[i] - cH[i - 1]), MathAbs(lH[i] - cH[i - 1])));
+      aH[i] = (i < 14) ? ((i == 0) ? tr : (aH[i - 1] * i + tr) / (i + 1)) : aH[i - 1] + (tr - aH[i - 1]) / 14;
+   }
+   marcoActual = 1;
+   enCurso = nh - 1;
+   BuscarVacios(20, nh - 2, tH, hH, lH, cH, aH, 3600);
+   if(MostrarOB)
+      BuscarOB(20, nh - 2, tH, oH, hH, lH, cH);
+   marcoActual = 0;
 }
 
 int OnCalculate(const int rates_total, const int prev_calculated, const datetime &time[],
@@ -296,10 +340,13 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
       Atr[i] = (i < 14) ? ((i == 0) ? tr : (Atr[i - 1] * i + tr) / (i + 1)) : Atr[i - 1] + (tr - Atr[i - 1]) / 14;
       Zig[i] = EMPTY_VALUE;
    }
-   // Se redibuja al cerrar cada vela (y si cambia el fondo del grafico)
+   // Se redibuja al cerrar cada vela, si cambia el fondo, y cada 5 s para los toques en vivo
    bool c = FondoClaro();
-   if(time[rates_total - 1] == ultimaVela && prev_calculated > 0 && c == claro)
+   if(time[rates_total - 1] == ultimaVela && prev_calculated > 0 && c == claro
+      && GetTickCount() - ultimoDibujo < 5000)
       return rates_total;
+   ultimoDibujo = GetTickCount();
+   enCurso = rates_total - 1;
    claro = c;
    ultimaVela = time[rates_total - 1];
    int ult = rates_total - 2;
@@ -310,9 +357,12 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
    if(MostrarSerie)
       Serie(ini, ult, time, high, low);
    ArrayResize(zonas, 0);
-   BuscarVacios(ini, ult, time, high, low, close);
+   BuscarVacios(ini, ult, time, high, low, close, Atr, PeriodSeconds());
    if(MostrarOB)
       BuscarOB(ini, ult, time, open, high, low, close);
+   if(MostrarH1 && PeriodSeconds() < 3600)
+      ZonasH1();
+   enCurso = rates_total - 1;
    Dibujar(close[ult], time[ult] + PeriodSeconds() * 3);
    ChartRedraw();
    return rates_total;
