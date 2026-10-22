@@ -58,6 +58,26 @@ input bool   AlMovil       = false; // Notificacion push al movil (MetaQuotes ID
 double VO[], VH[], VL[], VC[], VColor[];
 double Linea[], ColorLinea[], Compra[], Venta[], Ema[], Atr[], Fuerte[];
 datetime ultimaAlerta = 0;
+bool claro = false;
+color cVerde = clrLime, cRojo = clrRed, cVerdeD = clrSeaGreen, cRojoD = clrIndianRed;
+
+// Colores segun el fondo: en blanco, la paleta de TradingView; en negro, vivos
+void Paleta()
+{
+   color bg = (color)ChartGetInteger(0, CHART_COLOR_BACKGROUND);
+   claro = ((bg & 0xFF) + ((bg >> 8) & 0xFF) + ((bg >> 16) & 0xFF)) / 3 > 128;
+   cVerde  = claro ? C'38,166,154'  : clrLime;
+   cRojo   = claro ? C'239,83,80'   : clrRed;
+   cVerdeD = claro ? C'150,205,198' : clrSeaGreen;
+   cRojoD  = claro ? C'244,170,168' : clrIndianRed;
+   PlotIndexSetInteger(0, PLOT_LINE_COLOR, 0, cVerde);
+   PlotIndexSetInteger(0, PLOT_LINE_COLOR, 1, cRojo);
+   PlotIndexSetInteger(1, PLOT_LINE_COLOR, 0, cVerde);
+   PlotIndexSetInteger(1, PLOT_LINE_COLOR, 1, cRojo);
+   PlotIndexSetInteger(2, PLOT_LINE_COLOR, cVerde);
+   PlotIndexSetInteger(3, PLOT_LINE_COLOR, cRojo);
+   PlotIndexSetInteger(4, PLOT_LINE_COLOR, claro ? C'200,150,0' : clrGold);
+}
 
 int OnInit()
 {
@@ -82,6 +102,7 @@ int OnInit()
       PlotIndexSetDouble(p, PLOT_EMPTY_VALUE, EMPTY_VALUE);
    IndicatorSetString(INDICATOR_SHORTNAME, StringFormat("UT Bot a=%.1f ATR%d%s%s",
                       ClaveA, PeriodoATR, HeikinAshi ? " HA" : "", SoloFiltradas ? " EMA200" : ""));
+   Paleta();
    return INIT_SUCCEEDED;
 }
 
@@ -106,7 +127,7 @@ void Etiqueta(const datetime t, const double precio, const bool compra, const bo
    // A favor de la EMA 200: grande y vivo. En contra: pequeña y apagada
    ObjectSetString(0, nombre, OBJPROP_FONT, fuerte ? "Arial Black" : "Arial");
    ObjectSetInteger(0, nombre, OBJPROP_FONTSIZE, fuerte ? 10 : 7);
-   ObjectSetInteger(0, nombre, OBJPROP_COLOR, compra ? (fuerte ? clrLime : clrSeaGreen) : (fuerte ? clrRed : clrIndianRed));
+   ObjectSetInteger(0, nombre, OBJPROP_COLOR, compra ? (fuerte ? cVerde : cVerdeD) : (fuerte ? cRojo : cRojoD));
    ObjectSetInteger(0, nombre, OBJPROP_ANCHOR, compra ? ANCHOR_UPPER : ANCHOR_LOWER);
    ObjectSetInteger(0, nombre, OBJPROP_SELECTABLE, false);
    ObjectSetInteger(0, nombre, OBJPROP_HIDDEN, true);
