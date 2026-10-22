@@ -64,6 +64,8 @@ struct Zona
    int      marco;    // 0 el del grafico, 1 H1, 2 H4
 };
 Zona zonas[];
+Zona mayores[];          // zonas de H1/H4: se recalculan al abrir cada vela del grafico, no cada 5 s
+datetime ultimaMayor = 0;
 
 int OnInit()
 {
@@ -364,10 +366,27 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
    BuscarVacios(ini, ult, time, high, low, close, Atr, PeriodSeconds());
    if(MostrarOB)
       BuscarOB(ini, ult, time, open, high, low, close);
-   if(MostrarH1 && PeriodSeconds() < 3600)
-      ZonasMayor(PERIOD_H1, VelasH1, 1);
-   if(MostrarH4 && PeriodSeconds() < 4 * 3600)
-      ZonasMayor(PERIOD_H4, VelasH4, 2);
+   // H1/H4 son lo pesado (miles de velas): solo cuando abre una vela nueva del grafico
+   if(time[rates_total - 1] != ultimaMayor || prev_calculated == 0)
+   {
+      ultimaMayor = time[rates_total - 1];
+      int base = ArraySize(zonas);
+      if(MostrarH1 && PeriodSeconds() < 3600)
+         ZonasMayor(PERIOD_H1, VelasH1, 1);
+      if(MostrarH4 && PeriodSeconds() < 4 * 3600)
+         ZonasMayor(PERIOD_H4, VelasH4, 2);
+      int extra = ArraySize(zonas) - base;
+      ArrayResize(mayores, extra);
+      for(int i = 0; i < extra; i++)
+         mayores[i] = zonas[base + i];
+   }
+   else
+   {
+      int base = ArraySize(zonas), extra = ArraySize(mayores);
+      ArrayResize(zonas, base + extra);
+      for(int i = 0; i < extra; i++)
+         zonas[base + i] = mayores[i];
+   }
    enCurso = rates_total - 1;
    Dibujar(close[ult], time[ult] + PeriodSeconds() * 3);
    ChartRedraw();
