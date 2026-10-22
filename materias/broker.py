@@ -302,7 +302,7 @@ cuatro de 1H. Aqui no hace falta: las del broker son las que el broker
 usa, que es lo que ve cualquiera mirando el mismo grafico.
 """
 
-CUANTAS = {"m5": 1500, "m15": 700, "h1": 700, "h4": 400, "diario": 250}
+CUANTAS = {"m5": 1500, "m15": 700, "h1": 2500, "h4": 900, "diario": 250}
 
 
 def velas(simbolo: str, marco: str, n: int = 0) -> list[dict]:

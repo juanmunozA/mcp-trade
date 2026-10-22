@@ -342,7 +342,8 @@ def _vivo(m15: list[dict]) -> dict | None:
     piv = series(b["h"], b["l"], a)
     abiertos = []
     tt = np.array([x["dt"].timestamp() for x in m15])
-    for i, lado, bajo, alto in huecos(b["h"], b["l"], a, t=tt):
+    seg = int(np.median(np.diff(tt))) if len(tt) > 1 else 900
+    for i, lado, bajo, alto in huecos(b["h"], b["l"], a, t=tt, seg=seg):
         resto = slice(i + 1, len(b["c"]))
         roto = (b["c"][resto] < bajo).any() if lado > 0 else (b["c"][resto] > alto).any()
         toques = np.flatnonzero(b["l"][resto] <= alto) if lado > 0 else np.flatnonzero(b["h"][resto] >= bajo)
@@ -425,6 +426,22 @@ def texto(ctx: dict) -> str:
         for edad, lado, bajo, alto, estado in vv.get("obs", []):
             L.append(f"- order block {'alcista' if lado > 0 else 'bajista'} {bajo:.2f}-{alto:.2f} "
                      f"(hace {edad} velas de 15M, {estado})")
+    # Marcos mayores: sus zonas viven meses y suelen ser el soporte o techo del dia
+    for clave, nombre in (("h1", "H1"), ("h4", "H4")):
+        try:
+            vm = _vivo((ctx.get(clave) or [])[:-1])
+        except (KeyError, TypeError, ValueError):
+            vm = None
+        if not vm:
+            continue
+        for edad, lado, bajo, alto, estado in vm["huecos"][-3:]:
+            L.append(f"- {nombre} vacio {'alcista' if lado > 0 else 'bajista'} abierto {bajo:.2f}-{alto:.2f} "
+                     f"(hace {edad} velas de {nombre}, {estado})")
+        for edad, lado, bajo, alto, estado in vm.get("obs", [])[-3:]:
+            L.append(f"- {nombre} order block {'alcista' if lado > 0 else 'bajista'} {bajo:.2f}-{alto:.2f} "
+                     f"(hace {edad} velas de {nombre}, {estado})")
+    L.append("Una ruptura dentro de un vacio u order block de H1/H4 que se toca sin llegar a la mitad "
+             "NO es ruptura: es la zona reaccionando. Mirar siempre los marcos mayores antes de vender un minimo.")
     return "\n".join(L)
 
 

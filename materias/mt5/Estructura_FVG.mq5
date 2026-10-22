@@ -37,7 +37,10 @@ input color  ColorVacio      = C'232,232,232'; // Relleno de los vacios (fondo c
 input color  ColorOB         = C'253,226,226'; // Relleno de los order blocks (fondo claro)
 input bool   MostrarH1       = true;  // Traer tambien los vacios y order blocks de H1 vigentes
 input int    ZonasH1PorLado  = 2;     // Zonas de H1 por encima y por debajo del precio
-input int    VelasH1         = 500;   // Velas de H1 hacia atras (~3 semanas)
+input int    VelasH1         = 2500;  // Velas de H1 hacia atras (~5 meses)
+input bool   MostrarH4       = true;  // Traer tambien los de H4 vigentes
+input int    ZonasH4PorLado  = 2;     // Zonas de H4 por encima y por debajo del precio
+input int    VelasH4         = 900;   // Velas de H4 hacia atras (~7 meses)
 input color  ColorVacioH1    = C'212,212,212'; // Relleno de los vacios de H1 (fondo claro)
 input color  ColorOBH1       = C'247,196,196'; // Relleno de los order blocks de H1 (fondo claro)
 
@@ -48,7 +51,7 @@ datetime ultimaVela = 0;
 uint ultimoDibujo = 0;
 int enCurso = -1;   // indice de la vela que se esta formando
 bool claro = false;
-int marcoActual = 0;   // 0 el del grafico, 1 H1
+int marcoActual = 0;   // 0 el del grafico, 1 H1, 2 H4
 
 struct Zona
 {
@@ -58,7 +61,7 @@ struct Zona
    datetime t0;
    int      estado;   // 0 sin tocar, 1 defendido en el borde, 2 llego a la mitad, 3 tocando ahora
    bool     conFVG;   // OB cuyo impulso dejo un vacio
-   int      marco;    // 0 el del grafico, 1 H1
+   int      marco;    // 0 el del grafico, 1 H1, 2 H4
 };
 Zona zonas[];
 
@@ -85,7 +88,7 @@ bool FondoClaro()
 // Paleta: vacios gris claro y order blocks rojo muy suave; en fondo negro, sus equivalentes oscuros
 color Relleno(const int tipo, const int marco)
 {
-   if(marco == 1) return tipo == 1 ? (claro ? ColorOBH1 : C'95,35,35') : (claro ? ColorVacioH1 : C'65,65,72');
+   if(marco >= 1) return tipo == 1 ? (claro ? ColorOBH1 : C'95,35,35') : (claro ? ColorVacioH1 : C'65,65,72');
    return tipo == 1 ? (claro ? ColorOB : C'70,30,30') : (claro ? ColorVacio : C'50,50,56');
 }
 color Borde(const int tipo, const int lado)
@@ -258,7 +261,7 @@ string Nombre(const Zona &z)
    string e = z.estado == 0 ? "sin tocar" : (z.estado == 1 ? (z.tipo == 1 ? "defendido 56%" : "defendido 54%")
             : (z.estado == 3 ? "TOCANDO AHORA" : "llego a la mitad"));
    if(z.tipo == 2) e = "roto, ahora " + (z.lado > 0 ? "soporte" : "resistencia");
-   return (z.marco == 1 ? "H1 " : "") + t + " " + l + " · " + e + (z.conFVG ? " · con FVG" : "");
+   return (z.marco == 1 ? "H1 " : (z.marco == 2 ? "H4 " : "")) + t + " " + l + " · " + e + (z.conFVG ? " · con FVG" : "");
 }
 
 void Dibujar(const double precio, const datetime fin)
@@ -268,9 +271,9 @@ void Dibujar(const double precio, const datetime fin)
    bool elegida[];
    ArrayResize(elegida, n);
    ArrayInitialize(elegida, false);
-   for(int marco = 0; marco <= 1; marco++)
+   for(int marco = 0; marco <= 2; marco++)
    for(int lado = 1; lado >= -1; lado -= 2)
-      for(int c = 0; c < (marco == 0 ? ZonasPorLado : ZonasH1PorLado); c++)
+      for(int c = 0; c < (marco == 0 ? ZonasPorLado : (marco == 1 ? ZonasH1PorLado : ZonasH4PorLado)); c++)
       {
          int mejor = -1;
          double dist = DBL_MAX;
@@ -301,11 +304,12 @@ void Dibujar(const double precio, const datetime fin)
    }
 }
 
-// Vacios y order blocks de H1 que siguen vivos, para verlos en marcos menores
-void ZonasH1()
+// Vacios y order blocks de un marco mayor que siguen vivos, para verlos en marcos menores.
+// Se buscan meses atras: un vacio de 4H de julio puede ser el soporte de hoy.
+void ZonasMayor(const ENUM_TIMEFRAMES tf, const int velas, const int marco)
 {
    MqlRates rh[];
-   int nh = CopyRates(_Symbol, PERIOD_H1, 0, VelasH1, rh);
+   int nh = CopyRates(_Symbol, tf, 0, velas, rh);
    if(nh < 60)
       return;
    datetime tH[]; double oH[], hH[], lH[], cH[], aH[];
@@ -318,9 +322,9 @@ void ZonasH1()
                  : MathMax(hH[i] - lH[i], MathMax(MathAbs(hH[i] - cH[i - 1]), MathAbs(lH[i] - cH[i - 1])));
       aH[i] = (i < 14) ? ((i == 0) ? tr : (aH[i - 1] * i + tr) / (i + 1)) : aH[i - 1] + (tr - aH[i - 1]) / 14;
    }
-   marcoActual = 1;
+   marcoActual = marco;
    enCurso = nh - 1;
-   BuscarVacios(20, nh - 2, tH, hH, lH, cH, aH, 3600);
+   BuscarVacios(20, nh - 2, tH, hH, lH, cH, aH, PeriodSeconds(tf));
    if(MostrarOB)
       BuscarOB(20, nh - 2, tH, oH, hH, lH, cH);
    marcoActual = 0;
@@ -361,7 +365,9 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
    if(MostrarOB)
       BuscarOB(ini, ult, time, open, high, low, close);
    if(MostrarH1 && PeriodSeconds() < 3600)
-      ZonasH1();
+      ZonasMayor(PERIOD_H1, VelasH1, 1);
+   if(MostrarH4 && PeriodSeconds() < 4 * 3600)
+      ZonasMayor(PERIOD_H4, VelasH4, 2);
    enCurso = rates_total - 1;
    Dibujar(close[ult], time[ult] + PeriodSeconds() * 3);
    ChartRedraw();

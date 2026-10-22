@@ -117,10 +117,14 @@ capitulo 15.5 necesita la plata para leer el oro, y el backtest comparado
 dice si un resultado es del sistema o del activo.
 """
 
-TEMPORALIDADES = [("1d", "60d", "diario"), ("1h", "60d", "h1"),
+TEMPORALIDADES = [("1d", "1y", "diario"), ("1h", "180d", "h1"),
                   ("15m", "1mo", "m15"), ("5m", "1mo", "m5")]
 """
 Cuanta historia pedir de cada temporalidad.
+
+1H a 180 dias (y 4H, que sale de agruparla): los vacios y order blocks de
+marcos mayores siguen vivos meses. El 22-10-2026 un vacio de 4H del 29 de
+julio fue el soporte del dia y con 60 dias no se veia.
 
 Un mes en 5M es el techo de la fuente: mas atras devuelve "must be
 within the last 60 days" y el rango explicito de 60 dias vuelve vacio.
