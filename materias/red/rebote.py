@@ -128,6 +128,8 @@ def texto() -> str:
             if a and b:
                 L.append(f"- {clave.replace('|', ' · ')} a {rr}: {a['r_medio']:+.2f} R (n={a['n']}) en 2022-24, "
                          f"{b['r_medio']:+.2f} R (n={b['n']}) en 2025-26")
+    L.append("Ni sola ni dentro de un OB de H1/H4 en su primer toque gana (-0,10 R a 2 R, n=859): el stop tras "
+             "la barrida queda lejos. Lo que gana en esas zonas es entrar en el BORDE con el stop detras de la zona.")
     return "\n".join(L)
 
 
