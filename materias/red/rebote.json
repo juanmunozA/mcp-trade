@@ -1,0 +1,282 @@
+{
+ "compra|a favor EMA200|1R|2022-2024": {
+  "n": 1247,
+  "r_medio": -0.023,
+  "gana_pct": 50.2
+ },
+ "compra|a favor EMA200|1R|2025-2026": {
+  "n": 1209,
+  "r_medio": -0.033,
+  "gana_pct": 49.0
+ },
+ "compra|a favor EMA200|2R|2022-2024": {
+  "n": 1247,
+  "r_medio": -0.031,
+  "gana_pct": 35.0
+ },
+ "compra|a favor EMA200|2R|2025-2026": {
+  "n": 1209,
+  "r_medio": -0.01,
+  "gana_pct": 34.5
+ },
+ "compra|contra EMA200|1R|2022-2024": {
+  "n": 2619,
+  "r_medio": -0.095,
+  "gana_pct": 46.4
+ },
+ "compra|contra EMA200|1R|2025-2026": {
+  "n": 2102,
+  "r_medio": -0.064,
+  "gana_pct": 47.9
+ },
+ "compra|contra EMA200|2R|2022-2024": {
+  "n": 2619,
+  "r_medio": -0.095,
+  "gana_pct": 32.5
+ },
+ "compra|contra EMA200|2R|2025-2026": {
+  "n": 2102,
+  "r_medio": -0.048,
+  "gana_pct": 34.2
+ },
+ "compra|fuera de killzone|1R|2022-2024": {
+  "n": 1114,
+  "r_medio": -0.077,
+  "gana_pct": 48.1
+ },
+ "compra|fuera de killzone|1R|2025-2026": {
+  "n": 1077,
+  "r_medio": -0.055,
+  "gana_pct": 48.4
+ },
+ "compra|fuera de killzone|2R|2022-2024": {
+  "n": 1114,
+  "r_medio": -0.058,
+  "gana_pct": 34.1
+ },
+ "compra|fuera de killzone|2R|2025-2026": {
+  "n": 1077,
+  "r_medio": -0.006,
+  "gana_pct": 35.1
+ },
+ "compra|killzone|1R|2022-2024": {
+  "n": 2752,
+  "r_medio": -0.069,
+  "gana_pct": 47.5
+ },
+ "compra|killzone|1R|2025-2026": {
+  "n": 2234,
+  "r_medio": -0.052,
+  "gana_pct": 48.3
+ },
+ "compra|killzone|2R|2022-2024": {
+  "n": 2752,
+  "r_medio": -0.081,
+  "gana_pct": 33.0
+ },
+ "compra|killzone|2R|2025-2026": {
+  "n": 2234,
+  "r_medio": -0.048,
+  "gana_pct": 33.9
+ },
+ "compra|redondo|1R|2022-2024": {
+  "n": 807,
+  "r_medio": -0.036,
+  "gana_pct": 49.2
+ },
+ "compra|redondo|1R|2025-2026": {
+  "n": 1594,
+  "r_medio": -0.017,
+  "gana_pct": 49.9
+ },
+ "compra|redondo|2R|2022-2024": {
+  "n": 807,
+  "r_medio": -0.108,
+  "gana_pct": 32.5
+ },
+ "compra|redondo|2R|2025-2026": {
+  "n": 1594,
+  "r_medio": 0.026,
+  "gana_pct": 35.9
+ },
+ "compra|serie|1R|2022-2024": {
+  "n": 3059,
+  "r_medio": -0.081,
+  "gana_pct": 47.2
+ },
+ "compra|serie|1R|2025-2026": {
+  "n": 1717,
+  "r_medio": -0.087,
+  "gana_pct": 46.8
+ },
+ "compra|serie|2R|2022-2024": {
+  "n": 3059,
+  "r_medio": -0.066,
+  "gana_pct": 33.5
+ },
+ "compra|serie|2R|2025-2026": {
+  "n": 1717,
+  "r_medio": -0.09,
+  "gana_pct": 32.8
+ },
+ "compra|todas|1R|2022-2024": {
+  "n": 3866,
+  "r_medio": -0.072,
+  "gana_pct": 47.6
+ },
+ "compra|todas|1R|2025-2026": {
+  "n": 3311,
+  "r_medio": -0.053,
+  "gana_pct": 48.3
+ },
+ "compra|todas|2R|2022-2024": {
+  "n": 3866,
+  "r_medio": -0.075,
+  "gana_pct": 33.3
+ },
+ "compra|todas|2R|2025-2026": {
+  "n": 3311,
+  "r_medio": -0.034,
+  "gana_pct": 34.3
+ },
+ "venta|a favor EMA200|1R|2022-2024": {
+  "n": 1120,
+  "r_medio": -0.075,
+  "gana_pct": 47.7
+ },
+ "venta|a favor EMA200|1R|2025-2026": {
+  "n": 1139,
+  "r_medio": -0.022,
+  "gana_pct": 49.9
+ },
+ "venta|a favor EMA200|2R|2022-2024": {
+  "n": 1120,
+  "r_medio": -0.13,
+  "gana_pct": 31.3
+ },
+ "venta|a favor EMA200|2R|2025-2026": {
+  "n": 1139,
+  "r_medio": -0.002,
+  "gana_pct": 34.5
+ },
+ "venta|contra EMA200|1R|2022-2024": {
+  "n": 2749,
+  "r_medio": -0.062,
+  "gana_pct": 48.2
+ },
+ "venta|contra EMA200|1R|2025-2026": {
+  "n": 2025,
+  "r_medio": -0.05,
+  "gana_pct": 48.6
+ },
+ "venta|contra EMA200|2R|2022-2024": {
+  "n": 2749,
+  "r_medio": -0.034,
+  "gana_pct": 34.4
+ },
+ "venta|contra EMA200|2R|2025-2026": {
+  "n": 2025,
+  "r_medio": -0.047,
+  "gana_pct": 33.4
+ },
+ "venta|fuera de killzone|1R|2022-2024": {
+  "n": 1067,
+  "r_medio": -0.13,
+  "gana_pct": 45.5
+ },
+ "venta|fuera de killzone|1R|2025-2026": {
+  "n": 963,
+  "r_medio": -0.077,
+  "gana_pct": 47.7
+ },
+ "venta|fuera de killzone|2R|2022-2024": {
+  "n": 1067,
+  "r_medio": -0.142,
+  "gana_pct": 30.5
+ },
+ "venta|fuera de killzone|2R|2025-2026": {
+  "n": 963,
+  "r_medio": -0.061,
+  "gana_pct": 33.0
+ },
+ "venta|killzone|1R|2022-2024": {
+  "n": 2802,
+  "r_medio": -0.041,
+  "gana_pct": 49.0
+ },
+ "venta|killzone|1R|2025-2026": {
+  "n": 2201,
+  "r_medio": -0.024,
+  "gana_pct": 49.7
+ },
+ "venta|killzone|2R|2022-2024": {
+  "n": 2802,
+  "r_medio": -0.031,
+  "gana_pct": 34.7
+ },
+ "venta|killzone|2R|2025-2026": {
+  "n": 2201,
+  "r_medio": -0.017,
+  "gana_pct": 34.2
+ },
+ "venta|redondo|1R|2022-2024": {
+  "n": 765,
+  "r_medio": -0.069,
+  "gana_pct": 47.8
+ },
+ "venta|redondo|1R|2025-2026": {
+  "n": 1374,
+  "r_medio": -0.004,
+  "gana_pct": 50.7
+ },
+ "venta|redondo|2R|2022-2024": {
+  "n": 765,
+  "r_medio": -0.059,
+  "gana_pct": 33.3
+ },
+ "venta|redondo|2R|2025-2026": {
+  "n": 1374,
+  "r_medio": 0.024,
+  "gana_pct": 35.5
+ },
+ "venta|serie|1R|2022-2024": {
+  "n": 3104,
+  "r_medio": -0.065,
+  "gana_pct": 48.1
+ },
+ "venta|serie|1R|2025-2026": {
+  "n": 1790,
+  "r_medio": -0.067,
+  "gana_pct": 47.9
+ },
+ "venta|serie|2R|2022-2024": {
+  "n": 3104,
+  "r_medio": -0.062,
+  "gana_pct": 33.5
+ },
+ "venta|serie|2R|2025-2026": {
+  "n": 1790,
+  "r_medio": -0.073,
+  "gana_pct": 32.5
+ },
+ "venta|todas|1R|2022-2024": {
+  "n": 3869,
+  "r_medio": -0.066,
+  "gana_pct": 48.0
+ },
+ "venta|todas|1R|2025-2026": {
+  "n": 3164,
+  "r_medio": -0.04,
+  "gana_pct": 49.1
+ },
+ "venta|todas|2R|2022-2024": {
+  "n": 3869,
+  "r_medio": -0.062,
+  "gana_pct": 33.5
+ },
+ "venta|todas|2R|2025-2026": {
+  "n": 3164,
+  "r_medio": -0.031,
+  "gana_pct": 33.8
+ }
+}
