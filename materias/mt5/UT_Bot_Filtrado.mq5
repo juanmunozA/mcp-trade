@@ -9,9 +9,11 @@
 //| SoloFiltradas=true en M15: +3,07 pips/op, PF 1,11.                |
 //| Las señales y alertas son de velas CERRADAS: dentro de la vela la |
 //| señal puede aparecer y desaparecer.                               |
+//| v3: niveles del rebote del ultimo impulso con la probabilidad de  |
+//| llegar a cada uno (materias/red/largo_rebote.py, 5M/15M 2022-26). |
 //+------------------------------------------------------------------+
 #property copyright   "MCP Trade"
-#property version     "2.00"
+#property version     "3.00"
 #property description "UT Bot con Heikin Ashi y filtro EMA 200 (medido en XAUUSD 15M)"
 #property indicator_chart_window
 #property indicator_buffers 12
@@ -52,8 +54,13 @@ input bool   MostrarEMA    = false; // Dibujar la EMA 200
 input bool   Alertas       = true;  // Ventana de alerta al cerrar la vela
 input bool   AlertarTodas  = false; // Alertar tambien las que van contra la EMA
 input bool   AlMovil       = false; // Notificacion push al movil (MetaQuotes ID)
+input bool   MostrarRebote = true;  // Niveles del rebote con su probabilidad (medido desde 2022)
+input int    VelasRebote   = 3000;  // Velas para el zigzag del rebote
+
+#include "Rebote_tabla.mqh"
 
 #define PREFIJO "UTB_"
+#define PREF_REB "UTB_R_"
 
 double VO[], VH[], VL[], VC[], VColor[];
 double Linea[], ColorLinea[], Compra[], Venta[], Ema[], Atr[], Fuerte[];
@@ -133,6 +140,169 @@ void Etiqueta(const datetime t, const double precio, const bool compra, const bo
    ObjectSetInteger(0, nombre, OBJPROP_HIDDEN, true);
 }
 
+//--- Rebote: el mismo zigzag que materias/red/largo_rebote.py (giro de REB_K ATR) ------------
+// Tabla de 5M para M1-M5; de 15M para el resto (en H1 o mas no esta medida: orientativa)
+double Superv(const int g, const double r)
+{
+   double x = r / REB_PASO;
+   if(x <= 0) return 1.0;
+   if(x >= REB_PASOS - 1) return (_Period <= PERIOD_M5) ? REB_M5[g][REB_PASOS - 1] : REB_M15[g][REB_PASOS - 1];
+   int k = (int)MathFloor(x);
+   double f = x - k;
+   double a = (_Period <= PERIOD_M5) ? REB_M5[g][k] : REB_M15[g][k];
+   double b = (_Period <= PERIOD_M5) ? REB_M5[g][k + 1] : REB_M15[g][k + 1];
+   return a + f * (b - a);
+}
+
+double SiguePorProf(const double r)
+{
+   int k = r < 0.382 ? 0 : (r < 0.618 ? 1 : (r < 0.786 ? 2 : (r < 1.0 ? 3 : 4)));
+   return (_Period <= PERIOD_M5) ? REB_SIGUE_PROF_M5[k] : REB_SIGUE_PROF_M15[k];
+}
+
+void NivelReb(const string nombre, const datetime t1, const datetime t2, const double precio, const color c,
+           const ENUM_LINE_STYLE estilo, const string texto)
+{
+   string n = PREF_REB + nombre;
+   if(ObjectFind(0, n) < 0)
+   {
+      ObjectCreate(0, n, OBJ_TREND, 0, t1, precio, t2, precio);
+      ObjectSetInteger(0, n, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(0, n, OBJPROP_HIDDEN, true);
+      ObjectSetInteger(0, n, OBJPROP_RAY_RIGHT, false);
+   }
+   ObjectMove(0, n, 0, t1, precio);
+   ObjectMove(0, n, 1, t2, precio);
+   ObjectSetInteger(0, n, OBJPROP_COLOR, c);
+   ObjectSetInteger(0, n, OBJPROP_STYLE, estilo);
+   string e = n + "_t";
+   if(ObjectFind(0, e) < 0)
+   {
+      ObjectCreate(0, e, OBJ_TEXT, 0, t2, precio);
+      ObjectSetInteger(0, e, OBJPROP_ANCHOR, ANCHOR_LEFT);
+      ObjectSetInteger(0, e, OBJPROP_FONTSIZE, 7);
+      ObjectSetInteger(0, e, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(0, e, OBJPROP_HIDDEN, true);
+   }
+   ObjectMove(0, e, 0, t2, precio);
+   ObjectSetString(0, e, OBJPROP_TEXT, texto);
+   ObjectSetInteger(0, e, OBJPROP_COLOR, c);
+}
+
+void Renglon(const int fila, const string texto, const color c)
+{
+   string n = PREF_REB + "panel" + IntegerToString(fila);
+   if(ObjectFind(0, n) < 0)
+   {
+      ObjectCreate(0, n, OBJ_LABEL, 0, 0, 0);
+      ObjectSetInteger(0, n, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(0, n, OBJPROP_XDISTANCE, 8);
+      ObjectSetInteger(0, n, OBJPROP_YDISTANCE, 22 + 14 * fila);
+      ObjectSetInteger(0, n, OBJPROP_FONTSIZE, 8);
+      ObjectSetString(0, n, OBJPROP_FONT, "Consolas");
+      ObjectSetInteger(0, n, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(0, n, OBJPROP_HIDDEN, true);
+   }
+   ObjectSetString(0, n, OBJPROP_TEXT, texto);
+   ObjectSetInteger(0, n, OBJPROP_COLOR, c);
+}
+
+// El impulso mas reciente (>= REB_MIN_PIERNA ATR) y hasta donde suele llegar su rebote.
+// Si el tramo desde el ultimo giro ya mide >= REB_MIN_PIERNA ATR, ese es el impulso y su
+// rebote aun no esta confirmado. Si no, es el impulso anterior y el rebote ya se confirmo.
+// Probabilidad de llegar a Y sabiendo que va por X: S(Y) / S(X).
+void Rebote(const int rates_total, const datetime &time[], const double &high[], const double &low[],
+            const double &close[])
+{
+   int u = rates_total - 1, s = MathMax(PeriodoATR + 1, rates_total - VelasRebote);
+   int lado = 0, ie = s, pc = 0;
+   double ext = high[s];
+   int pIe[2], pIc[2], pT[2]; double pP[2];
+   for(int i = s + 1; i <= u; i++)
+   {
+      double d = REB_K * Atr[i];
+      if(lado >= 0)
+      {
+         if(high[i] > ext || (lado == 0 && high[i] >= ext)) { ie = i; ext = high[i]; }
+         if(low[i] < ext - d)
+         {
+            pIe[0] = pIe[1]; pIc[0] = pIc[1]; pP[0] = pP[1]; pT[0] = pT[1];
+            pIe[1] = ie; pIc[1] = i; pP[1] = ext; pT[1] = 1; pc++;
+            lado = -1; ie = i; ext = low[i];
+         }
+      }
+      else
+      {
+         if(low[i] < ext) { ie = i; ext = low[i]; }
+         if(high[i] > ext + d)
+         {
+            pIe[0] = pIe[1]; pIc[0] = pIc[1]; pP[0] = pP[1]; pT[0] = pT[1];
+            pIe[1] = ie; pIc[1] = i; pP[1] = ext; pT[1] = -1; pc++;
+            lado = 1; ie = i; ext = high[i];
+         }
+      }
+   }
+   if(pc < 2)
+      return;
+   // ext / ie: el extremo del tramo que va desde el ultimo giro
+   double P = pP[1], X = ext, A, B, prof;
+   int ladoImp, iConf, iB;
+   bool confirmado;
+   if(MathAbs(P - X) >= REB_MIN_PIERNA * Atr[u])
+   {
+      A = P; B = X; ladoImp = -pT[1]; iConf = u; iB = ie; confirmado = false;
+      prof = 0;
+      for(int j = ie + 1; j <= u; j++)
+         prof = MathMax(prof, ladoImp < 0 ? high[j] - B : B - low[j]);
+   }
+   else
+   {
+      A = pP[0]; B = P; ladoImp = pT[1]; iConf = pIc[1]; confirmado = true;
+      iB = pIe[1]; prof = MathAbs(B - X);
+   }
+   double pierna = MathAbs(B - A), pa = pierna / Atr[iConf];
+   if(pa < REB_MIN_PIERNA)
+      return;
+   bool aFavor = ladoImp > 0 ? close[iConf] > Ema[iConf] : close[iConf] < Ema[iConf];
+   int g = (aFavor ? 0 : 3) + (pa < 6 ? 0 : (pa < 10 ? 1 : 2));
+   double x = prof / pierna, base = Superv(g, x);
+   if(base <= 0) base = 1e-9;
+
+   color cTxt = claro ? C'90,90,90' : clrSilver;
+   color cNiv = ladoImp < 0 ? (claro ? C'200,90,90' : C'255,120,120') : (claro ? C'40,140,120' : C'120,220,180');
+   datetime t2 = time[u] + PeriodSeconds() * 6;
+   double niveles[5] = {0.382, 0.5, 0.618, 0.786, 1.0};
+   for(int k = 0; k < 5; k++)
+   {
+      double r = niveles[k], precio = B - ladoImp * r * pierna;
+      double p = r <= x ? 100.0 : 100.0 * MathMin(1.0, Superv(g, r) / base);
+      NivelReb("n" + IntegerToString(k), time[iB], t2, precio, cNiv, k == 4 ? STYLE_SOLID : STYLE_DOT,
+            StringFormat("%.1f%%  %s  %s", 100 * r, DoubleToString(precio, _Digits),
+                         r <= x ? "ya llego" : StringFormat("%.0f%%", p)));
+   }
+   // mediana y 3 de cada 4, condicionadas a lo que ya reboto
+   double med = 2.0, p75 = 2.0;
+   for(double r = x + 0.01; r <= 2.0; r += 0.01)
+   {
+      double q = Superv(g, r) / base;
+      if(med == 2.0 && q <= 0.5) med = r;
+      if(q <= 0.25) { p75 = r; break; }
+   }
+   string tf = _Period <= PERIOD_M5 ? "5M" : "15M";
+   Renglon(0, StringFormat("Rebote (tabla %s): impulso %s %s -> %s, %.1f ATR, %s EMA200", tf,
+                           ladoImp > 0 ? "alcista" : "bajista", DoubleToString(A, _Digits), DoubleToString(B, _Digits),
+                           pa, aFavor ? "a favor" : "contra"), cTxt);
+   Renglon(1, confirmado ? StringFormat("Rebote confirmado: va por %.0f%% (%s)", 100 * x,
+                                        DoubleToString(B - ladoImp * prof, _Digits))
+                         : StringFormat("Rebote sin confirmar (%.0f%%): las probabilidades son si rebota %.0f ATR",
+                                        100 * x, REB_K), cTxt);
+   Renglon(2, StringFormat("La mitad para antes de %s (%.0f%%) · 3 de 4 antes de %s (%.0f%%)",
+                           DoubleToString(B - ladoImp * med * pierna, _Digits), 100 * med,
+                           DoubleToString(B - ladoImp * p75 * pierna, _Digits), 100 * p75), cTxt);
+   Renglon(3, StringFormat("Hasta 78%% la tendencia sigue %.0f%% · si pasa 100%% (%s) solo %.0f%%: es giro",
+                           SiguePorProf(0.7), DoubleToString(A, _Digits), SiguePorProf(1.5)), cTxt);
+}
+
 int OnCalculate(const int rates_total, const int prev_calculated, const datetime &time[],
                 const double &open[], const double &high[], const double &low[], const double &close[],
                 const long &tick_volume[], const long &volume[], const int &spread[])
@@ -203,5 +373,7 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
       if(Alertas) Alert(msg);
       if(AlMovil) SendNotification(msg);
    }
+   if(MostrarRebote && rates_total > PeriodoATR + 50)
+      Rebote(rates_total, time, high, low, close);
    return rates_total;
 }
