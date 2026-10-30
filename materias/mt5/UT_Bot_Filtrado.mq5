@@ -217,52 +217,75 @@ void Rebote(const int rates_total, const datetime &time[], const double &high[],
    int u = rates_total - 1, s = MathMax(PeriodoATR + 1, rates_total - VelasRebote);
    int lado = 0, ie = s, pc = 0;
    double ext = high[s];
-   int pIe[2], pIc[2], pT[2]; double pP[2];
+   int pIe[], pIc[], pT[]; double pP[];
    for(int i = s + 1; i <= u; i++)
    {
       double d = REB_K * Atr[i];
+      int giro = 0;
       if(lado >= 0)
       {
          if(high[i] > ext || (lado == 0 && high[i] >= ext)) { ie = i; ext = high[i]; }
-         if(low[i] < ext - d)
-         {
-            pIe[0] = pIe[1]; pIc[0] = pIc[1]; pP[0] = pP[1]; pT[0] = pT[1];
-            pIe[1] = ie; pIc[1] = i; pP[1] = ext; pT[1] = 1; pc++;
-            lado = -1; ie = i; ext = low[i];
-         }
+         if(low[i] < ext - d) giro = 1;
       }
       else
       {
          if(low[i] < ext) { ie = i; ext = low[i]; }
-         if(high[i] > ext + d)
-         {
-            pIe[0] = pIe[1]; pIc[0] = pIc[1]; pP[0] = pP[1]; pT[0] = pT[1];
-            pIe[1] = ie; pIc[1] = i; pP[1] = ext; pT[1] = -1; pc++;
-            lado = 1; ie = i; ext = high[i];
-         }
+         if(high[i] > ext + d) giro = -1;
       }
+      if(giro == 0)
+         continue;
+      ArrayResize(pIe, pc + 1, 512); ArrayResize(pIc, pc + 1, 512);
+      ArrayResize(pT, pc + 1, 512); ArrayResize(pP, pc + 1, 512);
+      pIe[pc] = ie; pIc[pc] = i; pP[pc] = ext; pT[pc] = giro; pc++;
+      lado = -giro; ie = i; ext = giro > 0 ? low[i] : high[i];
    }
    if(pc < 2)
+   {
+      ObjectsDeleteAll(0, PREF_REB);
       return;
+   }
    // ext / ie: el extremo del tramo que va desde el ultimo giro
-   double P = pP[1], X = ext, A, B, prof;
-   int ladoImp, iConf, iB;
+   double P = pP[pc - 1], X = ext, A = 0, B = 0, prof = 0;
+   int ladoImp = 0, iConf = 0, iB = 0;
    bool confirmado;
    if(MathAbs(P - X) >= REB_MIN_PIERNA * Atr[u])
    {
-      A = P; B = X; ladoImp = -pT[1]; iConf = u; iB = ie; confirmado = false;
-      prof = 0;
+      A = P; B = X; ladoImp = -pT[pc - 1]; iConf = u; iB = ie; confirmado = false;
       for(int j = ie + 1; j <= u; j++)
          prof = MathMax(prof, ladoImp < 0 ? high[j] - B : B - low[j]);
    }
    else
    {
-      A = pP[0]; B = P; ladoImp = pT[1]; iConf = pIc[1]; confirmado = true;
-      iB = pIe[1]; prof = MathAbs(B - X);
+      // el ultimo impulso >= REB_MIN_PIERNA ATR cuyo extremo B no se ha vuelto a pasar: su rebote sigue vivo
+      confirmado = true;
+      bool hay = false;
+      for(int k = pc - 1; k >= MathMax(1, pc - 8) && !hay; k--)
+      {
+         if(MathAbs(pP[k] - pP[k - 1]) < REB_MIN_PIERNA * Atr[pIc[k]])
+            continue;
+         double m = 0;
+         bool roto = false;
+         for(int j = pIe[k] + 1; j <= u && !roto; j++)
+         {
+            roto = pT[k] > 0 ? high[j] > pP[k] : low[j] < pP[k];
+            m = MathMax(m, pT[k] > 0 ? pP[k] - low[j] : high[j] - pP[k]);
+         }
+         if(roto)
+            continue;
+         A = pP[k - 1]; B = pP[k]; ladoImp = pT[k]; iConf = pIc[k]; iB = pIe[k]; prof = m; hay = true;
+      }
+      if(!hay)
+      {
+         ObjectsDeleteAll(0, PREF_REB);
+         return;
+      }
    }
    double pierna = MathAbs(B - A), pa = pierna / Atr[iConf];
    if(pa < REB_MIN_PIERNA)
+   {
+      ObjectsDeleteAll(0, PREF_REB);
       return;
+   }
    bool aFavor = ladoImp > 0 ? close[iConf] > Ema[iConf] : close[iConf] < Ema[iConf];
    int g = (aFavor ? 0 : 3) + (pa < 6 ? 0 : (pa < 10 ? 1 : 2));
    double x = prof / pierna, base = Superv(g, x);

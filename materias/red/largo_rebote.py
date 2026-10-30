@@ -188,9 +188,18 @@ def en_curso(h, lo, c, tf: str = "M5", d: dict | None = None) -> dict | None:
         despues = slice(ix + 1, n + 1)
         prof = 0.0 if ix == n else float(h[despues].max() - B if lado < 0 else B - lo[despues].min())
     else:
-        A = piv[-2][2]
-        B, lado, i_conf, confirmado = P, tipo, ic, True
-        prof = abs(B - X)
+        # el ultimo impulso >= MIN_PIERNA cuyo extremo B no se ha vuelto a pasar: su rebote sigue vivo
+        for k in range(len(piv) - 1, max(0, len(piv) - 9), -1):
+            iB, ic, B, lado = piv[k]
+            A = piv[k - 1][2]
+            despues = slice(iB + 1, n + 1)
+            roto = (h[despues] > B).any() if lado > 0 else (lo[despues] < B).any()
+            if abs(B - A) >= MIN_PIERNA * a[ic] and not roto:
+                break
+        else:
+            return None
+        i_conf, confirmado = ic, True
+        prof = float(B - lo[despues].min() if lado > 0 else h[despues].max() - B)
     pierna = abs(B - A)
     pa = pierna / a[i_conf]
     if pa < MIN_PIERNA:
