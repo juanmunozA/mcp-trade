@@ -11,10 +11,10 @@
     "azar_pct": 33.7
    },
    "2025-2026": {
-    "n": 4990,
+    "n": 5059,
     "reacciona_pct": 39.4,
     "rompe_pct": 60.6,
-    "azar_pct": 33.3
+    "azar_pct": 33.2
    }
   },
   "FVG a favor de la tendencia": {
@@ -25,9 +25,9 @@
     "azar_pct": 34.6
    },
    "2025-2026": {
-    "n": 3194,
+    "n": 3239,
     "reacciona_pct": 40.3,
-    "rompe_pct": 59.6,
+    "rompe_pct": 59.7,
     "azar_pct": 34.2
    }
   },
@@ -39,9 +39,9 @@
     "azar_pct": 32.1
    },
    "2025-2026": {
-    "n": 1796,
-    "reacciona_pct": 37.6,
-    "rompe_pct": 62.4,
+    "n": 1820,
+    "reacciona_pct": 37.7,
+    "rompe_pct": 62.3,
     "azar_pct": 31.6
    }
   },
@@ -53,9 +53,9 @@
     "azar_pct": 24.5
    },
    "2025-2026": {
-    "n": 2843,
-    "reacciona_pct": 34.4,
-    "rompe_pct": 65.6,
+    "n": 2883,
+    "reacciona_pct": 34.6,
+    "rompe_pct": 65.4,
     "azar_pct": 24.6
    }
   },
@@ -67,9 +67,9 @@
     "azar_pct": 40.6
    },
    "2025-2026": {
-    "n": 1620,
-    "reacciona_pct": 43.0,
-    "rompe_pct": 57.0,
+    "n": 1647,
+    "reacciona_pct": 42.8,
+    "rompe_pct": 57.2,
     "azar_pct": 40.4
    }
   },
@@ -81,9 +81,9 @@
     "azar_pct": 57.8
    },
    "2025-2026": {
-    "n": 527,
-    "reacciona_pct": 54.8,
-    "rompe_pct": 45.0,
+    "n": 529,
+    "reacciona_pct": 54.6,
+    "rompe_pct": 45.2,
     "azar_pct": 57.8
    }
   },
@@ -95,9 +95,9 @@
     "azar_pct": 38.3
    },
    "2025-2026": {
-    "n": 2195,
-    "reacciona_pct": 53.8,
-    "rompe_pct": 46.2,
+    "n": 2220,
+    "reacciona_pct": 53.7,
+    "rompe_pct": 46.3,
     "azar_pct": 37.6
    }
   },
@@ -109,7 +109,7 @@
     "azar_pct": 30.3
    },
    "2025-2026": {
-    "n": 2795,
+    "n": 2839,
     "reacciona_pct": 28.1,
     "rompe_pct": 71.9,
     "azar_pct": 29.8
@@ -123,10 +123,10 @@
     "azar_pct": 33.5
    },
    "2025-2026": {
-    "n": 3926,
-    "reacciona_pct": 38.9,
+    "n": 3980,
+    "reacciona_pct": 38.8,
     "rompe_pct": 61.1,
-    "azar_pct": 33.1
+    "azar_pct": 33.0
    }
   },
   "FVG vuelve en 2-12 h": {
@@ -137,10 +137,10 @@
     "azar_pct": 34.0
    },
    "2025-2026": {
-    "n": 763,
-    "reacciona_pct": 40.9,
-    "rompe_pct": 59.1,
-    "azar_pct": 33.6
+    "n": 777,
+    "reacciona_pct": 41.1,
+    "rompe_pct": 58.9,
+    "azar_pct": 33.5
    }
   },
   "FVG vuelve en >12 h": {
@@ -151,9 +151,9 @@
     "azar_pct": 35.2
    },
    "2025-2026": {
-    "n": 301,
-    "reacciona_pct": 41.5,
-    "rompe_pct": 58.5,
+    "n": 302,
+    "reacciona_pct": 41.7,
+    "rompe_pct": 58.3,
     "azar_pct": 35.2
    }
   },
@@ -165,7 +165,7 @@
     "azar_pct": 32.1
    },
    "2025-2026": {
-    "n": 2896,
+    "n": 2937,
     "reacciona_pct": 37.6,
     "rompe_pct": 62.4,
     "azar_pct": 31.9
@@ -179,10 +179,10 @@
     "azar_pct": 33.2
    },
    "2025-2026": {
-    "n": 951,
+    "n": 963,
     "reacciona_pct": 42.0,
     "rompe_pct": 58.0,
-    "azar_pct": 33.5
+    "azar_pct": 33.4
    }
   },
   "FVG tocado en Londres KZ 02-05": {
@@ -193,9 +193,9 @@
     "azar_pct": 34.9
    },
    "2025-2026": {
-    "n": 704,
-    "reacciona_pct": 36.9,
-    "rompe_pct": 63.1,
+    "n": 713,
+    "reacciona_pct": 37.3,
+    "rompe_pct": 62.7,
     "azar_pct": 33.9
    }
   },
@@ -207,10 +207,10 @@
     "azar_pct": 36.2
    },
    "2025-2026": {
-    "n": 868,
-    "reacciona_pct": 40.4,
-    "rompe_pct": 59.4,
-    "azar_pct": 34.7
+    "n": 881,
+    "reacciona_pct": 40.2,
+    "rompe_pct": 59.7,
+    "azar_pct": 34.8
    }
   },
   "FVG tocado en London Close 10-12": {
@@ -221,9 +221,9 @@
     "azar_pct": 36.6
    },
    "2025-2026": {
-    "n": 468,
-    "reacciona_pct": 43.6,
-    "rompe_pct": 56.4,
+    "n": 475,
+    "reacciona_pct": 43.4,
+    "rompe_pct": 56.6,
     "azar_pct": 35.8
    }
   },
@@ -235,9 +235,9 @@
     "azar_pct": 30.4
    },
    "2025-2026": {
-    "n": 437,
-    "reacciona_pct": 38.0,
-    "rompe_pct": 62.0,
+    "n": 443,
+    "reacciona_pct": 37.7,
+    "rompe_pct": 62.3,
     "azar_pct": 31.4
    }
   },
@@ -252,10 +252,10 @@
     "ruptura_sigue_pct": 47.0
    },
    "2025-2026": {
-    "n": 1781,
-    "rechaza_pct": 24.3,
-    "rompe_pct": 75.7,
-    "ruptura_sigue_pct": 46.9
+    "n": 1809,
+    "rechaza_pct": 24.5,
+    "rompe_pct": 75.5,
+    "ruptura_sigue_pct": 46.7
    }
   },
   "relativo": {
@@ -266,10 +266,10 @@
     "ruptura_sigue_pct": 40.6
    },
    "2025-2026": {
-    "n": 10191,
-    "rechaza_pct": 22.9,
-    "rompe_pct": 77.1,
-    "ruptura_sigue_pct": 42.4
+    "n": 10338,
+    "rechaza_pct": 23.0,
+    "rompe_pct": 77.0,
+    "ruptura_sigue_pct": 42.3
    }
   }
  },
@@ -282,9 +282,9 @@
     "azar_pct": 44.9
    },
    "2025-2026": {
-    "n": 3644,
-    "reacciona_pct": 46.4,
-    "rompe_pct": 53.6,
+    "n": 3698,
+    "reacciona_pct": 46.3,
+    "rompe_pct": 53.7,
     "azar_pct": 45.0
    }
   },
@@ -296,7 +296,7 @@
     "azar_pct": 45.6
    },
    "2025-2026": {
-    "n": 1226,
+    "n": 1243,
     "reacciona_pct": 48.0,
     "rompe_pct": 52.0,
     "azar_pct": 45.7
@@ -310,9 +310,9 @@
     "azar_pct": 44.7
    },
    "2025-2026": {
-    "n": 2418,
-    "reacciona_pct": 45.6,
-    "rompe_pct": 54.4,
+    "n": 2455,
+    "reacciona_pct": 45.5,
+    "rompe_pct": 54.5,
     "azar_pct": 44.6
    }
   },
@@ -324,9 +324,9 @@
     "azar_pct": 45.4
    },
    "2025-2026": {
-    "n": 2339,
+    "n": 2373,
     "reacciona_pct": 46.3,
-    "rompe_pct": 53.6,
+    "rompe_pct": 53.7,
     "azar_pct": 45.3
    }
   },
@@ -338,7 +338,7 @@
     "azar_pct": 44.1
    },
    "2025-2026": {
-    "n": 1305,
+    "n": 1325,
     "reacciona_pct": 46.5,
     "rompe_pct": 53.5,
     "azar_pct": 44.4
@@ -352,9 +352,9 @@
     "azar_pct": 47.0
    },
    "2025-2026": {
-    "n": 2112,
-    "reacciona_pct": 57.8,
-    "rompe_pct": 42.2,
+    "n": 2148,
+    "reacciona_pct": 57.7,
+    "rompe_pct": 42.3,
     "azar_pct": 47.2
    }
   },
@@ -366,9 +366,9 @@
     "azar_pct": 42.1
    },
    "2025-2026": {
-    "n": 1532,
-    "reacciona_pct": 30.7,
-    "rompe_pct": 69.3,
+    "n": 1550,
+    "reacciona_pct": 30.6,
+    "rompe_pct": 69.4,
     "azar_pct": 41.9
    }
   },
@@ -380,9 +380,9 @@
     "azar_pct": 48.1
    },
    "2025-2026": {
-    "n": 736,
-    "reacciona_pct": 59.0,
-    "rompe_pct": 41.0,
+    "n": 749,
+    "reacciona_pct": 58.7,
+    "rompe_pct": 41.3,
     "azar_pct": 48.4
    }
   }
