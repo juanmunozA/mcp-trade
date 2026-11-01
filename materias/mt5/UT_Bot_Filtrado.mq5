@@ -66,6 +66,7 @@ double VO[], VH[], VL[], VC[], VColor[];
 double Linea[], ColorLinea[], Compra[], Venta[], Ema[], Atr[], Fuerte[];
 datetime ultimaAlerta = 0;
 bool claro = false;
+string faseDibujada = "";     // fase del rebote dibujada (ver Fase())
 color cVerde = clrLime, cRojo = clrRed, cVerdeD = clrSeaGreen, cRojoD = clrIndianRed;
 
 // Colores segun el fondo: en blanco, la paleta de TradingView; en negro, vivos
@@ -110,6 +111,7 @@ int OnInit()
    IndicatorSetString(INDICATOR_SHORTNAME, StringFormat("UT Bot a=%.1f ATR%d%s%s",
                       ClaveA, PeriodoATR, HeikinAshi ? " HA" : "", SoloFiltradas ? " EMA200" : ""));
    Paleta();
+   faseDibujada = "";
    return INIT_SUCCEEDED;
 }
 
@@ -207,7 +209,82 @@ void Renglon(const int fila, const string texto, const color c)
    ObjectSetInteger(0, n, OBJPROP_COLOR, c);
 }
 
-// El impulso mas reciente (>= REB_MIN_PIERNA ATR) y hasta donde suele llegar su rebote.
+// Supervivencia del recorrido tras una señal (en ATR de la vela de la señal)
+double SupervRec(const double r)
+{
+   double x = r / REC_PASO;
+   if(x <= 0) return 1.0;
+   if(x >= REC_PASOS - 1) return (_Period <= PERIOD_M5) ? REC_M5[REC_PASOS - 1] : REC_M15[REC_PASOS - 1];
+   int k = (int)MathFloor(x);
+   double f = x - k;
+   double a = (_Period <= PERIOD_M5) ? REC_M5[k] : REC_M15[k];
+   double b = (_Period <= PERIOD_M5) ? REC_M5[k + 1] : REC_M15[k + 1];
+   return a + f * (b - a);
+}
+
+// Al cambiar de fase (otra señal, o de recorrido a rebote) se borra lo dibujado
+void Fase(const string f)
+{
+   if(f == faseDibujada)
+      return;
+   ObjectsDeleteAll(0, PREF_REB);
+   faseDibujada = f;
+}
+
+// Fase 1: la ultima señal sigue su camino (aun no hubo un rebote de REB_K ATR en contra).
+// Lineas A FAVOR de la señal: hasta donde suele llegar antes del siguiente rebote.
+bool Recorrido(const int rates_total, const datetime &time[], const double &high[], const double &low[],
+               const double &close[])
+{
+   int u = rates_total - 1, is = -1;
+   for(int i = u - 1; i >= MathMax(PeriodoATR + 2, u - 600) && is < 0; i--)
+      if(Compra[i] != EMPTY_VALUE || Venta[i] != EMPTY_VALUE)
+         is = i;
+   if(is < 0)
+      return false;
+   int d = Compra[is] != EMPTY_VALUE ? 1 : -1;
+   double c0 = close[is], a0 = Atr[is], F = c0;
+   for(int j = is + 1; j <= u; j++)
+   {
+      double ext = d > 0 ? high[j] : low[j], contra = d > 0 ? low[j] : high[j];
+      if((ext - F) * d > 0) F = ext;
+      if((F - contra) * d >= REB_K * Atr[j])
+         return false;                               // ya reboto: fase 2
+   }
+   double prog = MathMax(0.0, (F - c0) * d / a0), base = MathMax(SupervRec(prog), 1e-9);
+   Fase("rec" + IntegerToString((long)time[is]));
+
+   color cTxt = claro ? C'90,90,90' : clrSilver;
+   color cNiv = d < 0 ? (claro ? C'200,90,90' : C'255,120,120') : (claro ? C'40,140,120' : C'120,220,180');
+   datetime t2 = time[u] + PeriodSeconds() * 6;
+   for(int k = 1; k <= 4; k++)
+   {
+      double precio = c0 + d * k * a0, p = 100.0 * MathMin(1.0, SupervRec(k) / base);
+      NivelReb("r" + IntegerToString(k), time[is], t2, precio, cNiv, k == 2 ? STYLE_SOLID : STYLE_DOT,
+               StringFormat("%d ATR  %s  %s", k, DoubleToString(precio, _Digits),
+                            k <= prog ? "ya llego" : StringFormat("%.0f%%", p)));
+   }
+   // mitad y 1 de cada 4, condicionadas a lo que ya recorrio
+   double med = 6.0, p25 = 6.0;
+   for(double r = prog + 0.02; r <= 6.0; r += 0.02)
+   {
+      double q = SupervRec(r) / base;
+      if(med == 6.0 && q <= 0.5) med = r;
+      if(q <= 0.25) { p25 = r; break; }
+   }
+   string verbo = d < 0 ? "bajar" : "subir", tf = _Period <= PERIOD_M5 ? "5M" : "15M";
+   int hace = u - is;
+   Renglon(0, StringFormat("%s en %s (hace %d velas) · ya va %.1f ATR a favor (%s)", d < 0 ? "SELL" : "BUY",
+                           DoubleToString(c0, _Digits), hace, prog, DoubleToString(F, _Digits)), cTxt);
+   Renglon(1, StringFormat("Antes del proximo rebote suele %s: la mitad hasta %s · 1 de cada 4 hasta %s", verbo,
+                           DoubleToString(c0 + d * med * a0, _Digits), DoubleToString(c0 + d * p25 * a0, _Digits)), cTxt);
+   Renglon(2, StringFormat("El tramo termina si %s %.0f ATR desde el extremo: %s", d < 0 ? "sube" : "baja", REB_K,
+                           DoubleToString(F - d * REB_K * Atr[u], _Digits)), cTxt);
+   Renglon(3, StringFormat("Medido tras %s señales UT (a=1, ATR14) en %s desde 2022: mediana 1,3 ATR", "44.000", tf), cTxt);
+   return true;
+}
+
+// Fase 2: el impulso mas reciente (>= REB_MIN_PIERNA ATR) y hasta donde suele llegar su rebote.
 // Si el tramo desde el ultimo giro ya mide >= REB_MIN_PIERNA ATR, ese es el impulso y su
 // rebote aun no esta confirmado. Si no, es el impulso anterior y el rebote ya se confirmo.
 // Probabilidad de llegar a Y sabiendo que va por X: S(Y) / S(X).
@@ -241,7 +318,7 @@ void Rebote(const int rates_total, const datetime &time[], const double &high[],
    }
    if(pc < 2)
    {
-      ObjectsDeleteAll(0, PREF_REB);
+      Fase("nada");
       return;
    }
    // ext / ie: el extremo del tramo que va desde el ultimo giro
@@ -276,16 +353,17 @@ void Rebote(const int rates_total, const datetime &time[], const double &high[],
       }
       if(!hay)
       {
-         ObjectsDeleteAll(0, PREF_REB);
+         Fase("nada");
          return;
       }
    }
    double pierna = MathAbs(B - A), pa = pierna / Atr[iConf];
    if(pa < REB_MIN_PIERNA)
    {
-      ObjectsDeleteAll(0, PREF_REB);
+      Fase("nada");
       return;
    }
+   Fase("reb" + IntegerToString((long)time[iB]));
    bool aFavor = ladoImp > 0 ? close[iConf] > Ema[iConf] : close[iConf] < Ema[iConf];
    int g = (aFavor ? 0 : 3) + (pa < 6 ? 0 : (pa < 10 ? 1 : 2));
    double x = prof / pierna, base = Superv(g, x);
@@ -396,7 +474,9 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
       if(Alertas) Alert(msg);
       if(AlMovil) SendNotification(msg);
    }
-   if(MostrarRebote && rates_total > PeriodoATR + 50)
+   // Las lineas van con la ultima señal; solo cuando ya reboto 2 ATR en contra pasan al rebote
+   if(MostrarRebote && rates_total > PeriodoATR + 50
+      && !Recorrido(rates_total, time, high, low, close))
       Rebote(rates_total, time, high, low, close);
    return rates_total;
 }

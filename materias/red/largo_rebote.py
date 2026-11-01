@@ -8,6 +8,11 @@ rebota en contra. Se mide, hasta que el precio vuelve a pasar B (o 1 dia):
   sigue       : si despues vuelve a pasar B (el rebote era un retroceso)
                 o no (el rebote era un giro)
 
+Y el tramo anterior: tras una señal del UT Bot (a=1, ATR 14, como el del
+usuario), cuanto recorre el precio a favor, en ATR de la vela de la señal,
+hasta que empieza un rebote de K ATR. Ni la EMA 200 ni el dia de tendencia
+lo cambian (mediana 1,3 ATR en todos los grupos y en los dos tramos).
+
 Uso en vivo: si el rebote ya va por el X %, la probabilidad de que llegue al
 Y % es S(Y) / S(X), donde S es la proporcion de rebotes que llegaron a cada
 nivel (curva de supervivencia). Se exporta tambien como include de MQL5
@@ -23,7 +28,7 @@ import numpy as np
 
 from materias.red import datos as D
 from materias.red.pips import SESIONES, hora_ny
-from materias.red.utbot import agrupar, atr, ema
+from materias.red.utbot import agrupar, atr, ema, utbot
 from materias.red.zonas import CORTE, DESDE, series
 
 ARCHIVO = Path(__file__).with_name("largo_rebote.json")
@@ -34,6 +39,7 @@ VELAS_DIA = {"M5": 288, "M15": 96}
 REJILLA = np.round(np.arange(0, 2.0001, 0.05), 2)   # profundidad en % de la pierna (0..200 %)
 NIVELES = (0.236, 0.382, 0.5, 0.618, 0.786, 1.0)
 TRAMOS_PROF = ("0-38", "38-61", "61-78", "78-100", "100-mas")
+REJILLA_ATR = np.round(np.arange(0, 6.0001, 0.25), 2)   # recorrido tras la señal, en ATR
 
 
 def rebotes(v: dict, horizonte: int) -> list[dict]:
@@ -72,6 +78,35 @@ def rebotes(v: dict, horizonte: int) -> list[dict]:
             "tramo": "2022-2024" if v["t"][ic] < CORTE else "2025-2026",
         })
     return out
+
+
+def recorridos(v: dict, horizonte: int) -> list[dict]:
+    """Tras cada señal del UT Bot: cuanto va a favor (en ATR) antes de un rebote de K ATR."""
+    a = atr(v["h"], v["l"], v["c"], 14)
+    _, _, compra, venta = utbot(v, 1.0, 14, False)
+    out = []
+    for i in np.flatnonzero(compra | venta):
+        if v["t"][i] < DESDE or i + horizonte >= len(v["c"]):
+            continue
+        d = 1 if compra[i] else -1
+        F, iF = v["c"][i], i
+        for j in range(i + 1, i + horizonte):
+            ext = v["h"][j] if d > 0 else v["l"][j]
+            if (ext - F) * d > 0:
+                F, iF = ext, j
+            if (F - (v["l"][j] if d > 0 else v["h"][j])) * d >= K * a[j]:
+                break
+        out.append({"atr": (F - v["c"][i]) * d / a[i], "velas": iF - i,
+                    "tramo": "2022-2024" if v["t"][i] < CORTE else "2025-2026"})
+    return out
+
+
+def resumir_recorrido(rs: list[dict]) -> dict:
+    x = np.array([r["atr"] for r in rs])
+    return {"n": len(rs), "p50": round(float(np.median(x)), 2), "p75": round(float(np.percentile(x, 75)), 2),
+            "velas_p50": int(np.median([r["velas"] for r in rs])),
+            "llega": {f"{g:g}": round(100 * float((x >= g).mean()), 1) for g in (1, 2, 3, 4, 5)},
+            "supervivencia": [round(float((x >= g).mean()), 4) for g in REJILLA_ATR]}
 
 
 def grupos(r: dict) -> list[str]:
@@ -120,6 +155,10 @@ def medir() -> dict:
         for k, x in sorted(acc.items()):
             if len(x) >= 50:
                 out[k] = resumir(x)
+        rc = recorridos(v, VELAS_DIA[tf])
+        for tramo in ("2022-2024", "2025-2026"):
+            out[f"{tf}|senal|{tramo}"] = resumir_recorrido([r for r in rc if r["tramo"] == tramo])
+        out[f"{tf}|senal|todo"] = resumir_recorrido(rc)
     return out
 
 
@@ -134,7 +173,10 @@ def exportar_mqh(d: dict) -> None:
          "// Supervivencia de la profundidad del rebote (fraccion de rebotes que llegan a cada % de la pierna).",
          "// Grupos: 0-2 impulso a favor EMA200 (pierna 4-6, 6-10, 10+ ATR), 3-5 en contra.",
          f"#define REB_PASOS {len(REJILLA)}",
-         f"#define REB_PASO {REJILLA[1]:.2f}"]
+         f"#define REB_PASO {REJILLA[1]:.2f}",
+         "// Recorrido tras una señal del UT Bot (a=1, ATR 14) hasta un rebote de REB_K ATR, en ATR.",
+         f"#define REC_PASOS {len(REJILLA_ATR)}",
+         f"#define REC_PASO {REJILLA_ATR[1]:.2f}"]
     for tf in ("M5", "M15"):
         filas, sig, ns = [], [], []
         for c in claves:
@@ -148,6 +190,8 @@ def exportar_mqh(d: dict) -> None:
         L.append(f"int REB_N_{tf}[6] = {{{','.join(ns)}}};")
         # ¿sigue la tendencia despues, segun lo hondo que fue el rebote?
         pp = d[f"{tf}|todas|todo"]["sigue_por_profundidad"]
+        rc = d[f"{tf}|senal|todo"]
+        L.append(f"double REC_{tf}[{len(REJILLA_ATR)}] = {{{','.join(f'{x:.4f}' for x in rc['supervivencia'])}}};")
         L.append(f"double REB_SIGUE_PROF_{tf}[5] = {{{','.join(f'{pp.get(k, 0):.1f}' for k in TRAMOS_PROF)}}};"
                  "   // 0-38, 38-61, 61-78, 78-100, 100+ %")
     MQH.write_text("\n".join(L) + "\n", encoding="utf-8")
@@ -258,6 +302,13 @@ def texto(ctx: dict | None = None) -> str:
                          f"{f['sigue_pct']:.0f} %; segun lo hondo del rebote: {f['sigue_por_profundidad']}")
     L.append("Rebote de hasta el 78 %: el impulso sigue casi siempre. Si pasa el 100 % es un giro: en 15M la "
              "tendencia solo vuelve el 40 % de las veces.")
+    for tf in ("M5", "M15"):
+        f = d.get(f"{tf}|senal|todo")
+        if f:
+            ll = " · ".join(f"{k} ATR: {v:.0f} %" for k, v in f["llega"].items())
+            L.append(f"- Tras una señal del UT Bot en {tf} (n={f['n']}), antes de un rebote de {K:g} ATR el precio va "
+                     f"a favor una mediana de {f['p50']} ATR (3 de cada 4 <= {f['p75']}); llega a {ll}. Igual a favor "
+                     "o en contra de la EMA 200 y en dias de tendencia: el objetivo realista de una señal es 1-2 ATR.")
     for clave, tf in (("m5", "M5"), ("m15", "M15")):
         velas = (ctx or {}).get(clave) or []
         if len(velas) >= 250:
@@ -276,6 +327,9 @@ if __name__ == "__main__":
     exportar_mqh(r)
     for k, x in r.items():
         if k == "rejilla":
+            continue
+        if "|senal|" in k:
+            print(f"{k:52s} n={x['n']:5d} p50 {x['p50']} ATR p75 {x['p75']} ATR velas {x['velas_p50']} llega {x['llega']}")
             continue
         print(f"{k:52s} n={x['n']:5d} p50 {100 * x['p50']:4.0f}% p75 {100 * x['p75']:4.0f}% "
               f"atr {x['atr_p50']:.2f}/{x['atr_p75']:.2f} velas {x['velas_p50']:3d} sigue {x['sigue_pct']:4.1f}% "
