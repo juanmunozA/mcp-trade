@@ -62,7 +62,10 @@ def subir(archivos: list[str]) -> None:
 def instalar_mt5() -> None:
     """Copia el UT Bot y su tabla de rebotes a la carpeta de indicadores del MT5 y lo recompila."""
     editor = Path(os.getenv("MT5_RUTA", "")).with_name("MetaEditor64.exe")
-    for carpeta in Path(os.getenv("APPDATA", "")).glob("MetaQuotes/Terminal/*/MQL5/Indicators"):
+    carpetas = list(Path(os.getenv("APPDATA", "")).glob("MetaQuotes/Terminal/*/MQL5/Indicators"))
+    if os.getenv("FONDEO_RUTA"):  # MT5 portable de la cuenta de fondeo
+        carpetas.append(Path(os.getenv("FONDEO_RUTA")).with_name("MQL5") / "Indicators")
+    for carpeta in carpetas:
         if not (carpeta / "UT_Bot_Filtrado.mq5").exists():
             continue
         for nombre in ("UT_Bot_Filtrado.mq5", "Rebote_tabla.mqh"):
