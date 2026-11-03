@@ -65,8 +65,10 @@ def resumen() -> None:
     print(f"cuenta {cu['login']} · {cu['server']} · {'DEMO' if cu['trade_mode'] == 0 else 'REAL/FONDEO'} · "
           f"balance {cu['balance']:.2f} · equity {cu['equity']:.2f} {cu['currency']} · 1:{cu['leverage']}")
     print(f"hoy: cerrado {cerrado_hoy:+.2f} · flotante {flotante:+.2f} · total {hoy_pl:+.2f}")
-    print(f"perdida diaria: usada {max(0.0, -hoy_pl):.2f} de {tope_dia:.2f} · margen {tope_dia + min(0.0, hoy_pl):.2f}")
-    print(f"perdida total: equity {cu['equity']:.2f} · limite {inicial - tope_total:.2f} · margen {cu['equity'] - (inicial - tope_total):.2f}")
+    # FundedNext: suelo del dia = balance al empezar el dia - % del inicial; suelo total fijo
+    suelo_dia = saldo_dia - tope_dia
+    print(f"perdida diaria: suelo {suelo_dia:.2f} · margen {cu['equity'] - suelo_dia:.2f}")
+    print(f"perdida total: suelo {inicial - tope_total:.2f} · margen {cu['equity'] - (inicial - tope_total):.2f}")
     for p in pos:
         print(f"  abierta #{p.ticket} {'BUY' if p.type == 0 else 'SELL'} {p.volume} {p.symbol} en {p.price_open:.2f} "
               f"SL {p.sl:.2f} TP {p.tp:.2f} · {p.profit:+.2f}")

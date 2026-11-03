@@ -19,7 +19,8 @@
 
 input double Lote             = 3.0;  // Lote con el que operas
 input double SaldoInicial     = 0;    // Tamano de la cuenta de fondeo (0 = balance al empezar el dia)
-input double PerdidaDiariaPct = 5.0;  // Perdida diaria maxima de la cuenta (%)
+input double PerdidaDiariaPct = 5.0;  // Perdida diaria maxima (% del saldo inicial)
+input double PerdidaTotalPct  = 10.0; // Perdida total maxima (% del saldo inicial)
 input int    PeriodoATR       = 14;   // ATR de 15M (Wilder, como en la medicion)
 input int    SegundosRapida   = 30;   // Quick Strike: operaciones mas cortas que esto
 input bool   DibujarNiveles   = true; // Lineas de rebote y de «sigue» en el grafico
@@ -142,12 +143,14 @@ void Pintar()
          cerrado += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_COMMISSION) + HistoryDealGetDouble(d, DEAL_SWAP);
    }
    double bal = AccountInfoDouble(ACCOUNT_BALANCE), eq = AccountInfoDouble(ACCOUNT_EQUITY);
-   double base = SaldoInicial > 0 ? SaldoInicial : bal - cerrado;
-   double tope = base * PerdidaDiariaPct / 100, hoy = cerrado + (eq - bal);
-   double queda = tope + MathMin(0.0, hoy);
+   // FundedNext: suelo del dia = balance al empezar el dia - % del saldo inicial; suelo total fijo
+   double inicial = SaldoInicial > 0 ? SaldoInicial : bal - cerrado;
+   double tope = inicial * PerdidaDiariaPct / 100, hoy = cerrado + (eq - bal);
+   double suelo = MathMax(bal - cerrado - tope, inicial * (1 - PerdidaTotalPct / 100));
+   double queda = eq - suelo;
    double usd1 = Dinero(1.0);
-   Renglon(fila++, StringFormat("Hoy %s · perdida diaria permitida $%.0f · te quedan $%.0f = %.2f $ de precio con %.2f lotes",
-           Usd(hoy), tope, queda, usd1 > 0 ? queda / usd1 : 0, Lote), queda < tope * 0.3 ? clrRed : clrSilver);
+   Renglon(fila++, StringFormat("Hoy %s · suelo %.0f · te quedan $%.0f = %.2f $ de precio con %.2f lotes",
+           Usd(hoy), suelo, queda, usd1 > 0 ? queda / usd1 : 0, Lote), queda < tope * 0.3 ? clrRed : clrSilver);
    Renglon(fila++, StringFormat("%.2f lotes = $%.0f por cada $1 de precio · spread %.2f = -$%.0f al entrar",
            Lote, usd1, ask - bid, Dinero(ask - bid)), clrSilver);
 
