@@ -68,11 +68,13 @@ def instalar_mt5() -> None:
     for carpeta in carpetas:
         if not (carpeta / "UT_Bot_Filtrado.mq5").exists():
             continue
-        for nombre in ("UT_Bot_Filtrado.mq5", "Rebote_tabla.mqh"):
+        for nombre in ("UT_Bot_Filtrado.mq5", "Rebote_tabla.mqh", "Estructura_FVG.mq5",
+                       "Vela15_Scalper.mq5", "Vela15_tabla.mqh"):
             shutil.copy2(RAIZ / "materias" / "mt5" / nombre, carpeta / nombre)
-        if editor.exists():
-            subprocess.run([str(editor), f"/compile:{carpeta / 'UT_Bot_Filtrado.mq5'}",
-                            f"/log:{carpeta / 'UT_Bot_Filtrado.log'}"], capture_output=True)
+        for ind in ("UT_Bot_Filtrado", "Estructura_FVG", "Vela15_Scalper"):
+            if editor.exists():
+                subprocess.run([str(editor), f"/compile:{carpeta / (ind + '.mq5')}",
+                                f"/log:{carpeta / (ind + '.log')}"], capture_output=True)
         _log(f"UT Bot con la tabla nueva en {carpeta}")
 
 
