@@ -10,11 +10,16 @@ volumen, sesion, tramo del UT Bot...) con lo que se sabe AL CIERRE de esa
 vela. Se entra al cierre, a favor del rebote, con tres esquemas de
 stop/objetivo en ATR, y se resta el spread.
 
-Hipotesis = un rasgo, o dos a la vez, en un esquema. Se prueban todas. Se
-adopta una solo si gana en el 70 % mas viejo de los datos Y en el 30 % mas
-reciente, con casos suficientes y con el intervalo del 95 % de lo reciente
-por encima de cero. Lo demas se descarta: con ~700 hipotesis, sin ese
-filtro se «descubririan» casualidades (cap. 18.7 de la guia).
+Los rasgos incluyen lo de la guia: primer regreso a un FVG u order block
+de H1 o de 15M, tendencia de H1 y H4, premium/descuento del dia. Y hay dos
+entradas: en el toque, o esperando a que 5M rompa la estructura (CHoCH).
+
+Hipotesis = un rasgo, o dos a la vez, con una entrada y un esquema. Se
+prueban todas. Los datos se parten en tres tramos en el tiempo (50/25/25):
+se adopta una solo si gana en los tres, con casos suficientes y con el
+intervalo del 95 % de lo no visto por encima de cero. Lo demas se
+descarta: con miles de hipotesis, sin ese filtro se «descubririan»
+casualidades (cap. 18.7 de la guia).
 
 Cada semana `evolucionar` lo vuelve a correr. Una regla que deja de
 aguantar pasa a «caidas» con su fecha; no se borra, para no redescubrirla.
@@ -43,7 +48,12 @@ STOP, OBJ = 1.0, 1.5    # en ATR de 5M
 COSTE = 0.12            # spread tipico, en ATR de 5M
 HORIZONTE = 96          # 8 h para resolverse
 ESQUEMAS = ((1.0, 1.5), (1.0, 3.0), (2.0, 3.0))   # (stop, objetivo) en ATR; el primero es el de referencia
-MIN_ENT, MIN_VAL, MIN_R = 150, 60, 0.05
+MIN_ENT, MIN_VAL, MIN_R = 150, 50, 0.05
+ESPERA_RUPTURA = 12     # velas de 5M que se espera el cambio de estructura tras el toque
+VIDA = {3600: 1440, 900: 576}   # velas de 5M que vive una zona de H1 (5 dias) y de 15M (2 dias)
+MINIMO_VELAS = 12000    # velas de 5M para que la EMA 50 de H4 y las zonas de H1 esten formadas
+ENTRADAS = {"toque": "al cierre de la vela que toca el extremo",
+            "ruptura": "al cierre de la vela de 5M que rompe la estructura a favor (CHoCH) tras el toque"}
 
 NOMBRES = {
     "mecha60": "la vela cierra con mecha de rechazo >= 60 %",
@@ -63,6 +73,14 @@ NOMBRES = {
     "ext_2atr": "el tramo del UT lleva >= 2 ATR",
     "ext_3atr": "el tramo del UT lleva >= 3 ATR",
     "ema200_a_favor": "el rebote va a favor de la EMA 200 de 5M",
+    "fvg_h1": "primer regreso a un hueco (FVG) de H1 a favor",
+    "fvg_m15": "primer regreso a un hueco (FVG) de 15M a favor",
+    "ob_h1": "primer regreso a un order block de H1 a favor",
+    "ob_m15": "primer regreso a un order block de 15M a favor",
+    "h1_a_favor": "el rebote va a favor de la EMA 50 de H1",
+    "h4_a_favor": "el rebote va a favor de la EMA 50 de H4",
+    "h1_h4_a_favor": "a favor de la EMA 50 de H1 y de H4 a la vez",
+    "extremo_dia": "en el cuarto exterior del rango de 24 h (descuento para comprar, premium para vender)",
     "asia": "Asia (18-02 NY)",
     "londres": "Londres (02-07 NY)",
     "ny_am": "NY mañana (07-11 NY)",
@@ -83,6 +101,71 @@ def _previo(x: np.ndarray, n: int, f) -> np.ndarray:
     """Extremo de las n velas ANTERIORES a cada vela (sin contarla)."""
     out = np.full(len(x), np.nan)
     out[n:] = f(sliding_window_view(x, n), axis=1)[:-1]
+    return out
+
+
+def _zonas(v: np.ndarray, seg: int) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """
+    Por tipo de zona (FVG y order block del marco `seg`), dos booleanos por
+    vela de 5M: «esta en el primer regreso a una zona alcista / bajista».
+    La zona solo cuenta desde el cierre de la vela que la forma, vive
+    VIDA[seg] velas, y solo vale el primer regreso (tres velas), mientras
+    el cierre no la haya atravesado.
+    """
+    from materias.red import zonas as Z
+    b = U.agrupar(v, seg)
+    a = U.atr(b["h"], b["l"], b["c"], 14)
+    t5, lo, h, c, n = v["time"], v["low"], v["high"], v["close"], len(v)
+    listas = {"fvg": Z.huecos(b["h"], b["l"], a, t=b["t"], seg=seg),
+              "ob": [x[:4] for x in Z.order_blocks(b, a)]}
+    out = {}
+    for nom, zs in listas.items():
+        sube, baja = np.zeros(n, bool), np.zeros(n, bool)
+        for k, lado, zlo, zhi in zs:
+            j0 = int(np.searchsorted(t5, b["t"][k] + seg))
+            j1 = min(n, j0 + VIDA[seg])
+            toca = np.flatnonzero((lo[j0:j1] <= zhi) if lado > 0 else (h[j0:j1] >= zlo))
+            if not len(toca):
+                continue
+            j = j0 + int(toca[0])
+            w = slice(j, min(n, j + 3))
+            if lado > 0:
+                sube[w] |= (lo[w] <= zhi) & (c[w] >= zlo)
+            else:
+                baja[w] |= (h[w] >= zlo) & (c[w] <= zhi)
+        out[nom] = (sube, baja)
+    return out
+
+
+def _tendencia(v: np.ndarray, seg: int, n: int = 50) -> np.ndarray:
+    """Signo de (cierre - EMA n) de la ultima vela de `seg` ya cerrada, por vela de 5M."""
+    b = U.agrupar(v, seg)
+    sig = np.sign(b["c"] - U.ema(b["c"], n))
+    pos = np.searchsorted(b["t"] + seg, v["time"] + 300, side="right") - 1
+    return np.where(pos >= 0, sig[np.maximum(pos, 0)], 0)
+
+
+def _confirmar(v: np.ndarray, idx: np.ndarray, s: np.ndarray, a: np.ndarray) -> np.ndarray:
+    """
+    Vela de la entrada «ruptura» de cada candidato, o -1: la primera vela
+    de 5M, en las ESPERA_RUPTURA siguientes al toque, cuyo cierre rompe el
+    ultimo maximo/minimo relativo a favor del rebote, sin que antes el
+    precio haya pasado del extremo del toque.
+    """
+    from materias.red import zonas as Z
+    h, lo = v["high"], v["low"]
+    n = len(h)
+    rompe = np.zeros(n, int)
+    for k, lado, *_ in Z.order_blocks({"o": v["open"], "h": h, "l": lo, "c": v["close"]}, a):
+        rompe[k] = lado
+    out = np.full(len(idx), -1)
+    for k, (i, d) in enumerate(zip(idx, s)):
+        for j in range(i + 1, min(n, i + 1 + ESPERA_RUPTURA)):
+            if (lo[j] < lo[i] - 0.15 * a[i]) if d > 0 else (h[j] > h[i] + 0.15 * a[i]):
+                break
+            if rompe[j] == d:
+                out[k] = j
+                break
     return out
 
 
@@ -142,7 +225,17 @@ def rasgos(v: np.ndarray) -> dict:
         "asia": (hora >= 18) | (hora < 2), "londres": (hora >= 2) & (hora < 7),
         "ny_am": (hora >= 7) & (hora < 11), "ny_pm": (hora >= 11) & (hora < 17),
     }
-    return {"idx": idx, "lado": s, "atr": a, "F": {k: np.asarray(x, bool) for k, x in F.items()}}
+    # ── lo de la guia: zonas de marco mayor sin tocar, tendencia de H1/H4, premium/descuento ──
+    for seg, marco in ((3600, "h1"), (900, "m15")):
+        for nom, (sube, baja) in _zonas(v, seg).items():
+            F[f"{nom}_{marco}"] = lado(sube, baja)
+    h1, h4 = _tendencia(v, 3600)[idx] == s, _tendencia(v, 14400)[idx] == s
+    lo24, hi24 = _previo(l, 288, np.min), _previo(h, 288, np.max)
+    sitio = (c - lo24) / np.maximum(hi24 - lo24, 1e-9)
+    F |= {"h1_a_favor": h1, "h4_a_favor": h4, "h1_h4_a_favor": h1 & h4,
+          "extremo_dia": lado(sitio <= 0.25, sitio >= 0.75)}
+    return {"idx": idx, "lado": s, "atr": a, "F": {k: np.asarray(x, bool) for k, x in F.items()},
+            "conf": _confirmar(v, idx, s, a)}
 
 
 def resultado(v: np.ndarray, idx: np.ndarray, s: np.ndarray, a: np.ndarray,
@@ -214,34 +307,39 @@ def medir() -> dict:
     v = v[v["time"] >= v["time"][-1] - DIAS * 86400]
     R = rasgos(v)
     F, n = R["F"], len(R["idx"])
-    corte = int(n * 0.7)
+    # tres tramos en el tiempo: se busca en el primero, se filtra en el segundo y se confirma en el tercero
+    c1, c2 = int(n * 0.5), int(n * 0.75)
+    tramos = (slice(0, c1), slice(c1, c2), slice(c2, n))
     combos = [(k,) for k in F] + list(itertools.combinations(F, 2))
     buenas, sueltos, probadas, base = [], {}, 0, {}
-    for stop, obj in ESQUEMAS:
-        r = resultado(v, R["idx"], R["lado"], R["atr"], stop, obj)
-        vale = ~np.isnan(r)
-        base[f"{stop}/{obj}"] = {"r": round(float(r[vale].mean()), 3),
-                                 "acierta_pct": round(100 * float((r[vale] > 0).mean()), 1)}
-        for cb in combos:
-            m = vale.copy()
-            for k in cb:
-                m &= F[k]
-            probadas += 1
-            me, mv = m[:corte], m[corte:]
-            ne, nv = int(me.sum()), int(mv.sum())
-            if ne < MIN_ENT or nv < MIN_VAL:
-                continue
-            xe, xv = r[:corte][me], r[corte:][mv]
-            x = {"rasgos": list(cb), "stop_atr": stop, "obj_atr": obj, "n_ent": ne, "n_val": nv,
-                 "p_ent": round(100 * float((xe > 0).mean()), 1), "p_val": round(100 * float((xv > 0).mean()), 1),
-                 "r_ent": round(float(xe.mean()), 3), "r_val": round(float(xv.mean()), 3),
-                 "r_val_min": round(float(xv.mean() - 1.96 * xv.std() / np.sqrt(nv)), 3)}
-            if len(cb) == 1 and (stop, obj) == ESQUEMAS[0]:
-                sueltos[cb[0]] = x | {"frecuencia": round(100 * float(F[cb[0]].mean()), 1)}
-            # gana en lo viejo, gana en lo reciente, y el intervalo de lo reciente no toca el cero
-            if x["r_ent"] >= MIN_R and x["r_val"] >= MIN_R and x["r_val_min"] > 0:
-                buenas.append(x)
-    buenas.sort(key=lambda x: -min(x["r_ent"], x["r_val"]))
+    for entrada in ENTRADAS:
+        donde = R["idx"] if entrada == "toque" else np.where(R["conf"] >= 0, R["conf"], 0)
+        for stop, obj in ESQUEMAS:
+            r = resultado(v, donde, R["lado"], R["atr"], stop, obj)
+            vale = ~np.isnan(r) & ((R["conf"] >= 0) | (entrada == "toque"))
+            base[f"{entrada} {stop}/{obj}"] = {"n": int(vale.sum()), "r": round(float(r[vale].mean()), 3),
+                                               "acierta_pct": round(100 * float((r[vale] > 0).mean()), 1)}
+            for cb in combos:
+                m = vale.copy()
+                for k in cb:
+                    m &= F[k]
+                probadas += 1
+                xs = [r[t][m[t]] for t in tramos]
+                if len(xs[0]) < MIN_ENT or len(xs[1]) < MIN_VAL or len(xs[2]) < MIN_VAL:
+                    continue
+                reciente = np.r_[xs[1], xs[2]]
+                x = {"rasgos": list(cb), "entrada": entrada, "stop_atr": stop, "obj_atr": obj,
+                     "n_ent": len(xs[0]), "n_val": len(reciente),
+                     "p_val": round(100 * float((reciente > 0).mean()), 1),
+                     "r_ent": round(float(xs[0].mean()), 3), "r_val": round(float(reciente.mean()), 3),
+                     "r_filtro": round(float(xs[1].mean()), 3), "r_prueba": round(float(xs[2].mean()), 3),
+                     "r_val_min": round(float(reciente.mean() - 1.96 * reciente.std() / np.sqrt(len(reciente))), 3)}
+                if len(cb) == 1 and entrada == "toque" and (stop, obj) == ESQUEMAS[0]:
+                    sueltos[cb[0]] = x | {"frecuencia": round(100 * float(F[cb[0]].mean()), 1)}
+                # gana en los tres tramos y el intervalo de lo no visto no toca el cero
+                if min(x["r_ent"], x["r_filtro"], x["r_prueba"]) >= MIN_R and x["r_val_min"] > 0:
+                    buenas.append(x)
+    buenas.sort(key=lambda x: -min(x["r_ent"], x["r_filtro"], x["r_prueba"]))
 
     hoy = f"{dt.date.today()}"
     viejo = datos()
@@ -252,14 +350,13 @@ def medir() -> dict:
     caidas = [c for c in viejo.get("caidas", []) if c["regla"] not in ahora]
     caidas += [{"regla": k, "desde": x.get("desde"), "cayo": hoy} for k, x in antes.items() if k not in ahora]
     return {"medido": hoy, "dias": DIAS, "candidatos": n, "coste_atr": COSTE,
-            "entrada": f"al cierre de la vela de 5M que toca el extremo de {VENTANA * 5 // 60} h, a favor del rebote",
             "base": base, "probadas": probadas,
             "reglas": buenas[:12], "sueltos": sueltos, "caidas": caidas[-40:],
             "tamano_rebote": tamano_rebote(v), "regla_fija": regla_fija(v)}
 
 
 def clave(x: dict) -> str:
-    return "+".join(x["rasgos"]) + f"@{x['stop_atr']}/{x['obj_atr']}"
+    return "+".join(x["rasgos"]) + f"@{x.get('entrada', 'toque')}/{x['stop_atr']}/{x['obj_atr']}"
 
 
 def datos() -> dict:
@@ -278,9 +375,23 @@ def nombre(regla: dict) -> str:
     return " + ".join(NOMBRES.get(k, k) for k in regla["rasgos"])
 
 
-def cumple(F: dict, k: int) -> list[dict]:
-    """Reglas adoptadas que cumple el candidato k de unos `rasgos()` en vivo."""
-    return [x for x in datos().get("reglas", []) if all(F[r][k] for r in x["rasgos"])]
+def cumple(R: dict, k: int, entrada: str | None = None) -> list[dict]:
+    """Reglas adoptadas que cumple el candidato k de unos `rasgos()`. `entrada` filtra por tipo."""
+    return [x for x in datos().get("reglas", [])
+            if all(R["F"][r][k] for r in x["rasgos"]) and entrada in (None, x.get("entrada", "toque"))
+            and (x.get("entrada", "toque") == "toque" or R["conf"][k] >= 0)]
+
+
+def en_vivo(v: np.ndarray) -> list[tuple[dict, int]]:
+    """(regla, lado) que se disparan en la ULTIMA vela cerrada de `v` (hacen falta MINIMO_VELAS)."""
+    R = rasgos(v)
+    ult, out = len(v) - 1, []
+    for k in np.flatnonzero(R["idx"] >= ult - ESPERA_RUPTURA):
+        if R["idx"][k] == ult:
+            out += [(x, int(R["lado"][k])) for x in cumple(R, int(k), "toque")]
+        if R["conf"][k] == ult:
+            out += [(x, int(R["lado"][k])) for x in cumple(R, int(k), "ruptura")]
+    return out
 
 
 def texto() -> str:
@@ -288,19 +399,22 @@ def texto() -> str:
     if not d:
         return ""
     L = ["## Rebotes: lo que el investigador busco solo, y lo que aguanto la validacion",
-         f"Candidato = vela de 5M que toca el extremo de 2 h; entrada {d['entrada']}, coste {d['coste_atr']} ATR. "
-         f"Ultimos {d['dias']} dias, {d['candidatos']:,} candidatos, medido el {d['medido']}. Sin filtro: "
-         + "; ".join(f"stop/objetivo {k} ATR {x['r']:+.2f} R ({x['acierta_pct']:.0f} % ganan)" for k, x in d["base"].items())
-         + f". Se probaron {d['probadas']} hipotesis (un rasgo o dos, por esquema); adoptadas {len(d['reglas'])}: "
-         "solo las que ganan en el 70 % viejo y en el 30 % reciente con el intervalo sobre cero."]
+         f"Candidato = vela de 5M que toca el extremo de 2 h; a favor del rebote, coste {d['coste_atr']} ATR. Dos "
+         "entradas: «toque» (al cierre de esa vela) y «ruptura» (al cierre de la vela de 5M que rompe la estructura "
+         f"a favor, CHoCH). Ultimos {d['dias']} dias, {d['candidatos']:,} candidatos, medido el {d['medido']}. "
+         "Sin filtro (entrada stop/objetivo en ATR): "
+         + "; ".join(f"{k} {x['r']:+.2f} R" for k, x in d["base"].items())
+         + f". Se probaron {d['probadas']} hipotesis (un rasgo o dos, por entrada y esquema); adoptadas "
+         f"{len(d['reglas'])}: solo las que ganan en los tres tramos del tiempo (50/25/25 %) con el intervalo de lo "
+         "no visto sobre cero."]
     for x in d["reglas"]:
-        L.append(f"- {nombre(x)} · stop {x['stop_atr']} ATR, objetivo {x['obj_atr']} ATR: {x['r_val']:+.2f} R en datos "
-                 f"no vistos ({x['p_val']:.0f} % ganan, n={x['n_val']}); antes {x['r_ent']:+.2f} R (n={x['n_ent']}); "
-                 f"adoptada el {x['desde']}")
+        L.append(f"- {nombre(x)} · entrada «{x['entrada']}», stop {x['stop_atr']} ATR, objetivo {x['obj_atr']} ATR: "
+                 f"{x['r_val']:+.2f} R en datos no vistos ({x['p_val']:.0f} % ganan, n={x['n_val']}; ultimo tramo "
+                 f"{x['r_prueba']:+.2f}); busqueda {x['r_ent']:+.2f} R (n={x['n_ent']}); adoptada el {x['desde']}")
     if not d["reglas"]:
-        L.append("- NINGUNA regla pasa: comprar o vender el rebote en el extremo de 2 h, con entrada mecanica al "
-                 "cierre, pierde despues del spread con cualquier rasgo probado. Un rebote contra tendencia no es un "
-                 "setup por si solo; hace falta lo demas de la guia (zona de marco mayor, CHoCH, killzone).")
+        L.append("- NINGUNA regla pasa: comprar o vender el rebote en el extremo de 2 h pierde despues del spread "
+                 "con cualquier rasgo probado, tambien con zona de H1/15M, tendencia de H1/H4 y esperando el CHoCH. "
+                 "Un rebote no es un setup por si solo.")
     orden = sorted(d["sueltos"].items(), key=lambda kv: kv[1]["r_val"])
     L.append("Rasgo a rasgo (R en datos no vistos, stop 1 / objetivo 1,5 ATR) — peores: "
              + "; ".join(f"{NOMBRES[k]} {x['r_val']:+.2f}" for k, x in orden[:3]) + " — mejores: "

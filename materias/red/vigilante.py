@@ -81,13 +81,11 @@ def mirar(m5: np.ndarray, m15: np.ndarray, m15_nueva: bool) -> list[tuple[str, s
         t = d.get("tamano_rebote", {}).get("M5", {})
         out.append((f"XAUUSD: 5M da {NOM[s]} en contra de 15M ({c:.2f})",
                     f"mediana del movimiento contrario {t.get('p50', 3.1)} ATR = {c + s * t.get('p50', 3.1) * a:.2f}", None))
-    R = I.rasgos(m5)
-    if len(R["idx"]) and R["idx"][-1] == len(m5) - 1:
-        k, lado = len(R["idx"]) - 1, int(R["lado"][-1])
-        for x in I.cumple(R["F"], k)[:1]:
-            out.append((f"REBOTE {NOM[lado]} XAUUSD {c:.2f}",
-                        f"{I.nombre(x)}. Validada: {x['r_val']:+.2f} R, {x['p_val']:.0f} % ganan (n={x['n_val']}). "
-                        f"Stop {c - lado * x['stop_atr'] * a:.2f} · objetivo {c + lado * x['obj_atr'] * a:.2f}", True))
+    for x, lado in I.en_vivo(m5)[:2]:
+        out.append((f"REBOTE {NOM[lado]} XAUUSD {c:.2f}",
+                    f"{I.nombre(x)} · entrada «{x['entrada']}». Validada: {x['r_val']:+.2f} R, {x['p_val']:.0f} % ganan "
+                    f"(n={x['n_val']}). Stop {c - lado * x['stop_atr'] * a:.2f} · objetivo "
+                    f"{c + lado * x['obj_atr'] * a:.2f}", True))
     return out
 
 
@@ -116,7 +114,7 @@ def correr(una: bool = False) -> None:
         try:
             if mt5 is None:
                 mt5 = terminal.conectar()
-            m5, m15 = terminal.velas(mt5, "M5", 900), terminal.velas(mt5, "M15", 600)
+            m5, m15 = terminal.velas(mt5, "M5", I.MINIMO_VELAS), terminal.velas(mt5, "M15", 600)
             t5, t15 = int(m5["time"][-1]), int(m15["time"][-1])
             if t5 != ult5:
                 # la primera pasada solo toma referencia: no avisa de una vela vieja

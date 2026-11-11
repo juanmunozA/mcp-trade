@@ -85,7 +85,7 @@ def analizar(v: np.ndarray) -> dict:
         if len(ks):
             k = int(ks[-1])
             rasgos = [r for r, x in R["F"].items() if x[k]]
-            reglas = [I.clave(x) for x in I.cumple(R["F"], k)]
+            reglas = [I.clave(x) for x in I.cumple(R, k)]
         out.append({"hora_ny": f"{_ny(v['time'][p]):%H:%M}", "lado": "suelo" if s > 0 else "techo",
                     "precio": round(float(ext), 2), "atr": round(float(a[p]), 2), "mide_atr": round(float(mide), 1),
                     "en_extremo_2h": bool(len(ks)), "rasgos": rasgos, "avisado_por": reglas, "ut_tarde": tarde})
@@ -124,7 +124,7 @@ def correr() -> dict:
     from materias.red import terminal
     mt5 = terminal.conectar()
     try:
-        v = terminal.velas(mt5, "M5", 1500)
+        v = terminal.velas(mt5, "M5", I.MINIMO_VELAS)
     finally:
         mt5.shutdown()
     hoy = analizar(v)
@@ -146,9 +146,9 @@ def rellenar(n_dias: int = GUARDA) -> int:
     d = datos()
     dias = d.get("dias", {})
     for fin in cortes[-n_dias:]:
-        if fin < 1500:
+        if fin < I.MINIMO_VELAS:
             continue
-        x = analizar(v[fin - 1500:fin])
+        x = analizar(v[fin - I.MINIMO_VELAS:fin])
         dias.setdefault(x["fecha"], x["giros"])
     dias = dict(sorted(dias.items())[-GUARDA:])
     d = {"medido": max(dias), "giro_atr": GIRO, "resumen": resumir(dias), "dias": dias}

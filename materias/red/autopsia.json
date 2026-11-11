@@ -35,6 +35,16 @@
     "en_toques_pct": 38.8,
     "veces": 1.53
    },
+   "ob_h1": {
+    "en_giros_pct": 4.4,
+    "en_toques_pct": 3.1,
+    "veces": 1.43
+   },
+   "ob_m15": {
+    "en_giros_pct": 8.8,
+    "en_toques_pct": 6.8,
+    "veces": 1.29
+   },
    "rsi_medio": {
     "en_giros_pct": 61.9,
     "en_toques_pct": 49.9,
@@ -49,6 +59,11 @@
     "en_giros_pct": 23.9,
     "en_toques_pct": 19.9,
     "veces": 1.2
+   },
+   "fvg_m15": {
+    "en_giros_pct": 5.9,
+    "en_toques_pct": 5.2,
+    "veces": 1.14
    },
    "barrida_dia": {
     "en_giros_pct": 20.6,
@@ -65,6 +80,11 @@
     "en_toques_pct": 33.6,
     "veces": 1.07
    },
+   "h4_a_favor": {
+    "en_giros_pct": 48.7,
+    "en_toques_pct": 45.5,
+    "veces": 1.07
+   },
    "ema200_a_favor": {
     "en_giros_pct": 24.8,
     "en_toques_pct": 23.3,
@@ -75,9 +95,29 @@
     "en_toques_pct": 52.3,
     "veces": 1.05
    },
+   "extremo_dia": {
+    "en_giros_pct": 47.1,
+    "en_toques_pct": 46.0,
+    "veces": 1.02
+   },
+   "h1_h4_a_favor": {
+    "en_giros_pct": 32.5,
+    "en_toques_pct": 32.6,
+    "veces": 1.0
+   },
+   "h1_a_favor": {
+    "en_giros_pct": 40.2,
+    "en_toques_pct": 40.7,
+    "veces": 0.99
+   },
    "ext_3atr": {
     "en_giros_pct": 34.1,
     "en_toques_pct": 35.3,
+    "veces": 0.97
+   },
+   "fvg_h1": {
+    "en_giros_pct": 4.0,
+    "en_toques_pct": 4.1,
     "veces": 0.97
    },
    "ext_2atr": {
@@ -132,7 +172,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -192,7 +233,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -216,7 +260,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_h1",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -237,7 +283,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -275,7 +324,9 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -295,7 +346,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "ob_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -320,7 +374,10 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -355,7 +412,9 @@
      "cierra_a_favor",
      "rsi_medio",
      "vela_grande",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -374,7 +433,8 @@
      "doble",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -398,7 +458,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -419,7 +481,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -438,7 +501,9 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -461,7 +526,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -484,7 +550,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -507,7 +574,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -533,7 +601,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -558,7 +630,10 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "fvg_m15",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -580,7 +655,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -604,7 +682,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -630,7 +709,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -652,7 +735,8 @@
      "recupera",
      "rsi_medio",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -676,7 +760,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -700,7 +787,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -753,7 +841,12 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -791,7 +884,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -840,7 +934,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -860,7 +956,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "fvg_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -908,7 +1005,11 @@
      "mecha75",
      "cierra_a_favor",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "fvg_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -966,7 +1067,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1003,7 +1105,8 @@
      "rsi_medio",
      "vol_bajo",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1036,7 +1139,8 @@
      "doble",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1060,7 +1164,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1097,7 +1204,9 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1125,7 +1234,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_h1",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1146,7 +1257,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1169,7 +1281,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1189,7 +1302,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1228,7 +1342,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1250,7 +1365,8 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1273,7 +1389,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "fvg_m15",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1332,7 +1450,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1358,7 +1479,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1396,7 +1518,8 @@
      "barrida_dia",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1420,7 +1543,11 @@
      "rsi_medio",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1439,7 +1566,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1479,7 +1607,11 @@
      "rsi_medio",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1498,7 +1630,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1536,7 +1669,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1572,7 +1706,8 @@
      "recupera",
      "barrida_4h",
      "barrida_dia",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1596,7 +1731,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1618,7 +1756,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1643,7 +1782,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1667,7 +1809,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1687,7 +1830,10 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1709,7 +1855,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1760,7 +1907,8 @@
      "cierra_a_favor",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1783,7 +1931,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1808,7 +1960,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1828,7 +1981,13 @@
      "barrida_dia",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1869,7 +2028,11 @@
      "mecha75",
      "cierra_a_favor",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1894,7 +2057,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "fvg_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1918,7 +2082,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -1953,7 +2121,11 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2003,7 +2175,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2043,7 +2218,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2076,7 +2255,9 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2114,7 +2295,9 @@
      "barrida_dia",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2134,7 +2317,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2153,7 +2337,9 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2177,7 +2363,8 @@
      "barrida_dia",
      "rsi_medio",
      "vela_grande",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2212,7 +2399,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2236,7 +2424,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2274,7 +2464,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2299,7 +2493,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2321,7 +2516,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2346,7 +2542,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "ob_h1",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2383,7 +2581,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2406,7 +2605,10 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2425,7 +2627,8 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2441,7 +2644,10 @@
     "mide_atr": 3.4,
     "en_extremo_2h": true,
     "rasgos": [
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2490,7 +2696,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2536,7 +2745,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2581,7 +2793,9 @@
      "barrida_4h",
      "vela_grande",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2609,7 +2823,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2631,7 +2849,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2670,7 +2890,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2706,7 +2927,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_h1",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2726,7 +2950,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2747,7 +2974,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2771,7 +2999,8 @@
      "recupera",
      "rsi_medio",
      "vela_grande",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2793,7 +3022,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2817,7 +3049,9 @@
      "rsi_medio",
      "vol_2x",
      "vela_grande",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2842,7 +3076,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2864,7 +3101,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2884,7 +3123,10 @@
      "barrida_4h",
      "rsi_medio",
      "vela_grande",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2928,7 +3170,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2950,7 +3193,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2970,7 +3216,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -2990,7 +3237,10 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3012,7 +3262,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "fvg_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3032,7 +3284,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3070,7 +3325,8 @@
      "rsi_medio",
      "vol_bajo",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3117,7 +3373,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3137,7 +3394,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3171,7 +3430,11 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "asia"
+     "asia",
+     "ob_h1",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3213,7 +3476,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3238,7 +3502,12 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_h1",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3265,7 +3534,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3286,7 +3556,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3307,7 +3580,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3346,7 +3620,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3370,7 +3645,10 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3391,7 +3669,8 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3432,7 +3711,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3452,7 +3732,10 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3501,7 +3784,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3540,7 +3826,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3574,7 +3864,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3595,7 +3887,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3619,7 +3912,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3644,7 +3938,9 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "ob_h1",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3669,7 +3965,12 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3693,7 +3994,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3728,7 +4030,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "vela_grande",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3753,7 +4056,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3775,7 +4079,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3802,7 +4109,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "fvg_m15",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3826,7 +4137,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3851,7 +4163,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3872,7 +4185,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3893,7 +4207,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3915,7 +4232,8 @@
      "rsi_medio",
      "vol_2x",
      "vela_grande",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3950,7 +4268,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -3977,7 +4296,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4000,7 +4322,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4019,7 +4342,10 @@
      "barrida_4h",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4057,7 +4383,10 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4084,7 +4413,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4105,7 +4435,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4131,7 +4464,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4154,7 +4488,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4174,7 +4511,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4196,7 +4534,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4220,7 +4561,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4242,7 +4584,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4283,7 +4628,10 @@
      "recupera",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4307,7 +4655,8 @@
      "barrida_dia",
      "rsi_medio",
      "vela_grande",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4328,7 +4677,10 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "ob_h1",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4351,7 +4703,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4373,7 +4726,9 @@
      "vol_bajo",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4417,7 +4772,10 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4454,7 +4812,12 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4496,7 +4859,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4534,7 +4899,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4577,7 +4944,10 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4600,7 +4970,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4621,7 +4992,10 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4700,7 +5074,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4738,7 +5114,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4761,7 +5138,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4780,7 +5160,8 @@
      "recupera",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4805,7 +5186,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4843,7 +5227,11 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4866,7 +5254,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4889,7 +5278,10 @@
      "vol_bajo",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4911,7 +5303,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4938,7 +5331,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -4977,7 +5374,10 @@
      "vol_2x",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5002,7 +5402,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5041,7 +5442,8 @@
      "rsi_extremo",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5065,7 +5467,10 @@
      "vol_2x",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5084,7 +5489,9 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "fvg_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5105,7 +5512,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5127,7 +5537,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5148,7 +5559,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5171,7 +5585,8 @@
      "barrida_4h",
      "rsi_medio",
      "vela_grande",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5195,7 +5610,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5219,7 +5638,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5258,7 +5678,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5283,7 +5704,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5356,7 +5781,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5390,7 +5819,12 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5438,7 +5872,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5472,7 +5908,8 @@
      "mecha75",
      "cierra_a_favor",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5508,7 +5945,8 @@
      "barrida_dia",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5531,7 +5969,10 @@
      "barrida_4h",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5582,7 +6023,13 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5605,7 +6052,10 @@
      "cierra_a_favor",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5656,7 +6106,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5681,7 +6134,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5705,7 +6160,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5752,7 +6210,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5774,7 +6235,8 @@
      "recupera",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5796,7 +6258,8 @@
      "recupera",
      "barrida_4h",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5821,7 +6284,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5842,7 +6306,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5864,7 +6331,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5890,7 +6358,8 @@
      "barrida_dia",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5910,7 +6379,11 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5932,7 +6405,10 @@
      "barrida_dia",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5957,7 +6433,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5977,7 +6456,8 @@
      "mecha75",
      "cierra_a_favor",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -5999,7 +6479,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6021,7 +6504,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6044,7 +6528,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6068,7 +6555,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6093,7 +6581,10 @@
      "rsi_medio",
      "vol_bajo",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6110,7 +6601,8 @@
     "en_extremo_2h": true,
     "rasgos": [
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6133,7 +6625,11 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6155,7 +6651,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6178,7 +6675,10 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6224,7 +6724,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6265,7 +6769,10 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6289,7 +6796,8 @@
      "barrida_dia",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6328,7 +6836,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6352,7 +6861,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_h1",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6393,7 +6906,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6420,7 +6935,9 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6441,7 +6958,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6465,7 +6983,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6570,7 +7091,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6596,7 +7120,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6633,7 +7158,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6668,7 +7194,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6691,7 +7218,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6717,7 +7245,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6754,7 +7285,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6789,7 +7323,10 @@
      "cierra_a_favor",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6835,7 +7372,10 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6880,7 +7420,8 @@
      "barrida_4h",
      "barrida_dia",
      "rsi_medio",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6901,7 +7442,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6921,7 +7465,8 @@
     "rasgos": [
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6939,7 +7484,11 @@
     "rasgos": [
      "rsi_extremo",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -6974,7 +7523,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7014,7 +7564,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7033,7 +7584,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7135,7 +7689,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7159,7 +7714,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7181,7 +7737,10 @@
      "vol_bajo",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7219,7 +7778,10 @@
      "vol_2x",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7240,7 +7802,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "fvg_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7261,7 +7825,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7304,7 +7870,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7343,7 +7913,8 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7365,7 +7936,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7388,7 +7962,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7439,7 +8014,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7478,7 +8057,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7517,7 +8098,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7542,7 +8124,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7585,7 +8170,10 @@
      "cierra_a_favor",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7609,7 +8197,8 @@
      "barrida_dia",
      "rsi_medio",
      "vela_grande",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7632,7 +8221,10 @@
      "barrida_4h",
      "rsi_medio",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7655,7 +8247,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7692,7 +8285,8 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7728,7 +8322,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7755,7 +8350,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7778,7 +8377,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7816,7 +8416,8 @@
      "barrida_dia",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7852,7 +8453,8 @@
      "barrida_dia",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7879,7 +8481,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7900,7 +8506,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7934,7 +8541,8 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7958,7 +8566,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -7996,7 +8607,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8044,7 +8658,11 @@
      "barrida_dia",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8086,7 +8704,11 @@
     "rasgos": [
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8132,7 +8754,11 @@
      "vol_bajo",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8178,7 +8804,11 @@
      "doble",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8238,7 +8868,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8277,7 +8908,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8301,7 +8933,12 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8323,7 +8960,8 @@
      "rsi_extremo",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8403,7 +9041,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8422,7 +9063,8 @@
      "recupera",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8475,7 +9117,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8513,7 +9158,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8536,7 +9184,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8557,7 +9206,11 @@
      "cierra_a_favor",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8595,7 +9248,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8635,7 +9291,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8656,7 +9316,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8711,7 +9372,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8736,7 +9398,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8759,7 +9424,8 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8779,7 +9445,10 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8821,7 +9490,11 @@
     "rasgos": [
      "doble",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8845,7 +9518,11 @@
      "recupera",
      "rsi_medio",
      "vela_grande",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8933,7 +9610,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8955,7 +9635,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -8993,7 +9674,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9044,7 +9726,10 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9066,7 +9751,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9088,7 +9776,8 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9109,7 +9798,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9145,7 +9838,9 @@
      "barrida_dia",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9232,7 +9927,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9270,7 +9967,9 @@
      "barrida_dia",
      "rsi_medio",
      "tres_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9295,7 +9994,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9322,7 +10022,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9357,7 +10058,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9378,7 +10080,9 @@
      "barrida_dia",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9402,7 +10106,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "ob_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9438,7 +10144,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9476,7 +10183,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9510,7 +10218,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9546,7 +10256,8 @@
      "recupera",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9568,7 +10279,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9592,7 +10305,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9615,7 +10331,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_h1",
+     "fvg_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9639,7 +10358,11 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9657,7 +10380,8 @@
     "rasgos": [
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9716,7 +10440,11 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9740,7 +10468,8 @@
      "barrida_dia",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9761,7 +10490,13 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1",
+     "ob_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9788,7 +10523,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9812,7 +10548,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9837,7 +10576,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9875,7 +10615,8 @@
      "barrida_dia",
      "rsi_medio",
      "vela_grande",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9895,7 +10636,9 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9939,7 +10682,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9976,7 +10723,8 @@
      "barrida_4h",
      "rsi_medio",
      "vela_grande",
-     "londres"
+     "londres",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -9999,7 +10747,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10061,7 +10810,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10084,7 +10834,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10111,7 +10862,8 @@
      "rsi_medio",
      "vol_bajo",
      "vela_grande",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10143,7 +10895,8 @@
     "rasgos": [
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10167,7 +10920,12 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10191,7 +10949,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10213,7 +10973,10 @@
      "vol_bajo",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10233,7 +10996,9 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10259,7 +11024,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10296,7 +11062,8 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10324,7 +11091,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10350,7 +11121,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10374,7 +11146,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10412,7 +11187,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10430,7 +11208,8 @@
     "rasgos": [
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10465,7 +11244,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10489,7 +11270,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10510,7 +11294,8 @@
      "doble",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10534,7 +11319,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10557,7 +11346,8 @@
      "barrida_4h",
      "barrida_dia",
      "vela_grande",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10591,7 +11381,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10617,7 +11408,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10637,7 +11431,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10663,7 +11458,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10688,7 +11486,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10728,7 +11527,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10766,7 +11566,8 @@
      "barrida_dia",
      "vela_grande",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10806,7 +11607,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10831,7 +11633,11 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10852,7 +11658,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "vela_grande",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10878,7 +11685,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10928,7 +11739,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -10952,7 +11764,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11004,7 +11820,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11040,7 +11857,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11065,7 +11883,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11088,7 +11909,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11126,7 +11948,8 @@
      "barrida_dia",
      "rsi_medio",
      "vela_grande",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11147,7 +11970,11 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11171,7 +11998,8 @@
      "rsi_medio",
      "vol_2x",
      "vela_grande",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11208,7 +12036,8 @@
      "barrida_dia",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11229,7 +12058,11 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11270,7 +12103,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11340,7 +12177,9 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11428,7 +12267,14 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "ob_h1",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11472,7 +12318,10 @@
      "barrida_4h",
      "rsi_medio",
      "vela_grande",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11492,7 +12341,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11512,7 +12364,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11549,7 +12404,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11581,7 +12439,9 @@
     "rasgos": [
      "barrida_4h",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11622,7 +12482,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11647,7 +12509,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11672,7 +12535,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11713,7 +12578,9 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11756,7 +12623,12 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11775,7 +12647,8 @@
      "cierra_a_favor",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11798,7 +12671,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11822,7 +12697,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11846,7 +12722,9 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11885,7 +12763,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11906,7 +12785,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11928,7 +12808,9 @@
      "rsi_medio",
      "vol_bajo",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "fvg_m15",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11951,7 +12833,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -11970,7 +12853,8 @@
      "doble",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12007,7 +12891,8 @@
      "barrida_4h",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12042,7 +12927,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12064,7 +12951,9 @@
      "recupera",
      "barrida_4h",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12099,7 +12988,8 @@
      "barrida_4h",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12121,7 +13011,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12156,7 +13047,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12195,7 +13087,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12236,7 +13132,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12257,7 +13154,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12297,7 +13197,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12320,7 +13223,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12356,7 +13260,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12376,7 +13281,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12398,7 +13306,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12420,7 +13329,10 @@
      "rsi_medio",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12444,7 +13356,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12480,7 +13393,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12508,7 +13422,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12550,7 +13467,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12576,7 +13497,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12635,7 +13557,10 @@
      "recupera",
      "rsi_medio",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12659,7 +13584,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12682,7 +13608,10 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12705,7 +13634,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12743,7 +13673,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12764,7 +13695,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12792,7 +13726,8 @@
      "vol_2x",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12827,7 +13762,8 @@
      "barrida_dia",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12866,7 +13802,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12906,7 +13843,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12932,7 +13870,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12954,7 +13895,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -12975,7 +13917,9 @@
      "cierra_a_favor",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13019,7 +13963,9 @@
      "vol_bajo",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13042,7 +13988,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13063,7 +14010,9 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13104,7 +14053,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13143,7 +14095,9 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13168,7 +14122,10 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13204,7 +14161,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "fvg_h1",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13229,7 +14188,9 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13250,7 +14211,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13275,7 +14237,9 @@
      "rsi_extremo",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13310,7 +14274,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13334,7 +14299,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13355,7 +14323,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13391,7 +14360,8 @@
      "rsi_medio",
      "vol_2x",
      "vela_grande",
-     "asia"
+     "asia",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13413,7 +14383,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13451,7 +14424,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13497,7 +14473,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13519,7 +14498,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13544,7 +14524,12 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13580,7 +14565,12 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13622,7 +14612,10 @@
      "rsi_extremo",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "fvg_m15",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13645,7 +14638,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13717,7 +14713,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13738,7 +14738,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13806,7 +14807,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13841,7 +14843,8 @@
      "rsi_medio",
      "vol_bajo",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13867,7 +14870,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13890,7 +14896,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13911,7 +14918,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13934,7 +14944,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -13956,7 +14967,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14032,7 +15046,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14070,7 +15088,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14107,7 +15126,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14142,7 +15163,9 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14164,7 +15187,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14186,7 +15210,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14205,7 +15232,8 @@
      "mecha60",
      "doble",
      "rsi_medio",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14229,7 +15257,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14251,7 +15282,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14276,7 +15308,12 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14297,7 +15334,8 @@
      "recupera",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14333,7 +15371,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14371,7 +15410,8 @@
      "barrida_dia",
      "rsi_medio",
      "vela_grande",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14412,7 +15452,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14430,7 +15471,9 @@
     "rasgos": [
      "barrida_4h",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14455,7 +15498,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "fvg_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14480,7 +15524,9 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14505,7 +15551,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14528,7 +15575,13 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "ob_h1",
+     "fvg_m15",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14551,7 +15604,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14572,7 +15627,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14616,7 +15673,11 @@
      "vol_bajo",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14660,7 +15721,9 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14680,7 +15743,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14707,7 +15771,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14756,7 +15822,8 @@
      "cierra_a_favor",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14780,7 +15847,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14807,7 +15877,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14828,7 +15899,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14854,7 +15928,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14876,7 +15951,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14935,7 +16013,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_h1"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14957,7 +16036,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -14982,7 +16063,9 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "ob_h1",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15033,7 +16116,11 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15079,7 +16166,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15125,7 +16215,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15147,7 +16240,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15172,7 +16266,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15193,7 +16290,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15215,7 +16313,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15326,7 +16427,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15347,7 +16451,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15370,7 +16475,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15404,7 +16513,10 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15448,7 +16560,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15490,7 +16604,12 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15529,7 +16648,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15552,7 +16673,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15575,7 +16697,9 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15613,7 +16737,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15637,7 +16763,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15686,7 +16813,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15710,7 +16839,9 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15736,7 +16867,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15761,7 +16894,9 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15786,7 +16921,9 @@
      "vela_grande",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15809,7 +16946,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15842,7 +16980,9 @@
      "doble",
      "vela_grande",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15881,7 +17021,10 @@
      "barrida_4h",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15903,7 +17046,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15923,7 +17067,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15959,7 +17106,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -15982,7 +17130,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16008,7 +17157,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16043,7 +17193,9 @@
      "cierra_a_favor",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16066,7 +17218,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16106,7 +17261,8 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16127,7 +17283,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16164,7 +17321,9 @@
      "barrida_4h",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16190,7 +17349,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16211,7 +17373,8 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16235,7 +17398,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16270,7 +17436,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16308,7 +17478,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16345,7 +17519,12 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16369,7 +17548,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16395,7 +17575,11 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16470,7 +17654,9 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16491,7 +17677,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16517,7 +17704,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16570,7 +17758,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16623,7 +17812,9 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16644,7 +17835,9 @@
      "cierra_a_favor",
      "rsi_medio",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "fvg_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16665,7 +17858,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16688,7 +17882,10 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16734,7 +17931,9 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16757,7 +17956,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16795,7 +17995,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_h1",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16830,7 +18032,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16855,7 +18058,12 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "ob_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16892,7 +18100,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16937,7 +18148,10 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -16978,7 +18192,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17014,7 +18231,8 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17038,7 +18256,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17063,7 +18282,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17123,7 +18343,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17148,7 +18369,11 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17213,7 +18438,11 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17239,7 +18468,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17291,7 +18521,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17315,7 +18548,8 @@
      "barrida_4h",
      "rsi_medio",
      "vela_grande",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17354,7 +18588,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17379,7 +18614,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17400,7 +18639,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17421,7 +18661,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17461,7 +18704,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17483,7 +18730,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17507,7 +18755,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17529,7 +18779,8 @@
      "recupera",
      "barrida_4h",
      "vela_grande",
-     "ny_am"
+     "ny_am",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17556,7 +18807,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17581,7 +18833,10 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17605,7 +18860,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17644,7 +18900,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17666,7 +18923,13 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "ob_h1",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17691,7 +18954,8 @@
      "barrida_4h",
      "vol_bajo",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17713,7 +18977,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17734,7 +19001,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17770,7 +19038,8 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17794,7 +19063,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17815,7 +19087,8 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17839,7 +19112,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17873,7 +19150,11 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17899,7 +19180,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17923,7 +19205,9 @@
      "rsi_medio",
      "vol_2x",
      "vela_grande",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17945,7 +19229,9 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -17968,7 +19254,11 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18007,7 +19297,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18030,7 +19324,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18050,7 +19345,9 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18075,7 +19372,8 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18096,7 +19394,10 @@
      "cierra_a_favor",
      "rsi_medio",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18131,7 +19432,9 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18156,7 +19459,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18179,7 +19483,10 @@
      "cierra_a_favor",
      "rsi_medio",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18202,7 +19509,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18220,7 +19528,10 @@
     "rasgos": [
      "rsi_medio",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18260,7 +19571,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "ob_m15",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18283,7 +19597,8 @@
      "barrida_4h",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18304,7 +19619,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18324,7 +19640,8 @@
      "barrida_4h",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18387,7 +19704,11 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18424,7 +19745,9 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18452,7 +19775,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18474,7 +19798,10 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "fvg_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18496,7 +19823,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18516,7 +19844,9 @@
      "vela_grande",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18536,7 +19866,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18557,7 +19890,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18594,7 +19929,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18618,7 +19955,10 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18642,7 +19982,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18664,7 +20005,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18686,7 +20030,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "ob_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18708,7 +20054,8 @@
      "recupera",
      "rsi_medio",
      "vela_grande",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18732,7 +20079,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18772,7 +20120,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "ob_m15",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18812,7 +20163,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18839,7 +20191,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18880,7 +20235,10 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18914,7 +20272,10 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18940,7 +20301,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18976,7 +20338,8 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -18998,7 +20361,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19022,7 +20387,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19046,7 +20412,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19083,7 +20451,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19108,7 +20478,8 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19132,7 +20503,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19218,7 +20591,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19239,7 +20613,11 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19262,7 +20640,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19285,7 +20664,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19308,7 +20690,8 @@
      "barrida_4h",
      "barrida_dia",
      "vela_grande",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19332,7 +20715,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19377,7 +20764,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19444,7 +20834,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19478,7 +20872,9 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19529,7 +20925,8 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19567,7 +20964,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "ob_h1"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19618,7 +21016,11 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19639,7 +21041,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19659,7 +21062,11 @@
      "vela_grande",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19703,7 +21110,9 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19779,7 +21188,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19821,7 +21234,10 @@
      "vol_2x",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19859,7 +21275,9 @@
      "barrida_dia",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19898,7 +21316,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19926,7 +21345,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19947,7 +21369,8 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19972,7 +21395,12 @@
      "vela_grande",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -19995,7 +21423,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20018,7 +21449,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20057,7 +21489,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20082,7 +21515,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20118,7 +21554,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20166,7 +21606,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "fvg_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20187,7 +21630,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20223,7 +21669,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20243,7 +21692,8 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20267,7 +21717,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20287,7 +21738,9 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20310,7 +21763,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20333,7 +21787,8 @@
      "barrida_dia",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20367,7 +21822,8 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20390,7 +21846,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "ob_h1",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20411,7 +21869,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20430,7 +21891,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20452,7 +21914,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20530,7 +21995,11 @@
      "barrida_4h",
      "ut_en_contra",
      "ext_2atr",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20564,7 +22033,8 @@
      "barrida_dia",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20588,7 +22058,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20616,7 +22089,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20638,7 +22112,10 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20659,7 +22136,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20683,7 +22161,10 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20708,7 +22189,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20731,7 +22213,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20755,7 +22240,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20790,7 +22276,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20830,7 +22317,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20869,7 +22357,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20892,7 +22381,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20911,7 +22403,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20938,7 +22431,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -20975,7 +22471,9 @@
      "barrida_4h",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21021,7 +22519,9 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21044,7 +22544,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21065,7 +22567,9 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21085,7 +22589,10 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21106,7 +22613,9 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21140,7 +22649,9 @@
      "barrida_dia",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21160,7 +22671,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21188,7 +22700,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21224,7 +22739,8 @@
      "barrida_4h",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21247,7 +22763,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21286,7 +22804,9 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21309,7 +22829,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21331,7 +22854,8 @@
      "rsi_medio",
      "vela_grande",
      "tres_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21370,7 +22894,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21395,7 +22920,10 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21433,7 +22961,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21469,7 +23000,10 @@
      "rsi_medio",
      "tres_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21504,7 +23038,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21526,7 +23064,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21547,7 +23086,11 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21572,7 +23115,12 @@
      "barrida_4h",
      "rsi_medio",
      "vela_grande",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21614,7 +23162,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21638,7 +23189,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21725,7 +23277,10 @@
      "recupera",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21746,7 +23301,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21768,7 +23324,9 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21801,7 +23359,9 @@
      "recupera",
      "barrida_4h",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21850,7 +23410,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21887,7 +23449,8 @@
      "vol_bajo",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21908,7 +23471,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21936,7 +23502,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -21972,7 +23539,8 @@
      "rsi_medio",
      "vol_2x",
      "vela_grande",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22009,7 +23577,8 @@
      "vol_2x",
      "vela_grande",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22034,7 +23603,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22059,7 +23631,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22083,7 +23656,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22106,7 +23682,8 @@
      "barrida_4h",
      "rsi_medio",
      "vela_grande",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22142,7 +23719,8 @@
      "rsi_medio",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22165,7 +23743,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22200,7 +23781,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22219,7 +23803,8 @@
      "doble",
      "rsi_medio",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22243,7 +23828,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "fvg_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22267,7 +23856,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22294,7 +23886,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22331,7 +23924,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22353,7 +23947,10 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22391,7 +23988,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22412,7 +24013,8 @@
      "cierra_a_favor",
      "rsi_medio",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22435,7 +24037,10 @@
      "rsi_medio",
      "vela_grande",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22458,7 +24063,8 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22480,7 +24086,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22500,7 +24107,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22556,7 +24165,10 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22590,7 +24202,9 @@
      "recupera",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22616,7 +24230,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22644,7 +24259,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22688,7 +24305,12 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "fvg_h1",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22713,7 +24335,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22737,7 +24360,11 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "londres"
+     "londres",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22758,7 +24385,8 @@
      "barrida_4h",
      "barrida_dia",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22780,7 +24408,13 @@
      "ext_2atr",
      "ext_3atr",
      "ema200_a_favor",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "fvg_m15",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22803,7 +24437,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22827,7 +24464,8 @@
      "barrida_dia",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22847,7 +24485,10 @@
      "tres_en_contra",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22873,7 +24514,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22910,7 +24552,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22932,7 +24575,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22951,7 +24597,8 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -22974,7 +24621,10 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23001,7 +24651,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23023,7 +24674,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23060,7 +24714,10 @@
      "vela_grande",
      "ut_en_contra",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23079,7 +24736,8 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23098,7 +24756,10 @@
      "barrida_4h",
      "ut_en_contra",
      "ext_2atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23141,7 +24802,11 @@
      "cierra_a_favor",
      "rsi_medio",
      "vela_grande",
-     "londres"
+     "londres",
+     "ob_h1",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23184,7 +24849,12 @@
      "barrida_4h",
      "vela_grande",
      "ut_en_contra",
-     "ny_am"
+     "ny_am",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23209,7 +24879,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "ob_h1",
+     "ob_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23230,7 +24902,11 @@
      "tres_en_contra",
      "ut_en_contra",
      "ext_2atr",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23279,7 +24955,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23301,7 +24980,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "fvg_m15"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23325,7 +25005,12 @@
      "rsi_medio",
      "tres_en_contra",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "ob_h1",
+     "ob_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23401,7 +25086,11 @@
      "rsi_medio",
      "vol_bajo",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23460,7 +25149,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23484,7 +25174,9 @@
      "barrida_dia",
      "tres_en_contra",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23506,7 +25198,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23544,7 +25237,9 @@
      "barrida_4h",
      "rsi_medio",
      "ut_en_contra",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23566,7 +25261,8 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23594,7 +25290,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "asia"
+     "asia",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23641,7 +25339,12 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "londres"
+     "londres",
+     "ob_h1",
+     "fvg_m15",
+     "ob_m15",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23663,7 +25366,8 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h1_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23688,7 +25392,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_am"
+     "ny_am",
+     "h4_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23708,7 +25414,9 @@
      "barrida_4h",
      "vela_grande",
      "ut_en_contra",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23731,7 +25439,8 @@
      "rsi_medio",
      "vela_grande",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23769,7 +25478,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "ob_m15",
+     "h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23819,7 +25530,11 @@
      "mecha75",
      "cierra_a_favor",
      "rsi_medio",
-     "asia"
+     "asia",
+     "fvg_m15",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23888,7 +25603,9 @@
      "ut_en_contra",
      "ext_2atr",
      "ext_3atr",
-     "ny_pm"
+     "ny_pm",
+     "fvg_h1",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23912,7 +25629,10 @@
      "rsi_medio",
      "ut_en_contra",
      "ema200_a_favor",
-     "ny_pm"
+     "ny_pm",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23949,7 +25669,10 @@
      "ut_en_contra",
      "ext_2atr",
      "ema200_a_favor",
-     "asia"
+     "asia",
+     "h1_a_favor",
+     "h4_a_favor",
+     "h1_h4_a_favor"
     ],
     "avisado_por": [],
     "ut_tarde": {
@@ -23972,7 +25695,8 @@
      "barrida_4h",
      "rsi_medio",
      "vol_2x",
-     "asia"
+     "asia",
+     "extremo_dia"
     ],
     "avisado_por": [],
     "ut_tarde": {
