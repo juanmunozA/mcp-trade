@@ -11,10 +11,22 @@
 //| señal puede aparecer y desaparecer.                               |
 //| v3: niveles del rebote del ultimo impulso con la probabilidad de  |
 //| llegar a cada uno (materias/red/largo_rebote.py, 5M/15M 2022-26). |
+//| v4: aviso temprano. En una vela grande la señal de cierre llega   |
+//| cuando el movimiento ya se fue. Con AvisoTemprano, avisa DENTRO   |
+//| de la vela en cuanto el precio pasa la linea por MargenTemprano   |
+//| ATR y pone «Buy?» / «Sell?». Medido con velas de 1M (2025-26):    |
+//| margen 0 -> se confirma al cierre el 51 %; 0,25 -> 73 %; 0,5 ->   |
+//| 86 %; 1 -> 94 %. Con 0,25 coge todas las velas grandes.           |
+//| v5: los valores por defecto son la configuracion CON VENTAJA      |
+//| MEDIDA (materias/red/ventaja.py, 288 probadas, 2019-2026 en tres  |
+//| tramos): grafico de 30M, a=3, ATR 10, a favor de la EMA 200 y de  |
+//| la EMA 50 de H4, y SALIR en la señal contraria («Salir»). PF 1,27 |
+//| / 1,27 / 1,44; gana ~42 % de las veces: no lleva objetivo.        |
+//| El de TradingView (a=1, ATR 14, todas las señales) pierde.        |
 //+------------------------------------------------------------------+
 #property copyright   "MCP Trade"
-#property version     "3.00"
-#property description "UT Bot con Heikin Ashi y filtro EMA 200 (medido en XAUUSD 15M)"
+#property version     "5.00"
+#property description "UT Bot con filtro de tendencia. Por defecto: lo medido con ventaja en XAUUSD 30M"
 #property indicator_chart_window
 #property indicator_buffers 12
 #property indicator_plots   5
@@ -43,17 +55,20 @@
 #property indicator_color5  clrGold
 #property indicator_style5  STYLE_DOT
 
-input double ClaveA        = 1.0;   // Key value (sensibilidad). Medido: 2 da menos señales y mejores
-input int    PeriodoATR    = 14;    // Periodo del ATR
+input double ClaveA        = 3.0;   // Key value (sensibilidad). Medido en 30M: 3
+input int    PeriodoATR    = 10;    // Periodo del ATR
 input bool   HeikinAshi    = false; // Señales con cierre Heikin Ashi
 input int    PeriodoEMA    = 200;   // EMA de tendencia
-input bool   SoloFiltradas = false; // Ocultar las que van contra la EMA (si no, salen apagadas)
+input bool   FiltroH4      = true;  // Exigir tambien la EMA 50 de H4 a favor
+input bool   SoloFiltradas = true;  // Las que van contra el filtro no son entrada: salen como «Salir»
 input bool   ColorearVelas = true;  // Velas verdes/rojas como el original
 input bool   MostrarLinea  = false; // Dibujar la linea del trailing stop
 input bool   MostrarEMA    = false; // Dibujar la EMA 200
 input bool   Alertas       = true;  // Ventana de alerta al cerrar la vela
 input bool   AlertarTodas  = false; // Alertar tambien las que van contra la EMA
 input bool   AlMovil       = false; // Notificacion push al movil (MetaQuotes ID)
+input bool   AvisoTemprano = true;  // Avisar dentro de la vela, sin esperar al cierre («Buy?» / «Sell?»)
+input double MargenTemprano = 0.25; // ATR que el precio debe pasar de la linea (0,25: se confirma el 73 %)
 input bool   MostrarRebote = true;  // Niveles del rebote con su probabilidad (medido desde 2022)
 input int    VelasRebote   = 3000;  // Velas para el zigzag del rebote
 
@@ -64,7 +79,8 @@ input int    VelasRebote   = 3000;  // Velas para el zigzag del rebote
 
 double VO[], VH[], VL[], VC[], VColor[];
 double Linea[], ColorLinea[], Compra[], Venta[], Ema[], Atr[], Fuerte[];
-datetime ultimaAlerta = 0;
+datetime ultimaAlerta = 0, ultimaTemprana = 0;
+int hH4 = INVALID_HANDLE;
 bool claro = false;
 string faseDibujada = "";     // fase del rebote dibujada (ver Fase())
 color cVerde = clrLime, cRojo = clrRed, cVerdeD = clrSeaGreen, cRojoD = clrIndianRed;
@@ -118,6 +134,43 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    ObjectsDeleteAll(0, PREFIJO);
+   if(hH4 != INVALID_HANDLE)
+      IndicatorRelease(hH4);
+}
+
+// +1 / -1: cierre de la ultima vela de H4 YA CERRADA al cierre de la vela que abre en t, contra su EMA 50
+int TendenciaH4(const datetime t)
+{
+   int sh = iBarShift(_Symbol, PERIOD_H4, t + PeriodSeconds()) + 1;
+   double e[1];
+   if(sh < 1 || CopyBuffer(hH4, 0, sh, 1, e) != 1)
+      return 0;
+   double c = iClose(_Symbol, PERIOD_H4, sh);
+   return c > e[0] ? 1 : (c < e[0] ? -1 : 0);
+}
+
+// La señal va a favor del filtro: EMA del grafico y, si se pide, EMA 50 de H4
+bool AFavor(const bool compra, const double cierre, const double ema, const datetime t)
+{
+   if(compra ? cierre <= ema : cierre >= ema)
+      return false;
+   return !FiltroH4 || TendenciaH4(t) == (compra ? 1 : -1);
+}
+
+// Señal contraria que no pasa el filtro: no es entrada, es la salida de la operacion abierta
+void EtiquetaSalir(const datetime t, const double precio, const bool arriba)
+{
+   string nombre = PREFIJO + "X" + IntegerToString((long)t);
+   if(ObjectFind(0, nombre) >= 0)
+      return;
+   ObjectCreate(0, nombre, OBJ_TEXT, 0, t, precio);
+   ObjectSetString(0, nombre, OBJPROP_TEXT, "Salir");
+   ObjectSetString(0, nombre, OBJPROP_FONT, "Arial");
+   ObjectSetInteger(0, nombre, OBJPROP_FONTSIZE, 7);
+   ObjectSetInteger(0, nombre, OBJPROP_COLOR, clrGray);
+   ObjectSetInteger(0, nombre, OBJPROP_ANCHOR, arriba ? ANCHOR_LOWER : ANCHOR_UPPER);
+   ObjectSetInteger(0, nombre, OBJPROP_SELECTABLE, false);
+   ObjectSetInteger(0, nombre, OBJPROP_HIDDEN, true);
 }
 
 double Src(const int i, const double &o[], const double &h[], const double &l[], const double &c[])
@@ -410,6 +463,13 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
 {
    if(rates_total < PeriodoATR + 3)
       return 0;
+   if(FiltroH4)
+   {
+      if(hH4 == INVALID_HANDLE)
+         hH4 = iMA(_Symbol, PERIOD_H4, 50, 0, MODE_EMA, PRICE_CLOSE);
+      if(BarsCalculated(hH4) <= 0)
+         return 0;                          // H4 aun cargando: se reintenta en el proximo tick
+   }
    int inicio = prev_calculated > 1 ? prev_calculated - 1 : 0;
    double k = 2.0 / (PeriodoEMA + 1);
    for(int i = inicio; i < rates_total; i++)
@@ -447,8 +507,12 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
          continue;
       bool compra = x > Linea[i] && x1 <= Linea[i - 1];
       bool venta  = x < Linea[i] && x1 >= Linea[i - 1];
-      bool aFavor = compra ? close[i] > Ema[i] : close[i] < Ema[i];
+      bool aFavor = (compra || venta) && AFavor(compra, close[i], Ema[i], time[i]);
       Fuerte[i] = aFavor ? 1 : 0;
+      if(SoloFiltradas && !aFavor && compra)
+         EtiquetaSalir(time[i], low[i] - 0.4 * Atr[i], false);
+      if(SoloFiltradas && !aFavor && venta)
+         EtiquetaSalir(time[i], high[i] + 0.4 * Atr[i], true);
       if(compra && (!SoloFiltradas || aFavor))
       {
          Compra[i] = low[i] - 0.2 * Atr[i];
@@ -463,8 +527,20 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
 
    // Alerta solo con la ultima vela CERRADA y una vez por vela
    int j = rates_total - 2;
+   double xj = Src(j, open, high, low, close), xj1 = Src(j - 1, open, high, low, close);
+   bool giroJ = (xj > Linea[j] && xj1 <= Linea[j - 1]) || (xj < Linea[j] && xj1 >= Linea[j - 1]);
    if(prev_calculated == 0)
       ultimaAlerta = time[j];               // al cargar no avisa de señales viejas
+   else if(time[j] != ultimaAlerta && giroJ && Fuerte[j] == 0 && SoloFiltradas && !AlertarTodas)
+   {
+      // señal contraria sin filtro a favor: es la salida de lo que hubiera abierto
+      ultimaAlerta = time[j];
+      string msg = StringFormat("UT SALIR de %s %s %s @ %s (señal contraria, sin entrada nueva)",
+                                xj > Linea[j] ? "SELL" : "BUY", _Symbol, EnumToString(_Period),
+                                DoubleToString(close[j], _Digits));
+      if(Alertas) Alert(msg);
+      if(AlMovil) SendNotification(msg);
+   }
    else if(time[j] != ultimaAlerta && (Compra[j] != EMPTY_VALUE || Venta[j] != EMPTY_VALUE)
            && (AlertarTodas || Fuerte[j] > 0))
    {
@@ -474,6 +550,46 @@ int OnCalculate(const int rates_total, const int prev_calculated, const datetime
       if(Alertas) Alert(msg);
       if(AlMovil) SendNotification(msg);
    }
+   // Aviso temprano: la vela EN CURSO ya paso la linea de la vela anterior por MargenTemprano ATR.
+   // La etiqueta es provisional (se borra si el precio vuelve); la alerta, una vez por vela.
+   int u = rates_total - 1;
+   string pre = PREFIJO + "PRE";
+   bool hayPre = false;
+   if(AvisoTemprano && u > PeriodoATR + 2)
+   {
+      double p = Linea[u - 1], x = Src(u, open, high, low, close), x1 = Src(u - 1, open, high, low, close);
+      double m = MargenTemprano * Atr[u - 1];
+      bool compra = x1 <= p && x >= p + m, venta = x1 >= p && x <= p - m;
+      bool aFavor = (compra || venta) && AFavor(compra, close[u], Ema[u], time[u]);
+      if((compra || venta) && (!SoloFiltradas || aFavor))
+      {
+         hayPre = true;
+         double y = compra ? low[u] - 0.6 * Atr[u] : high[u] + 0.6 * Atr[u];
+         if(ObjectFind(0, pre) < 0)
+         {
+            ObjectCreate(0, pre, OBJ_TEXT, 0, time[u], y);
+            ObjectSetString(0, pre, OBJPROP_FONT, "Arial");
+            ObjectSetInteger(0, pre, OBJPROP_FONTSIZE, 9);
+            ObjectSetInteger(0, pre, OBJPROP_SELECTABLE, false);
+            ObjectSetInteger(0, pre, OBJPROP_HIDDEN, true);
+         }
+         ObjectMove(0, pre, 0, time[u], y);
+         ObjectSetString(0, pre, OBJPROP_TEXT, compra ? "Buy?" : "Sell?");
+         ObjectSetInteger(0, pre, OBJPROP_COLOR, compra ? (aFavor ? cVerde : cVerdeD) : (aFavor ? cRojo : cRojoD));
+         ObjectSetInteger(0, pre, OBJPROP_ANCHOR, compra ? ANCHOR_UPPER : ANCHOR_LOWER);
+         if(prev_calculated > 0 && time[u] != ultimaTemprana && (AlertarTodas || aFavor))
+         {
+            ultimaTemprana = time[u];
+            string msg = StringFormat("UT pre-%s %s %s @ %s (vela en curso: se confirma al cierre)",
+                                      compra ? "BUY" : "SELL", _Symbol, EnumToString(_Period),
+                                      DoubleToString(close[u], _Digits));
+            if(Alertas) Alert(msg);
+            if(AlMovil) SendNotification(msg);
+         }
+      }
+   }
+   if(!hayPre)
+      ObjectDelete(0, pre);
    // Las lineas van con la ultima señal; solo cuando ya reboto 2 ATR en contra pasan al rebote
    if(MostrarRebote && rates_total > PeriodoATR + 50
       && !Recorrido(rates_total, time, high, low, close))

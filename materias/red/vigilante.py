@@ -7,11 +7,11 @@ movimiento se haya ido, sin que nadie tenga que estar preguntando.
 
 Avisa, con las velas ya cerradas:
 
-  ENTRADA   señal del UT Bot elegido (15M, a=2, ATR 10, Heikin Ashi) que
-            pasa el filtro de la EMA 200. Es lo unico con ventaja medida
-            (ver `utbot.ELEGIDO`), y su salida es la señal contraria.
-  SALIDA    ese mismo bot se da la vuelta: el sistema saldria. Es un
-            aviso; cerrar lo decide y lo hace el usuario.
+  ENTRADA   señal de la configuracion del UT Bot que `ventaja.py` eligio
+            (la que gana en los tres tramos 2019-2026) y que pasa su
+            filtro de tendencia. Su salida es la señal contraria.
+  SALIR     ese mismo bot se da la vuelta sin filtro a favor: el sistema
+            saldria. Es un aviso; cerrar lo decide y lo hace el usuario.
   REBOTE    una vela toca el extremo de 2 h y cumple una regla que el
             investigador adopto (validada en datos no vistos). Si no hay
             reglas adoptadas, de esto no avisa: no inventa.
@@ -38,6 +38,7 @@ import numpy as np
 from materias.red import investigador as I
 from materias.red import terminal
 from materias.red import utbot as U
+from materias.red import ventaja as V
 from materias.red.avisar import _log, avisar
 
 PID = Path(__file__).resolve().parents[2] / "state" / "red" / "vigilante.pid"
@@ -58,19 +59,19 @@ def mirar(m5: np.ndarray, m15: np.ndarray, m15_nueva: bool) -> list[tuple[str, s
     u5, u15 = _ut(m5), _ut(m15)
     c, a = u5["c"], u5["atr"]
     d = I.datos()
-    if m15_nueva:
-        e = U.estado({"t": m15["time"], "o": m15["open"], "h": m15["high"], "l": m15["low"], "c": m15["close"]})
-        u = e and e["ultima"]
-        if u and u["velas_atras"] == 0:
-            E = U.ELEGIDO
-            if u["pasa_filtro"]:
-                out.append((f"ENTRADA {NOM[u['lado']]} XAUUSD {u['precio']:.2f}",
-                            f"UT 15M elegido, a favor de la EMA 200. Linea {e['linea']:.2f} (ahi se gira). Salida: "
-                            f"señal contraria. Medido: {E['prueba']}.", True))
-            else:
-                out.append((f"SALIDA / giro a {NOM[u['lado']]} XAUUSD {u['precio']:.2f}",
-                            f"UT 15M elegido se da la vuelta, contra la EMA 200: el sistema sale de "
-                            f"{NOM[-u['lado']]} y no entra. Linea {e['linea']:.2f}.", True))
+    e = V.estado(m5)
+    u = e and e["nueva"]
+    if u:
+        m = e["prueba"]
+        medida = f"Medido 2025-26: PF {m['pf']:.2f}, {m['r']:+.2f} R, ganan {m['ganan_pct']:.0f} % (n={m['n']})."
+        if u["entrada"]:
+            out.append((f"ENTRADA {NOM[u['lado']]} XAUUSD {e['precio']:.2f}",
+                        f"{e['config']}. Linea {e['linea']:.2f}. Sin objetivo: se sale en la señal contraria. "
+                        + medida, True))
+        else:
+            out.append((f"SALIR de {NOM[-u['lado']]} XAUUSD {e['precio']:.2f}",
+                        f"{e['config']}: señal contraria sin filtro a favor. El sistema sale y no entra. "
+                        "Es un aviso: cerrar lo decides tu.", True))
     s = u5["nueva"]
     if s and s == u15["lado"]:
         f = d.get("regla_fija", {}).get("a_favor", {})

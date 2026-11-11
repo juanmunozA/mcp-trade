@@ -107,6 +107,14 @@ def main() -> None:
     h = investigador.datos()
     _log(f"investigador: {h['probadas']} hipotesis, {len(h['reglas'])} adoptadas, {len(h['caidas'])} caidas")
     autopsia.rellenar()
+    from materias.red import ventaja
+    ventaja.exportar()
+    e = ventaja.datos()
+    _log(f"ventaja: {e['pasan']} de {e['probadas']} pasan; elegida "
+         f"{ventaja.nombre(e['elegida']) if e['elegida'] else 'NINGUNA'}")
+    if not e["elegida"]:
+        from materias.red.avisar import avisar
+        avisar("MCP Trade: el UT Bot ya no tiene ventaja medida", "ninguna configuracion pasa los tres tramos")
     g = lecciones.datos()["grupos"]
     for cl in ("corto|todas", "largo|todas"):
         if cl in g:
@@ -114,7 +122,7 @@ def main() -> None:
             _log(f"{cl}: n={m['n']} mercado {m['r_medio']:+.3f} R · limitada {li['r_medio']:+.3f} R → {g[cl]['mejor']}")
     subir(["materias/red/tabla_pips.json", "materias/red/lecciones.json", "materias/red/zonas.json", "materias/red/retroceso.json",
            "materias/red/largo_rebote.json", "materias/mt5/Rebote_tabla.mqh",
-           "materias/red/hallazgos.json", "materias/red/autopsia.json"])
+           "materias/red/hallazgos.json", "materias/red/autopsia.json", "materias/red/ventaja.json"])
 
 
 if __name__ == "__main__":
