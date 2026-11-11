@@ -5,6 +5,8 @@ El paso semanal que hace que la parte numerica aprenda sola.
 2. Rehace la tabla de pips (ultimos 365 dias), las lecciones de entrada,
    las reacciones en vacios y extremos de serie y cuanto llega un rebote
    (desde 2022). La tabla del rebote se copia al MT5 y se recompila el UT Bot.
+   Corre el investigador (busca reglas de rebote y solo adopta las que
+   aguantan en datos no vistos) y rehace la autopsia de giros.
 3. Si cambiaron, las sube a GitHub; Render las recoge en el siguiente
    despliegue y el agente las lee en cada decision.
 
@@ -80,11 +82,17 @@ def instalar_mt5() -> None:
 
 def main() -> None:
     load_dotenv(RAIZ / ".env")
-    from materias.red import consejo, largo_rebote, lecciones, retroceso, zonas
+    from materias.red import autopsia, consejo, investigador, largo_rebote, lecciones, retroceso, zonas
     from materias.red import datos as D
-    v = D.descargar("M5")
-    D.guardar(v, "M5")
-    _log(f"velas 5M: {len(v):,}")
+    try:
+        v = D.descargar("M5")
+        D.guardar(v, "M5")
+        _log(f"velas 5M: {len(v):,}")
+    except RuntimeError as exc:
+        # sin velas nuevas se vuelve a medir con las guardadas: mejor una semana vieja que nada
+        _log(f"AVISO sin velas nuevas ({exc}); se mide con las guardadas")
+        from materias.red.avisar import avisar
+        avisar("MCP Trade: evolucionar sin velas nuevas", str(exc))
     consejo.exportar()
     lecciones.exportar()
     zonas.ARCHIVO.write_text(__import__("json").dumps(zonas.medir(), indent=1, ensure_ascii=False),
@@ -95,13 +103,18 @@ def main() -> None:
     largo_rebote.ARCHIVO.write_text(__import__("json").dumps(reb, indent=1, ensure_ascii=False), encoding="utf-8")
     largo_rebote.exportar_mqh(reb)
     instalar_mt5()
+    investigador.exportar()
+    h = investigador.datos()
+    _log(f"investigador: {h['probadas']} hipotesis, {len(h['reglas'])} adoptadas, {len(h['caidas'])} caidas")
+    autopsia.rellenar()
     g = lecciones.datos()["grupos"]
     for cl in ("corto|todas", "largo|todas"):
         if cl in g:
             m, li = g[cl]["mercado"], g[cl]["limitada"]
             _log(f"{cl}: n={m['n']} mercado {m['r_medio']:+.3f} R · limitada {li['r_medio']:+.3f} R → {g[cl]['mejor']}")
     subir(["materias/red/tabla_pips.json", "materias/red/lecciones.json", "materias/red/zonas.json", "materias/red/retroceso.json",
-           "materias/red/largo_rebote.json", "materias/mt5/Rebote_tabla.mqh"])
+           "materias/red/largo_rebote.json", "materias/mt5/Rebote_tabla.mqh",
+           "materias/red/hallazgos.json", "materias/red/autopsia.json"])
 
 
 if __name__ == "__main__":
@@ -109,4 +122,6 @@ if __name__ == "__main__":
         main()
     except Exception as exc:          # que el log diga por que no aprendio esta semana
         _log(f"ERROR {type(exc).__name__}: {exc}")
+        from materias.red.avisar import avisar
+        avisar("MCP Trade: evolucionar fallo", f"{type(exc).__name__}: {exc}")
         raise

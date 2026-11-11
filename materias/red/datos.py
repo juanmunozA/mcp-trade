@@ -43,12 +43,22 @@ def _conectar():
     import MetaTrader5 as mt5
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).resolve().parents[2] / ".env")
-    ok = mt5.initialize(path=os.getenv("MT5_RUTA") or None,
-                        login=int(os.getenv("MT5_LOGIN") or 0),
-                        password=os.getenv("MT5_CLAVE", ""),
-                        server=os.getenv("MT5_SERVIDOR", ""), timeout=60000)
-    if not ok:
-        raise RuntimeError(f"MT5 no conecta: {mt5.last_error()}")
+    # «IPC send failed» sale cuando el terminal esta arrancando o colgado: se reintenta
+    # antes de rendirse (el 08-11-2026 un solo intento dejo la semana sin medir).
+    import time
+    for intento in range(4):
+        ok = mt5.initialize(path=os.getenv("MT5_RUTA") or None,
+                            login=int(os.getenv("MT5_LOGIN") or 0),
+                            password=os.getenv("MT5_CLAVE", ""),
+                            server=os.getenv("MT5_SERVIDOR", ""), timeout=60000)
+        if ok:
+            break
+        error = mt5.last_error()
+        mt5.shutdown()
+        if intento < 3:
+            time.sleep(30)
+    else:
+        raise RuntimeError(f"MT5 no conecta tras 4 intentos: {error}")
     if mt5.account_info().trade_mode != 0:
         # Para bajar datos no importa, pero si esto sale es que el .env
         # apunta a otra cuenta de la que se cree.

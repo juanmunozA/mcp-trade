@@ -1,0 +1,373 @@
+{
+ "medido": "2026-11-10",
+ "dias": 730,
+ "candidatos": 39381,
+ "coste_atr": 0.12,
+ "entrada": "al cierre de la vela de 5M que toca el extremo de 2 h, a favor del rebote",
+ "base": {
+  "1.0/1.5": {
+   "r": -0.119,
+   "acierta_pct": 40.0
+  },
+  "1.0/3.0": {
+   "r": -0.104,
+   "acierta_pct": 25.4
+  },
+  "2.0/3.0": {
+   "r": -0.071,
+   "acierta_pct": 39.6
+  }
+ },
+ "probadas": 693,
+ "reglas": [],
+ "sueltos": {
+  "mecha60": {
+   "rasgos": [
+    "mecha60"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 8740,
+   "n_val": 3844,
+   "p_ent": 40.6,
+   "p_val": 38.5,
+   "r_ent": -0.106,
+   "r_val": -0.157,
+   "r_val_min": -0.195,
+   "frecuencia": 32.0
+  },
+  "mecha75": {
+   "rasgos": [
+    "mecha75"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 5748,
+   "n_val": 2563,
+   "p_ent": 40.0,
+   "p_val": 37.7,
+   "r_ent": -0.119,
+   "r_val": -0.177,
+   "r_val_min": -0.224,
+   "frecuencia": 21.1
+  },
+  "cierra_a_favor": {
+   "rasgos": [
+    "cierra_a_favor"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 8475,
+   "n_val": 3658,
+   "p_ent": 40.5,
+   "p_val": 38.8,
+   "r_ent": -0.107,
+   "r_val": -0.15,
+   "r_val_min": -0.19,
+   "frecuencia": 30.8
+  },
+  "recupera": {
+   "rasgos": [
+    "recupera"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 10610,
+   "n_val": 4672,
+   "p_ent": 40.0,
+   "p_val": 39.6,
+   "r_ent": -0.121,
+   "r_val": -0.131,
+   "r_val_min": -0.166,
+   "frecuencia": 38.8
+  },
+  "doble": {
+   "rasgos": [
+    "doble"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 3466,
+   "n_val": 1486,
+   "p_ent": 40.5,
+   "p_val": 38.2,
+   "r_ent": -0.109,
+   "r_val": -0.164,
+   "r_val_min": -0.226,
+   "frecuencia": 12.6
+  },
+  "barrida_4h": {
+   "rasgos": [
+    "barrida_4h"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 14458,
+   "n_val": 6133,
+   "p_ent": 39.0,
+   "p_val": 39.6,
+   "r_ent": -0.144,
+   "r_val": -0.13,
+   "r_val_min": -0.16,
+   "frecuencia": 52.3
+  },
+  "barrida_dia": {
+   "rasgos": [
+    "barrida_dia"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 5467,
+   "n_val": 2053,
+   "p_ent": 37.6,
+   "p_val": 40.7,
+   "r_ent": -0.181,
+   "r_val": -0.102,
+   "r_val_min": -0.155,
+   "frecuencia": 19.1
+  },
+  "rsi_extremo": {
+   "rasgos": [
+    "rsi_extremo"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 3041,
+   "n_val": 1144,
+   "p_ent": 37.4,
+   "p_val": 41.6,
+   "r_ent": -0.185,
+   "r_val": -0.08,
+   "r_val_min": -0.151,
+   "frecuencia": 10.6
+  },
+  "rsi_medio": {
+   "rasgos": [
+    "rsi_medio"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 13544,
+   "n_val": 6104,
+   "p_ent": 41.1,
+   "p_val": 39.9,
+   "r_ent": -0.092,
+   "r_val": -0.123,
+   "r_val_min": -0.153,
+   "frecuencia": 49.9
+  },
+  "vol_2x": {
+   "rasgos": [
+    "vol_2x"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 1396,
+   "n_val": 376,
+   "p_ent": 39.8,
+   "p_val": 35.9,
+   "r_ent": -0.124,
+   "r_val": -0.222,
+   "r_val_min": -0.344,
+   "frecuencia": 4.5
+  },
+  "vol_bajo": {
+   "rasgos": [
+    "vol_bajo"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 2186,
+   "n_val": 568,
+   "p_ent": 41.0,
+   "p_val": 41.9,
+   "r_ent": -0.094,
+   "r_val": -0.072,
+   "r_val_min": -0.174,
+   "frecuencia": 7.0
+  },
+  "vela_grande": {
+   "rasgos": [
+    "vela_grande"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 6388,
+   "n_val": 2776,
+   "p_ent": 39.1,
+   "p_val": 39.7,
+   "r_ent": -0.142,
+   "r_val": -0.128,
+   "r_val_min": -0.173,
+   "frecuencia": 23.3
+  },
+  "tres_en_contra": {
+   "rasgos": [
+    "tres_en_contra"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 9416,
+   "n_val": 3799,
+   "p_ent": 39.8,
+   "p_val": 39.7,
+   "r_ent": -0.124,
+   "r_val": -0.127,
+   "r_val_min": -0.166,
+   "frecuencia": 33.6
+  },
+  "ut_en_contra": {
+   "rasgos": [
+    "ut_en_contra"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 26338,
+   "n_val": 11283,
+   "p_ent": 40.2,
+   "p_val": 39.8,
+   "r_ent": -0.115,
+   "r_val": -0.126,
+   "r_val_min": -0.148,
+   "frecuencia": 95.5
+  },
+  "ext_2atr": {
+   "rasgos": [
+    "ext_2atr"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 15812,
+   "n_val": 6485,
+   "p_ent": 39.5,
+   "p_val": 40.5,
+   "r_ent": -0.133,
+   "r_val": -0.108,
+   "r_val_min": -0.138,
+   "frecuencia": 56.6
+  },
+  "ext_3atr": {
+   "rasgos": [
+    "ext_3atr"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 9926,
+   "n_val": 3976,
+   "p_ent": 39.3,
+   "p_val": 39.9,
+   "r_ent": -0.137,
+   "r_val": -0.123,
+   "r_val_min": -0.161,
+   "frecuencia": 35.3
+  },
+  "ema200_a_favor": {
+   "rasgos": [
+    "ema200_a_favor"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 6172,
+   "n_val": 3022,
+   "p_ent": 41.4,
+   "p_val": 41.4,
+   "r_ent": -0.085,
+   "r_val": -0.086,
+   "r_val_min": -0.13,
+   "frecuencia": 23.3
+  },
+  "asia": {
+   "rasgos": [
+    "asia"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 9990,
+   "n_val": 4436,
+   "p_ent": 37.8,
+   "p_val": 38.5,
+   "r_ent": -0.175,
+   "r_val": -0.159,
+   "r_val_min": -0.194,
+   "frecuencia": 36.6
+  },
+  "londres": {
+   "rasgos": [
+    "londres"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 5744,
+   "n_val": 2545,
+   "p_ent": 41.6,
+   "p_val": 39.6,
+   "r_ent": -0.079,
+   "r_val": -0.13,
+   "r_val_min": -0.177,
+   "frecuencia": 21.0
+  },
+  "ny_am": {
+   "rasgos": [
+    "ny_am"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 5599,
+   "n_val": 2252,
+   "p_ent": 40.4,
+   "p_val": 41.3,
+   "r_ent": -0.11,
+   "r_val": -0.089,
+   "r_val_min": -0.14,
+   "frecuencia": 19.9
+  },
+  "ny_pm": {
+   "rasgos": [
+    "ny_pm"
+   ],
+   "stop_atr": 1.0,
+   "obj_atr": 1.5,
+   "n_ent": 6233,
+   "n_val": 2579,
+   "p_ent": 42.5,
+   "p_val": 40.7,
+   "r_ent": -0.059,
+   "r_val": -0.103,
+   "r_val_min": -0.151,
+   "frecuencia": 22.4
+  }
+ },
+ "caidas": [],
+ "tamano_rebote": {
+  "M5": {
+   "n": 17776,
+   "p25": 2.2,
+   "p50": 3.1,
+   "p75": 4.5,
+   "p90": 6.7
+  },
+  "M15": {
+   "n": 5856,
+   "p25": 2.2,
+   "p50": 3.1,
+   "p75": 4.6,
+   "p90": 6.8
+  }
+ },
+ "regla_fija": {
+  "stop_atr": 2.0,
+  "obj_atr": 3.0,
+  "a_favor": {
+   "n": 6290,
+   "r": -0.06,
+   "ganan_pct": 40.0,
+   "r_reciente": -0.091
+  },
+  "en_contra": {
+   "n": 11154,
+   "r": -0.047,
+   "ganan_pct": 40.5,
+   "r_reciente": -0.044
+  }
+ }
+}
