@@ -44,9 +44,9 @@ def resumen() -> None:
         tk = mt5.symbol_info_tick("XAUUSD")
         # el dia del servidor empieza a las 00:00 de su reloj (17:00 NY)
         t_srv = tk.time if tk else int(dt.datetime.now().timestamp())
-        ini_dia = dt.datetime.utcfromtimestamp(t_srv - t_srv % 86400)
-        hoy = mt5.history_deals_get(ini_dia, dt.datetime.utcfromtimestamp(t_srv + 3600)) or []
-        todos = mt5.history_deals_get(dt.datetime(2020, 1, 1), dt.datetime.utcfromtimestamp(t_srv + 3600)) or []
+        # se filtra por d.time (reloj del servidor): pedir el rango con fechas sin zona lo desplaza la hora del PC
+        todos = mt5.history_deals_get(dt.datetime(2020, 1, 1), dt.datetime(2030, 1, 1)) or []
+        hoy = [d for d in todos if d.time >= t_srv - t_srv % 86400]
         pos = mt5.positions_get() or []
     finally:
         mt5.shutdown()
