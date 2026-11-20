@@ -102,6 +102,8 @@ def main() -> None:
     reb = largo_rebote.medir()
     largo_rebote.ARCHIVO.write_text(__import__("json").dumps(reb, indent=1, ensure_ascii=False), encoding="utf-8")
     largo_rebote.exportar_mqh(reb)
+    from materias.red import estaciones
+    estaciones.exportar()
     instalar_mt5()
     investigador.exportar()
     h = investigador.datos()
@@ -121,7 +123,7 @@ def main() -> None:
             m, li = g[cl]["mercado"], g[cl]["limitada"]
             _log(f"{cl}: n={m['n']} mercado {m['r_medio']:+.3f} R · limitada {li['r_medio']:+.3f} R → {g[cl]['mejor']}")
     subir(["materias/red/tabla_pips.json", "materias/red/lecciones.json", "materias/red/zonas.json", "materias/red/retroceso.json",
-           "materias/red/largo_rebote.json", "materias/mt5/Rebote_tabla.mqh",
+           "materias/red/largo_rebote.json", "materias/red/estaciones.json", "materias/mt5/Rebote_tabla.mqh",
            "materias/red/hallazgos.json", "materias/red/autopsia.json", "materias/red/ventaja.json"])
 
 
