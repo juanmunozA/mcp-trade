@@ -67,11 +67,12 @@ def instalar_mt5() -> None:
     carpetas = list(Path(os.getenv("APPDATA", "")).glob("MetaQuotes/Terminal/*/MQL5/Indicators"))
     if os.getenv("FONDEO_RUTA"):  # MT5 portable de la cuenta de fondeo
         carpetas.append(Path(os.getenv("FONDEO_RUTA")).with_name("MQL5") / "Indicators")
+    nombres = ("UT_Bot_Filtrado.mq5", "Rebote_tabla.mqh", "Estructura_FVG.mq5", "Vela15_Scalper.mq5", "Vela15_tabla.mqh")
     for carpeta in carpetas:
-        if not (carpeta / "UT_Bot_Filtrado.mq5").exists():
+        # basta con que este uno: si el usuario borro otro, se repone (19-11-2026 faltaban el UT Bot y Vela15)
+        if not any((carpeta / n).exists() for n in nombres):
             continue
-        for nombre in ("UT_Bot_Filtrado.mq5", "Rebote_tabla.mqh", "Estructura_FVG.mq5",
-                       "Vela15_Scalper.mq5", "Vela15_tabla.mqh"):
+        for nombre in nombres:
             shutil.copy2(RAIZ / "materias" / "mt5" / nombre, carpeta / nombre)
         for ind in ("UT_Bot_Filtrado", "Estructura_FVG", "Vela15_Scalper"):
             if editor.exists():
